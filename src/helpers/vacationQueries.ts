@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsGetVacationQueries } from "../interfaces/vacationQueries";
+import { PropsGetTotalVacationQueries, PropsGetVacationQueries } from "../interfaces/vacationQueries";
 import { db } from "../utils/db";
 
 export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQueries) => {
@@ -7,6 +7,8 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
         try {
             const rowsPerPage = parseInt(props.limit);
             const min = ((parseInt(props.page) + 1) * rowsPerPage) - rowsPerPage;
+
+            let em = empleado.split(' ');
 
             let listVacation = await db.rch_empleado_vacaciones.findMany({
                 where: {
@@ -48,7 +50,7 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
                     fecha_fin: true
                 },
                 orderBy: {
-                    id: "asc"
+                    id: "desc"
                 },
                 skip: min,
                 take: rowsPerPage
@@ -56,6 +58,38 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
 
             resolve(listVacation);
         } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotalVacationQueries) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            let countListVacation = await db.rch_empleado_vacaciones.count({
+                where: {
+                    rch_empleados: {
+                        matricula: props.matricula ? parseInt(props.matricula) : {},
+                        cmp_persona: {
+                            OR: [
+                                { nombres: { contains: empleado } },
+                                { primer_apellido: { contains: empleado } },
+                                { segundo_apellido: { contains: empleado } }
+                            ]
+                        },
+                    },
+                    deleted_at: null
+                }
+            });
+
+            countListVacation ? (
+
+                resolve(countListVacation)
+
+            ) : resolve(0);
+        } catch (error) {
+            console.log(error);
             reject(error);
         }
     })

@@ -9,3 +9,8 @@ export interface PropsGetVacationQueries {
     fec_inicial: string;
     fec_final: string;
 }
+
+export interface PropsGetTotalVacationQueries {
+    matricula: string;
+    empleado: string;
+}
