@@ -13,4 +13,12 @@ export interface PropsGetVacationQueries {
 export interface PropsGetTotalVacationQueries {
     matricula: string;
     empleado: string;
+    rol: string;
+    fec_inicial: string;
+}
+
+export interface PropsUpdateVacationQueries {
+    id: number;
+    fec_inicial: string;
+    fec_final: string;
 }

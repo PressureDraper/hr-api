@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsGetTotalVacationQueries, PropsGetVacationQueries } from "../interfaces/vacationQueries";
+import { PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
 import { db } from "../utils/db";
 
 export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQueries) => {
@@ -7,8 +7,6 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
         try {
             const rowsPerPage = parseInt(props.limit);
             const min = ((parseInt(props.page) + 1) * rowsPerPage) - rowsPerPage;
-
-            let em = empleado.split(' ');
 
             let listVacation = await db.rch_empleado_vacaciones.findMany({
                 where: {
@@ -28,7 +26,8 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
                     tipo: props.tipo ? { contains: props.tipo } : {},
                     rol: props.rol ? { contains: props.rol } : {},
                     fecha_inicio: props.fec_inicial ? moment.utc(props.fec_inicial).toISOString() : {},
-                    fecha_fin: props.fec_final ? moment.utc(props.fec_final).toISOString() : {}
+                    fecha_fin: props.fec_final ? moment.utc(props.fec_final).toISOString() : {},
+                    deleted_at: null
                 },
                 select: {
                     id: true,
@@ -79,6 +78,8 @@ export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotal
                             ]
                         },
                     },
+                    rol: props.rol ? { contains: props.rol } : {},
+                    fecha_inicio: props.fec_inicial ? moment.utc(props.fec_inicial).toISOString() : {},
                     deleted_at: null
                 }
             });
@@ -90,6 +91,68 @@ export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotal
             ) : resolve(0);
         } catch (error) {
             console.log(error);
+            reject(error);
+        }
+    })
+}
+
+export const updateVacationQuery = ({ id, ...props }: PropsUpdateVacationQueries) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const record = await db.rch_empleado_vacaciones.findUnique({
+                where: {
+                    id
+                }
+            });
+
+            console.log(record);
+            console.log(props.fec_inicial);
+            console.log(props.fec_final);
+            resolve(true);
+
+            /* record ? (
+                await db.rch_empleado_vacaciones.update({
+                    where: {
+                        id: props.id
+                    },
+                    data: {
+                        fecha_inicio: props.fec_inicial,
+                        fecha_fin: props.fec_final
+                    }
+                }),
+
+                resolve(true)
+
+            ) : resolve(false); */
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export const deleteVacationQuery = (id: number) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const record = await db.rch_empleado_vacaciones.findUnique({
+                where: {
+                    id
+                }
+            });
+
+            record ? (
+                await db.rch_empleado_vacaciones.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        deleted_at: new Date().toISOString()
+                    }
+                }),
+
+                resolve(true)
+
+            ) : resolve(false);
+        } catch (error) {
             reject(error);
         }
     })
