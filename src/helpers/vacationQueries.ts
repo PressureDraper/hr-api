@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
+import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
 import { db } from "../utils/db";
 
 export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQueries) => {
@@ -23,7 +23,8 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
                             nombre: props.departamento ? { contains: props.departamento } : {}
                         }
                     },
-                    tipo: props.tipo ? { contains: props.tipo } : {},
+                    /* tipo: props.tipo ? { contains: props.tipo } : {}, */
+                    tipo: 'VACACIONES',
                     rol: props.rol ? { contains: props.rol } : {},
                     fecha_inicio: props.fec_inicial ? moment.utc(props.fec_inicial).toISOString() : {},
                     fecha_fin: props.fec_final ? moment.utc(props.fec_final).toISOString() : {},
@@ -79,6 +80,7 @@ export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotal
                         },
                     },
                     rol: props.rol ? { contains: props.rol } : {},
+                    tipo: 'VACACIONES',
                     fecha_inicio: props.fec_inicial ? moment.utc(props.fec_inicial).toISOString() : {},
                     deleted_at: null
                 }
@@ -96,34 +98,56 @@ export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotal
     })
 }
 
-export const updateVacationQuery = ({ id, ...props }: PropsUpdateVacationQueries) => {
+export const createSpecialtyQuery = ({ ...props }: PropsCreateVacationQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const record = await db.rch_empleado_vacaciones.findUnique({
+            const repeated: any = await db.rch_empleado_vacaciones.findFirst({
                 where: {
-                    id
+                    id_empleado: props.id,
+                    rch_empleados: {
+                        matricula: parseInt(props.matricula)
+                    },
+                    fecha_inicio: moment.utc(props.fec_inicial).toISOString(),
+                    fecha_fin: moment.utc(props.fec_final).toISOString()
                 }
             });
 
-            console.log(record);
-            console.log(props.fec_inicial);
-            console.log(props.fec_final);
-            resolve(true);
-
-            /* record ? (
-                await db.rch_empleado_vacaciones.update({
-                    where: {
-                        id: props.id
-                    },
+            if (repeated) {
+                resolve({}); //duplicated entry
+            } else {
+                let record = await db.rch_empleado_vacaciones.create({
                     data: {
-                        fecha_inicio: props.fec_inicial,
-                        fecha_fin: props.fec_final
+                        id_empleado: props.id,
+                        tipo: 'VACACIONES',
+                        rol: props.rol,
+                        fecha_inicio: moment.utc(props.fec_inicial).toISOString(),
+                        fecha_fin: moment.utc(props.fec_final).toISOString(),
+                        //add timestamps <- vacation
                     }
-                }),
+                })
+                resolve(record);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
 
-                resolve(true)
+export const updateVacationQuery = ({ id, ...props }: PropsUpdateVacationQueries) => {
+    return new Promise(async (resolve, reject) => {
+        try {
 
-            ) : resolve(false); */
+            await db.rch_empleado_vacaciones.update({
+                where: {
+                    id
+                },
+                data: {
+                    fecha_inicio: moment.utc(props.fec_inicial).toISOString(),
+                    fecha_fin: moment.utc(props.fec_final).toISOString()
+                }
+            });
+
+            resolve(true);
         } catch (error) {
             reject(error);
         }
