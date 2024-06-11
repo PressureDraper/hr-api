@@ -7,6 +7,7 @@ import cors from 'cors';
 import routeVacation from '../routes/vacation';
 import routeEmployee from '../routes/employees';
 import routePerson from '../routes/person';
+import routeHolidays from '../routes/holidays';
 
 class Server {
     private app: Express;
@@ -29,6 +30,7 @@ class Server {
         this.app.use('/api/rh/vacation', routeVacation);
         this.app.use('/api/rh/employee', routeEmployee);
         this.app.use('/api/rh/person', routePerson);
+        this.app.use('/api/rh/holidays', routeHolidays);
     }
 
     execute() {

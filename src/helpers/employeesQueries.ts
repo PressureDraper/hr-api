@@ -9,7 +9,9 @@ export const getEmployeePerIdsQuery = (data: PropsGetEmployeeQueries) => {
                 empleados.map(async (id: number) => {
                     const reg = await db.rch_empleados.findFirst({
                         where: {
-                            id
+                            id,
+                            activo: true,
+                            deleted_at: null
                         },
                         select: {
                             id: true,
@@ -20,7 +22,7 @@ export const getEmployeePerIdsQuery = (data: PropsGetEmployeeQueries) => {
                                     nombres: true,
                                     primer_apellido: true,
                                     segundo_apellido: true,
-                                    curp:true,
+                                    curp: true,
                                     rfc: true,
                                     sexo: true
                                 }
@@ -54,6 +56,7 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                         ]
                     },
                     matricula: enrollmentFilter ? parseInt(enrollmentFilter) : {},
+                    activo: true,
                     deleted_at: null
                 },
                 select: {
@@ -83,6 +86,52 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
             })
 
             resolve(listEmployee);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getKardexQuery = (id: number) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            let Employee: any = await db.rch_empleados.findUnique({
+                where: {
+                    id
+                },
+                select: {
+                    id: true,
+                    matricula: true,
+                    hora_entrada: true,
+                    hora_salida: true,
+                    guardias: true,
+                    cmp_persona: {
+                        select: {
+                            nombres: true,
+                            primer_apellido: true,
+                            segundo_apellido: true,
+                        }
+                    },
+                    cat_tipos_empleado: {
+                        select: {
+                            nombre: true
+                        }
+                    },
+                    cat_departamentos: {
+                        select: {
+                            nombre: true
+                        }
+                    },
+                    cat_turnos: {
+                        select: {
+                            nombre: true
+                        }
+                    }
+                }
+            });
+
+            resolve(Employee);
         } catch (error) {
             reject(error);
         }
