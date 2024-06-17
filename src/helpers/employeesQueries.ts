@@ -131,6 +131,19 @@ export const getKardexQuery = (id: number) => {
                 }
             });
 
+            let Historial: any = await db.rch_empleados_historial_horarios.findMany({
+                where: {
+                    id_empleado: id
+                },
+                select: {
+                    fecha_inicio: true,
+                    hora_entrada: true,
+                    hora_salida: true
+                }
+            });
+
+            Employee.historial = Historial;
+
             resolve(Employee);
         } catch (error) {
             reject(error);
