@@ -1,4 +1,5 @@
-import { PropsGetEmployeeQueries, SicaEmployeeQueries } from "../interfaces/employeesQueries";
+import moment from "moment";
+import { PropsGetEmployeeQueries, SicaEmployeeQueries, guardsInterface, shiftsHistoryQueries } from "../interfaces/employeesQueries";
 import { db } from "../utils/db";
 
 export const getEmployeePerIdsQuery = (data: PropsGetEmployeeQueries) => {
@@ -149,4 +150,70 @@ export const getKardexQuery = (id: number) => {
             reject(error);
         }
     })
+}
+
+export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
+
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            const repeated: any = await db.rch_empleados_historial_horarios.findFirst({ //check if history already exists
+                where: {
+                    id_empleado: data.id_empleado,
+                    fecha_inicio: moment.utc(data.fec_inicio).toISOString(),
+                }
+            });
+
+            const formatGuardias = data.guardias.map((data: guardsInterface) => {
+                return data.title
+            });
+
+            const userRegistro = await db.users.findFirst({
+                where: {
+                    id_empleado: data.id_registro
+                },
+                select: {
+                    id: true,
+                    username: true
+                }
+            })            
+
+            if (repeated) {
+                resolve({}); //duplicated entry
+            } else {
+                let record = await db.rch_empleados_historial_horarios.create({
+                    data: {
+                        id_empleado: data.id_empleado,
+                        id_turno: data.turno.id,
+                        fecha_inicio: moment.utc(data.fec_inicio).toISOString(),
+                        hora_entrada: moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
+                        hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
+                        guardias: JSON.stringify(formatGuardias),
+                        observaciones: data.observaciones === '' ? null : data.observaciones,
+                        idUser: userRegistro?.id,
+                        nick: userRegistro?.username,
+                        created_at: moment.utc().subtract(6, 'hour').toISOString(), //gmt -6
+                        updated_at: moment.utc().subtract(6, 'hour').toISOString()
+                    }
+                });
+
+                await db.rch_empleados.update({
+                    where: {
+                        id: data.id_empleado
+                    },
+                    data: {
+                        hora_entrada:  moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
+                        hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
+                        guardias: JSON.stringify(formatGuardias),
+                        updated_at: moment.utc().subtract(6, 'hour').toISOString(),
+                        id_turno: data.turno.id
+                    }
+                })
+
+                resolve(record);
+            }
+        } catch (error) {
+            reject(error);
+        }
+    });
 }

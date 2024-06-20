@@ -8,6 +8,7 @@ import routeVacation from '../routes/vacation';
 import routeEmployee from '../routes/employees';
 import routePerson from '../routes/person';
 import routeHolidays from '../routes/holidays';
+import routeShifts from '../routes/shifts';
 
 class Server {
     private app: Express;
@@ -31,6 +32,7 @@ class Server {
         this.app.use('/api/rh/employee', routeEmployee);
         this.app.use('/api/rh/person', routePerson);
         this.app.use('/api/rh/holidays', routeHolidays);
+        this.app.use('/api/rh/shifts', routeShifts);
     }
 
     execute() {
