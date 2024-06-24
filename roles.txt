@@ -1,0 +1,7 @@
+CONTROL ASISTENCIAL
+	permission:
+	rhumanos_kardex_ver
+	
+INCIDENCIAS
+	permission:
+	rhumanos_permisos_ver

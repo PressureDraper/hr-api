@@ -62,9 +62,6 @@ export const getKardex = async (req: any, res: Response) => {
 export const createShiftHistory = async (req: any, res: Response) => {
     try {
         const data: shiftsHistoryQueries = req.body;
-
-        console.log(data);
-        
         const record: any = await createShiftHistoryQuery({ ...data });
 
         if (Object.keys(record).length === 0) {

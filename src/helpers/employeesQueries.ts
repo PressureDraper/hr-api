@@ -157,18 +157,18 @@ export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
 
-            const repeated: any = await db.rch_empleados_historial_horarios.findFirst({ //check if history already exists
+            const repeated: any = await db.rch_empleados_historial_horarios.findFirst({ //ver si el registro ya existe
                 where: {
                     id_empleado: data.id_empleado,
                     fecha_inicio: moment.utc(data.fec_inicio).toISOString(),
                 }
             });
 
-            const formatGuardias = data.guardias.map((data: guardsInterface) => {
+            const formatGuardias = data.guardias.map((data: guardsInterface) => { //darle formato a las guardias para guardarlas
                 return data.title
             });
 
-            const userRegistro = await db.users.findFirst({
+            const userRegistro = await db.users.findFirst({ //obtener el username y id de la tabla user para ver quiem realizo la accion
                 where: {
                     id_empleado: data.id_registro
                 },
@@ -176,12 +176,46 @@ export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
                     id: true,
                     username: true
                 }
-            })            
+            })
 
-            if (repeated) {
-                resolve({}); //duplicated entry
-            } else {
-                let record = await db.rch_empleados_historial_horarios.create({
+            const isFirstHistoryChange = await db.rch_empleados_historial_horarios.findFirst({ //verificar si es el primer cambio de horario del empleado
+                where: {
+                    id_empleado: data.id_empleado
+                }
+            })
+
+            if (isFirstHistoryChange == null) { //si no tiene historial
+                const baseData = await db.rch_empleados.findUnique({ //consultar el horario actual
+                    where: {
+                        id: data.id_empleado
+                    },
+                    select: {
+                        id_turno: true,
+                        fecha_alta: true,
+                        hora_entrada: true,
+                        hora_salida: true,
+                        guardias: true,
+                        observaciones: true
+                    }
+                });
+
+                await db.rch_empleados_historial_horarios.create({//crear un primer registro como punto de partida para el calendario
+                    data: {
+                        id_empleado: data.id_empleado,
+                        id_turno: baseData?.id_turno,
+                        fecha_inicio: baseData?.fecha_alta,
+                        hora_entrada: baseData?.hora_entrada,
+                        hora_salida: baseData?.hora_salida,
+                        guardias: baseData?.guardias,
+                        observaciones: baseData?.observaciones == '' ? null : baseData?.observaciones,
+                        idUser: userRegistro?.id,
+                        nick: userRegistro?.username,
+                        created_at: moment.utc().subtract(6, 'hour').toISOString(), //gmt -6
+                        updated_at: moment.utc().subtract(6, 'hour').toISOString()
+                    }
+                });
+
+                let record = await db.rch_empleados_historial_horarios.create({ //crear el registro enviado del front
                     data: {
                         id_empleado: data.id_empleado,
                         id_turno: data.turno.id,
@@ -197,20 +231,58 @@ export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
                     }
                 });
 
-                await db.rch_empleados.update({
-                    where: {
-                        id: data.id_empleado
-                    },
-                    data: {
-                        hora_entrada:  moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
-                        hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
-                        guardias: JSON.stringify(formatGuardias),
-                        updated_at: moment.utc().subtract(6, 'hour').toISOString(),
-                        id_turno: data.turno.id
-                    }
-                })
+                setTimeout(async () => {
+                    await db.rch_empleados.update({ //actualizar la tabla de rch_empleados
+                        where: {
+                            id: data.id_empleado
+                        },
+                        data: {
+                            hora_entrada: moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
+                            hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
+                            guardias: JSON.stringify(formatGuardias),
+                            updated_at: moment.utc().subtract(6, 'hour').toISOString(),
+                            id_turno: data.turno.id
+                        }
+                    });
 
-                resolve(record);
+                    resolve(record);
+                }, 50);
+
+            } else { //si ya le han cambiado el horario antes
+                if (repeated) {
+                    resolve({}); //duplicated entry
+                } else {
+                    let record = await db.rch_empleados_historial_horarios.create({
+                        data: {
+                            id_empleado: data.id_empleado,
+                            id_turno: data.turno.id,
+                            fecha_inicio: moment.utc(data.fec_inicio).toISOString(),
+                            hora_entrada: moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
+                            hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
+                            guardias: JSON.stringify(formatGuardias),
+                            observaciones: data.observaciones === '' ? null : data.observaciones,
+                            idUser: userRegistro?.id,
+                            nick: userRegistro?.username,
+                            created_at: moment.utc().subtract(6, 'hour').toISOString(), //gmt -6
+                            updated_at: moment.utc().subtract(6, 'hour').toISOString()
+                        }
+                    });
+
+                    await db.rch_empleados.update({
+                        where: {
+                            id: data.id_empleado
+                        },
+                        data: {
+                            hora_entrada: moment.utc(data.hora_entrada, 'HH:mm:ss').toISOString(),
+                            hora_salida: moment.utc(data.hora_salida, 'HH:mm:ss').toISOString(),
+                            guardias: JSON.stringify(formatGuardias),
+                            updated_at: moment.utc().subtract(6, 'hour').toISOString(),
+                            id_turno: data.turno.id
+                        }
+                    })
+
+                    resolve(record);
+                }
             }
         } catch (error) {
             reject(error);
