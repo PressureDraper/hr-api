@@ -1,6 +1,11 @@
 CONTROL ASISTENCIAL
+	rol:
+	rhumanos_control_asistencial
+	
 	permission:
 	rhumanos_kardex_ver
+	reportes_rhumanos_checadas
+	
 	
 INCIDENCIAS
 	permission:

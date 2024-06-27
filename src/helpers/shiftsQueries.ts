@@ -1,6 +1,6 @@
 import { db } from "../utils/db";
 
-export const getShiftsQuery = () => {
+export const getShiftsCatalogQuery = () => {
     return new Promise(async (resolve, reject) => {
         try {
             const shifts = await db.cat_turnos.findMany({

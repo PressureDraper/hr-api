@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { createShiftHistoryQuery, getEmployeePerIdsQuery, getEmployeeQuery, getKardexQuery } from "../helpers/employeesQueries";
-import { SicaEmployeeQueries, shiftsHistoryQueries } from "../interfaces/employeesQueries";
+import { createShiftHistoryQuery, getEmployeePerIdsQuery, getEmployeeQuery, getEmployeeTypeCatalogQuery, getKardexQuery } from "../helpers/employeesQueries";
+import { SicaEmployeeQueries, ShiftsHistoryQueries } from "../interfaces/employeesQueries";
 
 export const getEmployeePerIdsData = async (req: any, res: Response) => {
     try {
@@ -61,7 +61,7 @@ export const getKardex = async (req: any, res: Response) => {
 
 export const createShiftHistory = async (req: any, res: Response) => {
     try {
-        const data: shiftsHistoryQueries = req.body;
+        const data: ShiftsHistoryQueries = req.body;
         const record: any = await createShiftHistoryQuery({ ...data });
 
         if (Object.keys(record).length === 0) {
@@ -76,6 +76,23 @@ export const createShiftHistory = async (req: any, res: Response) => {
                 data: record
             })
         }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const getEmployeeType = async (req: any, res: Response) => {
+    try {
+        const employeeTypeCatalog = await getEmployeeTypeCatalogQuery();
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: employeeTypeCatalog
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({

@@ -1,13 +1,13 @@
 import { Response } from "express";
-import { getShiftsQuery } from "../helpers/shiftsQueries";
+import { getShiftsCatalogQuery } from "../helpers/shiftsQueries";
 
 export const getShifts = async (req: any, res: Response) => {
     try {
-        const shifts = await getShiftsQuery();
+        const shiftsCatalog = await getShiftsCatalogQuery();
         res.status(200).json({
             ok: true,
             msg: 'Ok',
-            data: shifts
+            data: shiftsCatalog
         })
     } catch (error) {
         console.log(error);

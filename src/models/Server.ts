@@ -9,6 +9,7 @@ import routeEmployee from '../routes/employees';
 import routePerson from '../routes/person';
 import routeHolidays from '../routes/holidays';
 import routeShifts from '../routes/shifts';
+import routeReports from '../routes/reports';
 
 class Server {
     private app: Express;
@@ -33,13 +34,14 @@ class Server {
         this.app.use('/api/rh/person', routePerson);
         this.app.use('/api/rh/holidays', routeHolidays);
         this.app.use('/api/rh/shifts', routeShifts);
+        this.app.use('/api/rh/reports', routeReports);
     }
 
     execute() {
         this.middlewares();
         this.server.listen( this.port, () => {
             process.env.ENVIRONMENT == 'productivo'
-                ? console.log( `Server Settings ready in https://boletas.ssaver.gob.mx:${ this.port }`.america )
+                ? console.log( `Server Settings ready in https://rhumanos.ssaver.gob.mx:${ this.port }`.america )
                 : console.log( `Server Settings ready in http://localhost:${ this.port }`.rainbow );
         } );
     }

@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsGetEmployeeQueries, SicaEmployeeQueries, guardsInterface, shiftsHistoryQueries } from "../interfaces/employeesQueries";
+import { PropsGetEmployeeQueries, ShiftsHistoryQueries, SicaEmployeeQueries, GuardsInterface } from "../interfaces/employeesQueries";
 import { db } from "../utils/db";
 
 export const getEmployeePerIdsQuery = (data: PropsGetEmployeeQueries) => {
@@ -152,7 +152,7 @@ export const getKardexQuery = (id: number) => {
     })
 }
 
-export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
+export const createShiftHistoryQuery = ({ ...data }: ShiftsHistoryQueries) => {
 
     return new Promise(async (resolve, reject) => {
         try {
@@ -164,7 +164,7 @@ export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
                 }
             });
 
-            const formatGuardias = data.guardias.map((data: guardsInterface) => { //darle formato a las guardias para guardarlas
+            const formatGuardias = data.guardias.map((data: GuardsInterface) => { //darle formato a las guardias para guardarlas
                 return data.title
             });
 
@@ -288,4 +288,23 @@ export const createShiftHistoryQuery = ({ ...data }: shiftsHistoryQueries) => {
             reject(error);
         }
     });
+}
+
+export const getEmployeeTypeCatalogQuery = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            let listTypes: any = await db.cat_tipos_empleado.findMany({
+                select: {
+                    id: true,
+                    nombre: true,
+                    clave: true
+                }
+            });
+
+            resolve(listTypes);
+        } catch (error) {
+            reject(error);
+        }
+    })
 }
