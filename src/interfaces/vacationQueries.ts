@@ -11,11 +11,10 @@ export interface PropsGetVacationQueries {
 }
 
 export interface PropsCreateVacationQueries {
-    id: number;
-    matricula: string;
-    rol: string;
+    empleado: any
     fec_inicial: string;
     fec_final: string;
+    rol: string;
 }
 
 export interface PropsGetTotalVacationQueries {

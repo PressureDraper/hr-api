@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { check } from "express-validator";
-import { deleteVacation, getTotalVacation, getVacation, updateVacation } from "../controllers/vacation";
+import { createVacation, deleteVacation, getTotalVacation, getVacation, updateVacation } from "../controllers/vacation";
 
 const router: Router = Router();
 
 router.get('/', getVacation);
 router.get('/total/count', getTotalVacation);
+
+router.post('/', createVacation);
 
 router.put('/:id', updateVacation);
 

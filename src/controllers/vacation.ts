@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
-import { deleteVacationQuery, getTotalVacationQuery, getVacationQuery, updateVacationQuery } from "../helpers/vacationQueries";
+import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
+import { createVacationQuery, deleteVacationQuery, getTotalVacationQuery, getVacationQuery, updateVacationQuery } from "../helpers/vacationQueries";
 
 export const getVacation = async (req: any, res: Response) => {
     try {
@@ -39,11 +39,38 @@ export const getTotalVacation = async (req: any, res: Response) => {
     }
 }
 
+export const createVacation = async (req: any, res: Response) => {
+    try {
+        const data: PropsCreateVacationQueries = req.body;
+        const query: any = await createVacationQuery(data);
+
+        if (Object.keys(query).length === 0 ) {
+            res.status(409).json({
+                ok: false,
+                msg: 'Duplicated entry'
+            });
+        } else {
+            res.status(200).json({
+                ok: true,
+                msg: 'ok',
+                data: query
+            });
+        }
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
 export const updateVacation = async (req: any, res: Response) => {
     try {
         const id: number = req.params.id;
         const data: PropsUpdateVacationQueries = req.body;
-        const query = await updateVacationQuery({...data, id});
+        const query = await updateVacationQuery({ ...data, id });
 
         res.status(200).json({
             ok: true,

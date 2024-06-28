@@ -98,17 +98,16 @@ export const getTotalVacationQuery = ({ empleado = '', ...props }: PropsGetTotal
     })
 }
 
-export const createSpecialtyQuery = ({ ...props }: PropsCreateVacationQueries) => {
+export const createVacationQuery = ({ ...props }: PropsCreateVacationQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
             const repeated: any = await db.rch_empleado_vacaciones.findFirst({
                 where: {
-                    id_empleado: props.id,
-                    rch_empleados: {
-                        matricula: parseInt(props.matricula)
-                    },
-                    fecha_inicio: moment.utc(props.fec_inicial).toISOString(),
-                    fecha_fin: moment.utc(props.fec_final).toISOString()
+                    id_empleado: props.empleado.id, //id y cualquier fecha que de coincidencia con una ya registrada
+                    OR: [
+                        { fecha_inicio: moment.utc(props.fec_inicial).toISOString() },
+                        { fecha_fin: moment.utc(props.fec_final).toISOString() }
+                    ]
                 }
             });
 
@@ -117,12 +116,13 @@ export const createSpecialtyQuery = ({ ...props }: PropsCreateVacationQueries) =
             } else {
                 let record = await db.rch_empleado_vacaciones.create({
                     data: {
-                        id_empleado: props.id,
+                        id_empleado: props.empleado.id,
                         tipo: 'VACACIONES',
                         rol: props.rol,
                         fecha_inicio: moment.utc(props.fec_inicial).toISOString(),
                         fecha_fin: moment.utc(props.fec_final).toISOString(),
-                        //add timestamps <- vacation
+                        created_at: moment.utc().subtract(6, 'hour').toISOString(), //gmt -6
+                        updated_at: moment.utc().subtract(6, 'hour').toISOString()
                     }
                 })
                 resolve(record);
@@ -136,8 +136,7 @@ export const createSpecialtyQuery = ({ ...props }: PropsCreateVacationQueries) =
 export const updateVacationQuery = ({ id, ...props }: PropsUpdateVacationQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
-
-            await db.rch_empleado_vacaciones.update({
+            const updatedVacation = await db.rch_empleado_vacaciones.update({
                 where: {
                     id
                 },
@@ -147,7 +146,7 @@ export const updateVacationQuery = ({ id, ...props }: PropsUpdateVacationQueries
                 }
             });
 
-            resolve(true);
+            resolve(updatedVacation);
         } catch (error) {
             reject(error);
         }
@@ -169,7 +168,7 @@ export const deleteVacationQuery = (id: number) => {
                         id
                     },
                     data: {
-                        deleted_at: new Date().toISOString()
+                        deleted_at: moment.utc().subtract(6, 'hour').toISOString()
                     }
                 }),
 
