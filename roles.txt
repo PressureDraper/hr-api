@@ -3,10 +3,10 @@ CONTROL ASISTENCIAL
 	rhumanos_control_asistencial
 	
 	permission:
-	rhumanos_kardex_ver
-	reportes_rhumanos_checadas
+	rhumanos_kardex_ver = control asistencial view
+	reportes_rhumanos_checadas = reporte checadas
 	
 	
 INCIDENCIAS
 	permission:
-	rhumanos_permisos_ver
+	rhumanos_permisos_ver = permisos tab
