@@ -10,6 +10,7 @@ import routePerson from '../routes/person';
 import routeHolidays from '../routes/holidays';
 import routeShifts from '../routes/shifts';
 import routeReports from '../routes/reports';
+import routePermissions from '../routes/permissions';
 
 class Server {
     private app: Express;
@@ -35,6 +36,7 @@ class Server {
         this.app.use('/api/rh/holidays', routeHolidays);
         this.app.use('/api/rh/shifts', routeShifts);
         this.app.use('/api/rh/reports', routeReports);
+        this.app.use('/api/rh/permissions', routePermissions);
     }
 
     execute() {

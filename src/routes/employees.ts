@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { check } from "express-validator";
 import { createShiftHistory, getEmployee, getEmployeePerIdsData, getEmployeeType, getKardex } from "../controllers/employees";
 
 const router: Router = Router();
