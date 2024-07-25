@@ -29,3 +29,9 @@ export interface PropsUpdateVacationQueries {
     fec_inicial: string;
     fec_final: string;
 }
+
+export interface PropsGetVacationEmployeeIdInterface {
+    id: string;
+    fecha_ini: string;
+    fecha_fin: string;
+}

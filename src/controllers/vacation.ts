@@ -1,11 +1,30 @@
 import { Response } from "express";
-import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
-import { createVacationQuery, deleteVacationQuery, getTotalVacationQuery, getVacationQuery, updateVacationQuery } from "../helpers/vacationQueries";
+import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationEmployeeIdInterface, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
+import { createVacationQuery, deleteVacationQuery, getTotalVacationQuery, getVacationQuery, getVacationQueryPerEmployeeId, updateVacationQuery } from "../helpers/vacationQueries";
 
 export const getVacation = async (req: any, res: Response) => {
     try {
         const params: PropsGetVacationQueries = req.query;
         let queryVacation = await getVacationQuery({ ...params });
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: queryVacation
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const getVacationPerEmployeeId = async (req: any, res: Response) => {
+    try {
+        const params: PropsGetVacationEmployeeIdInterface = req.query;
+        let queryVacation = await getVacationQueryPerEmployeeId(params);
+
         res.status(200).json({
             ok: true,
             msg: 'Ok',

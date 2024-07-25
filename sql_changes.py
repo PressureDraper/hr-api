@@ -9,9 +9,9 @@ if __name__ == "__main__":
     cursor2 = database.cursor(buffered=True)
     
     # -------INSERTS ced_especialidades-------
-    c = 1
+    c = 25
 
-    while c <= 14:
+    while c <= 48:
         print(f"UPDATE cat_permisos SET deleted_at = NOW() WHERE id = {c}")
         cursor2.execute(f"UPDATE cat_permisos SET deleted_at = NOW() WHERE id = {c}")
         c+=1
@@ -87,6 +87,9 @@ if __name__ == "__main__":
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('DISFRUTE POR DIA DE LAS MADRES', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('DISFRUTE POR DIA DE LAS MADRES', now(), now(), NULL)")
+
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('VACACIONES', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('VACACIONES', now(), now(), NULL)")
 
     # -------FIN MIGRACIÓN - APLICAR CAMBIOS-------
     database.commit()

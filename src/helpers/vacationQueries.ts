@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
+import { PropsCreateVacationQueries, PropsGetTotalVacationQueries, PropsGetVacationEmployeeIdInterface, PropsGetVacationQueries, PropsUpdateVacationQueries } from "../interfaces/vacationQueries";
 import { db } from "../utils/db";
 
 export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQueries) => {
@@ -54,6 +54,35 @@ export const getVacationQuery = ({ empleado = '', ...props }: PropsGetVacationQu
                 },
                 skip: min,
                 take: rowsPerPage
+            });
+
+            resolve(listVacation);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getVacationQueryPerEmployeeId = ({ id, fecha_ini, fecha_fin }: PropsGetVacationEmployeeIdInterface) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let listVacation = await db.rch_empleado_vacaciones.findMany({
+                where: {
+                    rch_empleados: {
+                        id: parseInt(id)
+                    },
+                    OR: [
+                        { fecha_inicio: { gte: new Date(fecha_ini), lte: new Date(fecha_fin) } },
+                        { fecha_fin: { gte: new Date(fecha_ini), lte: new Date(fecha_fin) } }
+                    ],
+                    tipo: 'VACACIONES',
+                    deleted_at: null
+                },
+                select: {
+                    rol: true,
+                    fecha_inicio: true,
+                    fecha_fin: true
+                }
             });
 
             resolve(listVacation);

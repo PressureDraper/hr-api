@@ -70,6 +70,7 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                             segundo_apellido: true,
                             curp: true,
                             rfc: true,
+                            fecha_nacimiento: true,
                             cmp_contactos: {
                                 select: {
                                     descripcion: true,
