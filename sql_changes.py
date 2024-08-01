@@ -1,6 +1,7 @@
 import mysql.connector
 
 if __name__ == "__main__":
+    #PUT FOLIO DEFAULT NULL
     # ---Connection---
     database = mysql.connector.connect(
         host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica")
@@ -9,9 +10,9 @@ if __name__ == "__main__":
     cursor2 = database.cursor(buffered=True)
     
     # -------INSERTS ced_especialidades-------
-    c = 25
+    c = 1
 
-    while c <= 48:
+    while c <= 14:
         print(f"UPDATE cat_permisos SET deleted_at = NOW() WHERE id = {c}")
         cursor2.execute(f"UPDATE cat_permisos SET deleted_at = NOW() WHERE id = {c}")
         c+=1

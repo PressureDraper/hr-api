@@ -79,6 +79,24 @@ model cat_asentamientos {
   deleted_at       DateTime?        @db.Timestamp(0)
   cmp_domicilios   cmp_domicilios[]
   cmp_familiares   cmp_familiares[]
+
+  @@index([c_cp], map: "idx_c_cp")
+  @@index([c_cve_ciudad], map: "idx_c_cve_ciudad")
+  @@index([c_estado], map: "idx_c_estado")
+  @@index([c_mnpio], map: "idx_c_mnpio")
+  @@index([c_oficina], map: "idx_c_oficina")
+  @@index([c_tipo_asenta], map: "idx_c_tipo_asenta")
+  @@index([created_at], map: "idx_created_at")
+  @@index([d_asenta], map: "idx_d_asenta")
+  @@index([d_ciudad], map: "idx_d_ciudad")
+  @@index([d_codigo], map: "idx_d_codigo")
+  @@index([d_cp], map: "idx_d_cp")
+  @@index([d_estado], map: "idx_d_estado")
+  @@index([d_mnpio], map: "idx_d_mnpio")
+  @@index([d_tipo_asenta], map: "idx_d_tipo_asenta")
+  @@index([d_zona], map: "idx_d_zona")
+  @@index([id_asenta_cpcons], map: "idx_id_asenta_cpcons")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cat_asignaciones {
@@ -119,6 +137,13 @@ model cat_camas {
   hpz_ingreso_hospitalario hpz_ingreso_hospitalario[]
 
   @@index([id_area], map: "cat_camas_id_area_foreign")
+  @@index([activa], map: "idx_activa")
+  @@index([created_at], map: "idx_created_at")
+  @@index([estatus], map: "idx_estatus")
+  @@index([id_area], map: "idx_id_area")
+  @@index([nombre], map: "idx_nombre")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cat_categorias {
@@ -233,6 +258,60 @@ model cat_cie10 {
   hpz_ingreso_consulta     hpz_ingreso_consulta[]
   hpz_ingreso_hospitalario hpz_ingreso_hospitalario[]
   hpz_patologia_estudios   hpz_patologia_estudios[]
+
+  @@index([asterisco], map: "idx_asterisco")
+  @@index([birmm], map: "idx_birmm")
+  @@index([capitulo_type], map: "idx_capitulo_type")
+  @@index([catalog_key], map: "idx_catalog_key")
+  @@index([causa_type], map: "idx_causa_type")
+  @@index([clave_capitulo_type], map: "idx_clave_capitulo_type")
+  @@index([cod_sit_lesion], map: "idx_cod_sit_lesion")
+  @@index([codigox], map: "idx_codigox")
+  @@index([created_at], map: "idx_created_at")
+  @@index([cve_causa_type], map: "idx_cve_causa_type")
+  @@index([daga], map: "idx_daga")
+  @@index([edas_e_iras_en_m5], map: "idx_edas_e_iras_en_m5")
+  @@index([epi_clave], map: "idx_epi_clave")
+  @@index([epi_clave_desc], map: "idx_epi_clave_desc")
+  @@index([epi_morta], map: "idx_epi_morta")
+  @@index([epi_morta_m5], map: "idx_epi_morta_m5")
+  @@index([erradicado], map: "idx_erradicado")
+  @@index([es_causes], map: "idx_es_causes")
+  @@index([es_suive_est_brote], map: "idx_es_suive_est_brote")
+  @@index([es_suive_est_epi], map: "idx_es_suive_est_epi")
+  @@index([es_suive_morb], map: "idx_es_suive_morb")
+  @@index([es_suive_morta], map: "idx_es_suive_morta")
+  @@index([es_suive_notin], map: "idx_es_suive_notin")
+  @@index([fetal], map: "idx_fetal")
+  @@index([letra], map: "idx_letra")
+  @@index([lgbd165], map: "idx_lgbd165")
+  @@index([lgbd190], map: "idx_lgbd190")
+  @@index([linf], map: "idx_linf")
+  @@index([lista1], map: "idx_lista1")
+  @@index([lista5], map: "idx_lista5")
+  @@index([lm_morbi], map: "idx_lm_morbi")
+  @@index([lm_morta], map: "idx_lm_morta")
+  @@index([lomsbeck], map: "idx_lomsbeck")
+  @@index([lsex], map: "idx_lsex")
+  @@index([lsup], map: "idx_lsup")
+  @@index([n_inter], map: "idx_n_inter")
+  @@index([nin], map: "idx_nin")
+  @@index([ninmtobs], map: "idx_ninmtobs")
+  @@index([no_aph], map: "idx_no_aph")
+  @@index([no_cbd], map: "idx_no_cbd")
+  @@index([nombre], map: "idx_nombre")
+  @@index([notdiaria], map: "idx_notdiaria")
+  @@index([notsemanal], map: "idx_notsemanal")
+  @@index([num_causes], map: "idx_num_causes")
+  @@index([prinmorbi], map: "idx_prinmorbi")
+  @@index([prinmorta5], map: "idx_prinmorta5")
+  @@index([rubrica_type], map: "idx_rubrica_type")
+  @@index([sinac], map: "idx_sinac")
+  @@index([sistema_especial], map: "idx_sistema_especial")
+  @@index([trivial], map: "idx_trivial")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([year_aplicacion], map: "idx_year_aplicacion")
+  @@index([year_modifi], map: "idx_year_modifi")
 }
 
 model cat_clues {
@@ -262,6 +341,24 @@ model cat_clues {
   hpz_ingreso_hospitalario_hpz_ingreso_hospitalario_id_clue_atencionTocat_clues         hpz_ingreso_hospitalario[] @relation("hpz_ingreso_hospitalario_id_clue_atencionTocat_clues")
   hpz_ingreso_hospitalario_hpz_ingreso_hospitalario_id_clue_contrareferenciaTocat_clues hpz_ingreso_hospitalario[] @relation("hpz_ingreso_hospitalario_id_clue_contrareferenciaTocat_clues")
   hpz_ingreso_hospitalario_hpz_ingreso_hospitalario_id_clue_referenciaTocat_clues       hpz_ingreso_hospitalario[] @relation("hpz_ingreso_hospitalario_id_clue_referenciaTocat_clues")
+
+  @@index([clues], map: "idx_clues")
+  @@index([cp], map: "idx_cp")
+  @@index([created_at], map: "idx_created_at")
+  @@index([cve_ent], map: "idx_cve_ent")
+  @@index([cve_jur], map: "idx_cve_jur")
+  @@index([cve_loc], map: "idx_cve_loc")
+  @@index([cve_mun], map: "idx_cve_mun")
+  @@index([domicil], map: "idx_domicil")
+  @@index([email], map: "idx_email")
+  @@index([estatus], map: "idx_estatus")
+  @@index([inst], map: "idx_inst")
+  @@index([nom_uni], map: "idx_nom_uni")
+  @@index([numtel], map: "idx_numtel")
+  @@index([respon_unidad], map: "idx_respon_unidad")
+  @@index([tipo1], map: "idx_tipo1")
+  @@index([tipo2], map: "idx_tipo2")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cat_codigos_postales {
@@ -327,6 +424,22 @@ model cat_consulta_horarios {
   @@index([id_consultorio], map: "cat_consulta_horarios_id_consultorio_foreign")
   @@index([id_especialidad], map: "cat_consulta_horarios_id_especialidad_foreign")
   @@index([id_medico], map: "cat_consulta_horarios_id_medico_foreign")
+  @@index([cita], map: "idx_cita")
+  @@index([created_at], map: "idx_created_at")
+  @@index([day], map: "idx_day")
+  @@index([fecha_fin], map: "idx_fecha_fin")
+  @@index([fecha_inicio], map: "idx_fecha_inicio")
+  @@index([hora_fin], map: "idx_hora_fin")
+  @@index([hora_inicio], map: "idx_hora_inicio")
+  @@index([id_consultorio], map: "idx_id_consultorio")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([iniciar], map: "idx_iniciar")
+  @@index([intervalo], map: "idx_intervalo")
+  @@index([isFestivos], map: "idx_isFestivos")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([vacaciones], map: "idx_vacaciones")
 }
 
 model cat_departamento_empleado {
@@ -646,6 +759,13 @@ model cat_localidades {
   deleted_at     DateTime?        @db.Timestamp(0)
   cmp_domicilios cmp_domicilios[]
   cmp_familiares cmp_familiares[]
+
+  @@index([clave], map: "idx_clave")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_estado], map: "idx_id_estado")
+  @@index([id_municipio], map: "idx_id_municipio")
+  @@index([nombre], map: "idx_nombre")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cat_marcas {
@@ -1083,6 +1203,11 @@ model cat_vehiculo_submarca {
   updated_at            DateTime?               @db.Timestamp(0)
   deleted_at            DateTime?               @db.Timestamp(0)
   sgl_tarjeton_vehiculo sgl_tarjeton_vehiculo[]
+
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_marca], map: "idx_id_marca")
+  @@index([nombre], map: "idx_nombre")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cat_vias_ingreso {
@@ -1094,6 +1219,11 @@ model cat_vias_ingreso {
   deleted_at                                                                         DateTime?                  @db.Timestamp(0)
   hpz_ingreso_hospitalario_hpz_ingreso_hospitalario_id_programaTocat_vias_ingreso    hpz_ingreso_hospitalario[] @relation("hpz_ingreso_hospitalario_id_programaTocat_vias_ingreso")
   hpz_ingreso_hospitalario_hpz_ingreso_hospitalario_id_via_ingresoTocat_vias_ingreso hpz_ingreso_hospitalario[] @relation("hpz_ingreso_hospitalario_id_via_ingresoTocat_vias_ingreso")
+
+  @@index([created_at], map: "idx_created_at")
+  @@index([icon], map: "idx_icon")
+  @@index([nombre], map: "idx_nombre")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cfg_config_system {
@@ -1104,6 +1234,9 @@ model cfg_config_system {
   cat_niveles cat_niveles @relation(fields: [id_nivel], references: [id], onUpdate: Restrict, map: "cfg_config_system_id_nivel_foreign")
 
   @@index([id_nivel], map: "cfg_config_system_id_nivel_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_nivel], map: "idx_id_nivel")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1174,6 +1307,12 @@ model cmp_contactos {
   cmp_persona   cmp_persona @relation(fields: [id_persona], references: [id], onUpdate: Restrict, map: "cmp_contactos_id_persona_foreign")
 
   @@index([id_persona], map: "cmp_contactos_id_persona_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([descripcion], map: "idx_descripcion")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cmp_documentacion {
@@ -1189,6 +1328,13 @@ model cmp_documentacion {
   cat_documentos cat_documentos @relation(fields: [id_documento], references: [id], onUpdate: Restrict, map: "cmp_documentacion_id_documento_foreign")
 
   @@index([id_documento], map: "cmp_documentacion_id_documento_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([idUser], map: "idx_idUser")
+  @@index([id_documento], map: "idx_id_documento")
+  @@index([id_modelo], map: "idx_id_modelo")
+  @@index([modelo], map: "idx_modelo")
+  @@index([path_documento], map: "idx_path_documento")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model cmp_domicilios {
@@ -1223,6 +1369,24 @@ model cmp_domicilios {
   @@index([id_localidad], map: "cmp_domicilios_id_localidad_foreign")
   @@index([id_municipio], map: "cmp_domicilios_id_municipio_foreign")
   @@index([id_persona], map: "cmp_domicilios_id_persona_foreign")
+  @@index([calle], map: "idx_calle")
+  @@index([calle_posterior], map: "idx_calle_posterior")
+  @@index([cp], map: "idx_cp")
+  @@index([created_at], map: "idx_created_at")
+  @@index([descripcion_ubicacion(length: 768)], map: "idx_descripcion_ubicacion")
+  @@index([entre_calle], map: "idx_entre_calle")
+  @@index([idUser], map: "idx_idUser")
+  @@index([id_asentamiento], map: "idx_id_asentamiento")
+  @@index([id_estado], map: "idx_id_estado")
+  @@index([id_localidad], map: "idx_id_localidad")
+  @@index([id_municipio], map: "idx_id_municipio")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([num_exterior], map: "idx_num_exterior")
+  @@index([num_interior], map: "idx_num_interior")
+  @@index([telefono], map: "idx_telefono")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([y_calle], map: "idx_y_calle")
 }
 
 model cmp_educacion {
@@ -1283,6 +1447,28 @@ model cmp_familiares {
   @@index([id_municipio], map: "cmp_familiares_id_municipio_foreign")
   @@index([id_parentesco], map: "cmp_familiares_id_parentesco_foreign")
   @@index([id_persona], map: "cmp_familiares_id_persona_foreign")
+  @@index([calle], map: "idx_calle")
+  @@index([calle_posterior], map: "idx_calle_posterior")
+  @@index([cp], map: "idx_cp")
+  @@index([created_at], map: "idx_created_at")
+  @@index([descripcion_ubicacion(length: 768)], map: "idx_descripcion_ubicacion")
+  @@index([entre_calle], map: "idx_entre_calle")
+  @@index([idUser], map: "idx_idUser")
+  @@index([id_asentamiento], map: "idx_id_asentamiento")
+  @@index([id_estado], map: "idx_id_estado")
+  @@index([id_localidad], map: "idx_id_localidad")
+  @@index([id_municipio], map: "idx_id_municipio")
+  @@index([id_parentesco], map: "idx_id_parentesco")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([nombres], map: "idx_nombres")
+  @@index([num_exterior], map: "idx_num_exterior")
+  @@index([num_interior], map: "idx_num_interior")
+  @@index([primer_apellido], map: "idx_primer_apellido")
+  @@index([segundo_apellido], map: "idx_segundo_apellido")
+  @@index([telefono], map: "idx_telefono")
+  @@index([tipo_familiar], map: "idx_tipo_familiar")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([y_calle], map: "idx_y_calle")
 }
 
 model cmp_firmas {
@@ -1342,6 +1528,28 @@ model cmp_persona {
   @@index([id_ocupacion], map: "cmp_persona_id_ocupacion_foreign")
   @@index([id_religion], map: "cmp_persona_id_religion_foreign")
   @@index([id_tiposangre], map: "cmp_persona_id_tiposangre_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([created_user], map: "idx_created_user")
+  @@index([curp], map: "idx_curp")
+  @@index([curp_verificada], map: "idx_curp_verificada")
+  @@index([defuncion_observaciones(length: 768)], map: "idx_defuncion_observaciones")
+  @@index([estado_nacimiento], map: "idx_estado_nacimiento")
+  @@index([fecha_defuncion], map: "idx_fecha_defuncion")
+  @@index([fecha_nacimiento], map: "idx_fecha_nacimiento")
+  @@index([id_escolaridad], map: "idx_id_escolaridad")
+  @@index([id_estadocivil], map: "idx_id_estadocivil")
+  @@index([id_nacionalidad], map: "idx_id_nacionalidad")
+  @@index([id_ocupacion], map: "idx_id_ocupacion")
+  @@index([id_religion], map: "idx_id_religion")
+  @@index([id_tiposangre], map: "idx_id_tiposangre")
+  @@index([medios_comunicacion(length: 768)], map: "idx_medios_comunicacion")
+  @@index([motivo_verificacion_curp], map: "idx_motivo_verificacion_curp")
+  @@index([nombres], map: "idx_nombres")
+  @@index([primer_apellido], map: "idx_primer_apellido")
+  @@index([rfc], map: "idx_rfc")
+  @@index([segundo_apellido], map: "idx_segundo_apellido")
+  @@index([sexo], map: "idx_sexo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model enf_escala_valoracion {
@@ -1404,6 +1612,34 @@ model enf_escala_valoracion {
   @@index([id_percepcion], map: "enf_escala_valoracion_id_percepcion_foreign")
   @@index([id_roce_lesiones], map: "enf_escala_valoracion_id_roce_lesiones_foreign")
   @@index([id_user], map: "enf_escala_valoracion_id_user_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_actividad], map: "idx_id_actividad")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_cancelo], map: "idx_id_cancelo")
+  @@index([id_criterio_motora], map: "idx_id_criterio_motora")
+  @@index([id_criterio_ocular], map: "idx_id_criterio_ocular")
+  @@index([id_criterio_verbal], map: "idx_id_criterio_verbal")
+  @@index([id_eva], map: "idx_id_eva")
+  @@index([id_humedad], map: "idx_id_humedad")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_movilidad], map: "idx_id_movilidad")
+  @@index([id_nutricion], map: "idx_id_nutricion")
+  @@index([id_percepcion], map: "idx_id_percepcion")
+  @@index([id_roce_lesiones], map: "idx_id_roce_lesiones")
+  @@index([id_user], map: "idx_id_user")
+  @@index([puntos_actividad], map: "idx_puntos_actividad")
+  @@index([puntos_criterio_motora], map: "idx_puntos_criterio_motora")
+  @@index([puntos_criterio_ocular], map: "idx_puntos_criterio_ocular")
+  @@index([puntos_criterio_verbal], map: "idx_puntos_criterio_verbal")
+  @@index([puntos_eva], map: "idx_puntos_eva")
+  @@index([puntos_humedad], map: "idx_puntos_humedad")
+  @@index([puntos_lesiones], map: "idx_puntos_lesiones")
+  @@index([puntos_movilidad], map: "idx_puntos_movilidad")
+  @@index([puntos_nutricion], map: "idx_puntos_nutricion")
+  @@index([puntos_percepcion], map: "idx_puntos_percepcion")
+  @@index([puntos_riesgo_caidas], map: "idx_puntos_riesgo_caidas")
+  @@index([riesgo_caidas(length: 768)], map: "idx_riesgo_caidas")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model enf_medidas_antropometricas {
@@ -1586,6 +1822,7 @@ model hcl_historia_clinica {
   hacinamiento                                  Boolean                       @default(false)
   zoonosis                                      Boolean                       @default(false)
   toximanias                                    Boolean                       @default(false)
+  toximanias_observaciones                      String?                       @db.Text
   tabaquismo                                    Boolean                       @default(false)
   tabaquismo_tiempo                             String                        @db.VarChar(100)
   tabaquismo_cigarros                           String?                       @db.VarChar(10)
@@ -1593,14 +1830,23 @@ model hcl_historia_clinica {
   llega_embriagez                               Boolean                       @default(false)
   frecuencia_embriaguez                         String?                       @db.VarChar(250)
   alergias                                      Boolean                       @default(false)
+  alergias_observaciones                        String?                       @db.Text
   quirurgicos                                   Boolean                       @default(false)
+  quirurgicos_observaciones                     String?                       @db.Text
   transfucionales                               Boolean                       @default(false)
+  transfucionales_observaciones                 String?                       @db.Text
   traumaticos                                   Boolean                       @default(false)
+  traumaticos_observaciones                     String?                       @db.Text
   epilepsia                                     Boolean                       @default(false)
+  epilepsia_observaciones                       String?                       @db.Text
   obesidad                                      Boolean                       @default(false)
+  obesidad_observaciones                        String?                       @db.Text
   respiratorios                                 Boolean                       @default(false)
+  respiratorios_observaciones                   String?                       @db.Text
   cardiopatias                                  Boolean                       @default(false)
+  cardiopatias_observaciones                    String?                       @db.Text
   infecciones                                   Boolean                       @default(false)
+  infecciones_observaciones                     String?                       @db.Text
   fiebre_reumatica                              Boolean                       @default(false)
   hospitalizacion                               Boolean                       @default(false)
   antecedentes_patologicos_otros                String?                       @db.Text
@@ -1610,6 +1856,7 @@ model hcl_historia_clinica {
   ultima_mestruacion                            String?                       @db.VarChar(250)
   control_prenatal                              String?                       @db.VarChar(250)
   gesta                                         Boolean                       @default(false)
+  gesta_cantidad                                String?                       @db.Text
   partos                                        String?                       @db.VarChar(250)
   abortos                                       String?                       @db.VarChar(250)
   cesareas                                      String?                       @db.VarChar(250)
@@ -1660,8 +1907,10 @@ model hcl_historia_clinica {
   terapia_empleada                              String?                       @db.Text
   diagnosticos                                  String?                       @db.Text
   plan                                          String?                       @db.Text
+  motivo_consulta                               String?                       @db.Text
   id_paciente                                   Int?                          @db.UnsignedInt
   id_ingreso                                    Int?                          @db.UnsignedInt
+  id_nota                                       Int?                          @db.UnsignedInt
   id_user                                       Int                           @db.UnsignedInt
   id_autorizo                                   Int                           @db.UnsignedInt
   created_at                                    DateTime?                     @db.Timestamp(0)
@@ -1726,6 +1975,15 @@ model hpz_cama_historial {
   @@index([id_especialidad], map: "hpz_cama_historial_id_especialidad_foreign")
   @@index([id_ingreso], map: "hpz_cama_historial_id_ingreso_foreign")
   @@index([id_medico], map: "hpz_cama_historial_id_medico_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_area], map: "idx_id_area")
+  @@index([id_cama], map: "idx_id_cama")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([id_servicio], map: "idx_id_servicio")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_cateter_complicaciones_instalacion {
@@ -1802,6 +2060,18 @@ model hpz_citas_historial {
   @@index([id_cita], map: "hpz_citas_historial_id_cita_foreign")
   @@index([id_especialidad], map: "hpz_citas_historial_id_especialidad_foreign")
   @@index([id_medico], map: "hpz_citas_historial_id_medico_foreign")
+  @@index([autorizo], map: "idx_autorizo")
+  @@index([created_at], map: "idx_created_at")
+  @@index([estatus], map: "idx_estatus")
+  @@index([fecha_cita_inicio], map: "idx_fecha_cita_inicio")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_cita], map: "idx_id_cita")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([id_user], map: "idx_id_user")
+  @@index([tipo_cita], map: "idx_tipo_cita")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([user], map: "idx_user")
   @@ignore
 }
 
@@ -1840,6 +2110,16 @@ model hpz_dx_historial {
   @@index([id_ingreso], map: "hpz_dx_historial_id_ingreso_foreign")
   @@index([id_medico], map: "hpz_dx_historial_id_medico_foreign")
   @@index([id_ubicacion], map: "hpz_dx_historial_id_ubicacion_foreign")
+  @@index([activo], map: "idx_activo")
+  @@index([created_at], map: "idx_created_at")
+  @@index([dx_informal(length: 768)], map: "idx_dx_informal")
+  @@index([egreso], map: "idx_egreso")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([id_ubicacion], map: "idx_id_ubicacion")
+  @@index([ingreso], map: "idx_ingreso")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_enf_intervenciones {
@@ -1888,6 +2168,14 @@ model hpz_formatos_medicos {
 
   @@index([id_pregunta], map: "hpz_formatos_medicos_id_pregunta_foreign")
   @@index([id_respuesta], map: "hpz_formatos_medicos_id_respuesta_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_nota], map: "idx_id_nota")
+  @@index([id_pregunta], map: "idx_id_pregunta")
+  @@index([id_respuesta], map: "idx_id_respuesta")
+  @@index([id_user], map: "idx_id_user")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_indicacion_medicamentos {
@@ -1929,6 +2217,21 @@ model hpz_indicacion_medicamentos {
   @@index([id_suspendio], map: "hpz_indicacion_medicamentos_id_suspendio_foreign")
   @@index([id_user], map: "hpz_indicacion_medicamentos_id_user_foreign")
   @@index([id_via], map: "hpz_indicacion_medicamentos_id_via_foreign")
+  @@index([cantidad], map: "idx_cantidad")
+  @@index([created_at], map: "idx_created_at")
+  @@index([estatus], map: "idx_estatus")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_clave], map: "idx_id_clave")
+  @@index([id_dosis], map: "idx_id_dosis")
+  @@index([id_hora], map: "idx_id_hora")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_intervalo], map: "idx_id_intervalo")
+  @@index([id_suspendio], map: "idx_id_suspendio")
+  @@index([id_user], map: "idx_id_user")
+  @@index([id_via], map: "idx_id_via")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([suspended_at], map: "idx_suspended_at")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1957,6 +2260,16 @@ model hpz_indicaciones_medicamentos {
   @@index([id_intervalo], map: "hpz_indicaciones_medicamentos_id_intervalo_foreign")
   @@index([id_medicamento], map: "hpz_indicaciones_medicamentos_id_medicamento_foreign")
   @@index([id_via], map: "hpz_indicaciones_medicamentos_id_via_foreign")
+  @@index([cantidad], map: "idx_cantidad")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_dosis], map: "idx_id_dosis")
+  @@index([id_hora], map: "idx_id_hora")
+  @@index([id_indicacion], map: "idx_id_indicacion")
+  @@index([id_intervalo], map: "idx_id_intervalo")
+  @@index([id_medicamento], map: "idx_id_medicamento")
+  @@index([id_via], map: "idx_id_via")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([updated_at], map: "idx_updated_at")
   @@ignore
 }
 
@@ -2009,6 +2322,38 @@ model hpz_indicaciones_medicas {
   @@index([id_ingreso], map: "hpz_indicaciones_medicas_id_ingreso_foreign")
   @@index([id_residente], map: "hpz_indicaciones_medicas_id_residente_foreign")
   @@index([id_user], map: "hpz_indicaciones_medicas_id_user_foreign")
+  @@index([apoyo_ventilatorio(length: 768)], map: "idx_apoyo_ventilatorio")
+  @@index([balance_hidrico], map: "idx_balance_hidrico")
+  @@index([bano], map: "idx_bano")
+  @@index([created_at], map: "idx_created_at")
+  @@index([curacion], map: "idx_curacion")
+  @@index([deambulacion], map: "idx_deambulacion")
+  @@index([dieta(length: 768)], map: "idx_dieta")
+  @@index([diuresis], map: "idx_diuresis")
+  @@index([eva], map: "idx_eva")
+  @@index([examenes_laboratorio(length: 768)], map: "idx_examenes_laboratorio")
+  @@index([fisio_pulmonar], map: "idx_fisio_pulmonar")
+  @@index([glasglow], map: "idx_glasglow")
+  @@index([glucometria], map: "idx_glucometria")
+  @@index([id_adscrito], map: "idx_id_adscrito")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_cancelo], map: "idx_id_cancelo")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_residente], map: "idx_id_residente")
+  @@index([id_user], map: "idx_id_user")
+  @@index([infusiones(length: 768)], map: "idx_infusiones")
+  @@index([interconsultas(length: 768)], map: "idx_interconsultas")
+  @@index([medidas_antitromboticas], map: "idx_medidas_antitromboticas")
+  @@index([otras_medidas(length: 768)], map: "idx_otras_medidas")
+  @@index([perimetro_abdominal], map: "idx_perimetro_abdominal")
+  @@index([posicion], map: "idx_posicion")
+  @@index([proteccion_caidas], map: "idx_proteccion_caidas")
+  @@index([pvc], map: "idx_pvc")
+  @@index([saturometria], map: "idx_saturometria")
+  @@index([signos_vitales], map: "idx_signos_vitales")
+  @@index([soluciones(length: 768)], map: "idx_soluciones")
+  @@index([ulceras_presion], map: "idx_ulceras_presion")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_ingreso_consulta {
@@ -2059,6 +2404,31 @@ model hpz_ingreso_consulta {
   @@index([id_ingreso], map: "hpz_ingreso_consulta_id_ingreso_foreign")
   @@index([id_medico], map: "hpz_ingreso_consulta_id_medico_foreign")
   @@index([id_paciente], map: "hpz_ingreso_consulta_id_paciente_foreign")
+  @@index([caso_medico_legal], map: "idx_caso_medico_legal")
+  @@index([created_at], map: "idx_created_at")
+  @@index([created_user], map: "idx_created_user")
+  @@index([dx_informal(length: 768)], map: "idx_dx_informal")
+  @@index([estatus(length: 768)], map: "idx_estatus")
+  @@index([fecha_cita], map: "idx_fecha_cita")
+  @@index([fecha_cita_fin], map: "idx_fecha_cita_fin")
+  @@index([fecha_cita_inicio], map: "idx_fecha_cita_inicio")
+  @@index([fecha_egreso], map: "idx_fecha_egreso")
+  @@index([fecha_ingreso], map: "idx_fecha_ingreso")
+  @@index([id_clue_atencion], map: "idx_id_clue_atencion")
+  @@index([id_clue_contrareferencia], map: "idx_id_clue_contrareferencia")
+  @@index([id_clue_referencia], map: "idx_id_clue_referencia")
+  @@index([id_consultorio], map: "idx_id_consultorio")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([id_servicio], map: "idx_id_servicio")
+  @@index([id_user], map: "idx_id_user")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([tipo_cita], map: "idx_tipo_cita")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([via_ingreso], map: "idx_via_ingreso")
 }
 
 model hpz_ingreso_epidemio_iaas {
@@ -2177,6 +2547,44 @@ model hpz_ingreso_hospitalario {
   @@index([id_user_confirmacion], map: "hpz_ingreso_hospitalario_id_user_confirmacion_foreign")
   @@index([id_user], map: "hpz_ingreso_hospitalario_id_user_foreign")
   @@index([id_via_ingreso], map: "hpz_ingreso_hospitalario_id_via_ingreso_foreign")
+  @@index([alta_medica_fecha], map: "idx_alta_medica_fecha")
+  @@index([alta_medica_motivo], map: "idx_alta_medica_motivo")
+  @@index([alta_medica_otro_motivo(length: 768)], map: "idx_alta_medica_otro_motivo")
+  @@index([caso_medico_legal], map: "idx_caso_medico_legal")
+  @@index([codigo_atencion(length: 768)], map: "idx_codigo_atencion")
+  @@index([contigencia(length: 768)], map: "idx_contigencia")
+  @@index([created_at], map: "idx_created_at")
+  @@index([created_user], map: "idx_created_user")
+  @@index([defuncion_fecha], map: "idx_defuncion_fecha")
+  @@index([dx_informal(length: 768)], map: "idx_dx_informal")
+  @@index([dx_ingreso(length: 768)], map: "idx_dx_ingreso")
+  @@index([estado_ingreso], map: "idx_estado_ingreso")
+  @@index([estado_salud], map: "idx_estado_salud")
+  @@index([fecha_egreso], map: "idx_fecha_egreso")
+  @@index([fecha_ingreso], map: "idx_fecha_ingreso")
+  @@index([folio_referencia], map: "idx_folio_referencia")
+  @@index([id_area], map: "idx_id_area")
+  @@index([id_cama], map: "idx_id_cama")
+  @@index([id_clue_atencion], map: "idx_id_clue_atencion")
+  @@index([id_clue_contrareferencia], map: "idx_id_clue_contrareferencia")
+  @@index([id_clue_referencia], map: "idx_id_clue_referencia")
+  @@index([id_codigo_urgencia], map: "idx_id_codigo_urgencia")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_medico], map: "idx_id_medico")
+  @@index([id_medico_contrarefiere], map: "idx_id_medico_contrarefiere")
+  @@index([id_nivel], map: "idx_id_nivel")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([id_programa], map: "idx_id_programa")
+  @@index([id_servicio], map: "idx_id_servicio")
+  @@index([id_user], map: "idx_id_user")
+  @@index([id_user_confirmacion], map: "idx_id_user_confirmacion")
+  @@index([id_via_ingreso], map: "idx_id_via_ingreso")
+  @@index([medico_referencia], map: "idx_medico_referencia")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([remision], map: "idx_remision")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_ingreso_nom046 {
@@ -2191,6 +2599,12 @@ model hpz_ingreso_nom046 {
   hpz_ingreso_hospitalario hpz_ingreso_hospitalario @relation(fields: [id_ingreso], references: [id], onUpdate: Restrict, map: "hpz_ingreso_nom046_id_ingreso_foreign")
 
   @@index([id_ingreso], map: "hpz_ingreso_nom046_id_ingreso_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([folio_oficio], map: "idx_folio_oficio")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([numero_carpeta], map: "idx_numero_carpeta")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_ingreso_signos_vitales {
@@ -2222,6 +2636,23 @@ model hpz_ingreso_signos_vitales {
   @@index([id_cancelo], map: "hpz_ingreso_signos_vitales_id_cancelo_foreign")
   @@index([id_ingreso], map: "hpz_ingreso_signos_vitales_id_ingreso_foreign")
   @@index([id_user], map: "hpz_ingreso_signos_vitales_id_user_foreign")
+  @@index([cancelacion(length: 768)], map: "idx_cancelacion")
+  @@index([created_at], map: "idx_created_at")
+  @@index([frecuencia_cardiaca], map: "idx_frecuencia_cardiaca")
+  @@index([frecuencia_respiratoria], map: "idx_frecuencia_respiratoria")
+  @@index([glucemia_capilar], map: "idx_glucemia_capilar")
+  @@index([id_autorizo], map: "idx_id_autorizo")
+  @@index([id_cancelo], map: "idx_id_cancelo")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_user], map: "idx_id_user")
+  @@index([peso], map: "idx_peso")
+  @@index([saturacion_parcial_oxigeno], map: "idx_saturacion_parcial_oxigeno")
+  @@index([talla], map: "idx_talla")
+  @@index([temperatura], map: "idx_temperatura")
+  @@index([tension_arterial_diastolica], map: "idx_tension_arterial_diastolica")
+  @@index([tension_arterial_sistolica], map: "idx_tension_arterial_sistolica")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([uresis], map: "idx_uresis")
 }
 
 model hpz_medicamento_ministracion {
@@ -2259,6 +2690,12 @@ model hpz_nivel_historial {
 
   @@index([id_nivel], map: "hpz_nivel_historial_id_nivel_foreign")
   @@index([id_paciente], map: "hpz_nivel_historial_id_paciente_foreign")
+  @@index([caso], map: "idx_caso")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_nivel], map: "idx_id_nivel")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_nota_alta_medica {
@@ -2281,6 +2718,20 @@ model hpz_nota_alta_medica {
   hpz_paciente_nota_medica    hpz_paciente_nota_medica @relation(fields: [id_nota], references: [id], onUpdate: Restrict, map: "hpz_nota_alta_medica_id_nota_foreign")
 
   @@index([id_nota], map: "hpz_nota_alta_medica_id_nota_foreign")
+  @@index([alta_medica_fecha], map: "idx_alta_medica_fecha")
+  @@index([atencion_factores_riesgo(length: 768)], map: "idx_atencion_factores_riesgo")
+  @@index([cirugias(length: 768)], map: "idx_cirugias")
+  @@index([created_at], map: "idx_created_at")
+  @@index([estudios_realizados(length: 768)], map: "idx_estudios_realizados")
+  @@index([id_nota], map: "idx_id_nota")
+  @@index([motivo], map: "idx_motivo")
+  @@index([otro_motivo(length: 768)], map: "idx_otro_motivo")
+  @@index([problemas_clinicos_resolver(length: 768)], map: "idx_problemas_clinicos_resolver")
+  @@index([pronostico_egreso(length: 768)], map: "idx_pronostico_egreso")
+  @@index([proximas_citas(length: 768)], map: "idx_proximas_citas")
+  @@index([tratamiento_egreso(length: 768)], map: "idx_tratamiento_egreso")
+  @@index([tratamiento_global(length: 768)], map: "idx_tratamiento_global")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_notas_diagnosticos {
@@ -2294,6 +2745,10 @@ model hpz_notas_diagnosticos {
 
   @@index([id_diagnostico], map: "hpz_notas_diagnosticos_id_diagnostico_foreign")
   @@index([id_nota], map: "hpz_notas_diagnosticos_id_nota_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_nota], map: "idx_id_nota")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_paciente {
@@ -2331,6 +2786,22 @@ model hpz_paciente {
   @@index([id_nivel], map: "hpz_paciente_id_nivel_foreign")
   @@index([id_persona], map: "hpz_paciente_id_persona_foreign")
   @@index([id_subrogado], map: "hpz_paciente_id_subrogado_foreign")
+  @@index([atencion_prioritaria], map: "idx_atencion_prioritaria")
+  @@index([capasits], map: "idx_capasits")
+  @@index([created_at], map: "idx_created_at")
+  @@index([created_user], map: "idx_created_user")
+  @@index([estatus], map: "idx_estatus")
+  @@index([expediente], map: "idx_expediente")
+  @@index([expediente_fisico], map: "idx_expediente_fisico")
+  @@index([expediente_fisico_elaboro], map: "idx_expediente_fisico_elaboro")
+  @@index([expediente_fisico_fecha], map: "idx_expediente_fisico_fecha")
+  @@index([id_nivel], map: "idx_id_nivel")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([id_subrogado], map: "idx_id_subrogado")
+  @@index([migrado], map: "idx_migrado")
+  @@index([num_seguridad_social], map: "idx_num_seguridad_social")
+  @@index([tipo_paciente], map: "idx_tipo_paciente")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_paciente_auxiliares_diagnostico {
@@ -2364,6 +2835,22 @@ model hpz_paciente_auxiliares_diagnostico {
   @@index([id_ubicacion], map: "hpz_paciente_auxiliares_diagnostico_id_ubicacion_foreign")
   @@index([id_user_confirmacion], map: "hpz_paciente_auxiliares_diagnostico_id_user_confirmacion_foreign")
   @@index([id_user], map: "hpz_paciente_auxiliares_diagnostico_id_user_foreign")
+  @@index([atencion], map: "idx_atencion")
+  @@index([created_at], map: "idx_created_at")
+  @@index([estatus], map: "idx_estatus")
+  @@index([estatus_caja], map: "idx_estatus_caja")
+  @@index([fecha_atencion], map: "idx_fecha_atencion")
+  @@index([id_especialidad], map: "idx_id_especialidad")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_ubicacion], map: "idx_id_ubicacion")
+  @@index([id_user], map: "idx_id_user")
+  @@index([id_user_confirmacion], map: "idx_id_user_confirmacion")
+  @@index([motivo(length: 768)], map: "idx_motivo")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([observaciones_laboratorio(length: 768)], map: "idx_observaciones_laboratorio")
+  @@index([prioridad], map: "idx_prioridad")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_paciente_est_socioeconomico {
@@ -2429,6 +2916,55 @@ model hpz_paciente_est_socioeconomico {
   @@index([id_nivel], map: "hpz_paciente_est_socioeconomico_id_nivel_foreign")
   @@index([id_ocupacion], map: "hpz_paciente_est_socioeconomico_id_ocupacion_foreign")
   @@index([id_paciente], map: "hpz_paciente_est_socioeconomico_id_paciente_foreign")
+  @@index([agua], map: "idx_agua")
+  @@index([alimentacion], map: "idx_alimentacion")
+  @@index([atencion_prioritaria], map: "idx_atencion_prioritaria")
+  @@index([c_defuncion], map: "idx_c_defuncion")
+  @@index([c_domicilio], map: "idx_c_domicilio")
+  @@index([c_elector], map: "idx_c_elector")
+  @@index([c_ingresos], map: "idx_c_ingresos")
+  @@index([c_no_derechohabiencia], map: "idx_c_no_derechohabiencia")
+  @@index([combustible], map: "idx_combustible")
+  @@index([consumos], map: "idx_consumos")
+  @@index([created_at], map: "idx_created_at")
+  @@index([derechos_reales], map: "idx_derechos_reales")
+  @@index([educacion], map: "idx_educacion")
+  @@index([escolaridad_completa], map: "idx_escolaridad_completa")
+  @@index([estado_salud], map: "idx_estado_salud")
+  @@index([id_domicilio_permanente], map: "idx_id_domicilio_permanente")
+  @@index([id_domicilio_temporal], map: "idx_id_domicilio_temporal")
+  @@index([id_elaboro], map: "idx_id_elaboro")
+  @@index([id_escolaridad], map: "idx_id_escolaridad")
+  @@index([id_familiar_reponsable], map: "idx_id_familiar_reponsable")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_nivel], map: "idx_id_nivel")
+  @@index([id_ocupacion], map: "idx_id_ocupacion")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([ingreso], map: "idx_ingreso")
+  @@index([luz], map: "idx_luz")
+  @@index([material_construccion], map: "idx_material_construccion")
+  @@index([modelo_ingreso], map: "idx_modelo_ingreso")
+  @@index([num_dependientes], map: "idx_num_dependientes")
+  @@index([num_dormitorios], map: "idx_num_dormitorios")
+  @@index([num_personas_dormitorio], map: "idx_num_personas_dormitorio")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([ocupacion_est], map: "idx_ocupacion_est")
+  @@index([otros], map: "idx_otros")
+  @@index([problemas_salud], map: "idx_problemas_salud")
+  @@index([puntaje_egreso], map: "idx_puntaje_egreso")
+  @@index([puntaje_ingreso], map: "idx_puntaje_ingreso")
+  @@index([puntaje_ocupacion], map: "idx_puntaje_ocupacion")
+  @@index([puntaje_salud], map: "idx_puntaje_salud")
+  @@index([puntaje_total], map: "idx_puntaje_total")
+  @@index([puntaje_vivienda], map: "idx_puntaje_vivienda")
+  @@index([renta], map: "idx_renta")
+  @@index([servicios_intradomiciliarios], map: "idx_servicios_intradomiciliarios")
+  @@index([servicios_publicos], map: "idx_servicios_publicos")
+  @@index([telefono], map: "idx_telefono")
+  @@index([tiempo_tratamiento], map: "idx_tiempo_tratamiento")
+  @@index([tipo_vivienda], map: "idx_tipo_vivienda")
+  @@index([transporte], map: "idx_transporte")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_paciente_nota_medica {
@@ -2473,6 +3009,28 @@ model hpz_paciente_nota_medica {
   @@index([id_ubicacion], map: "hpz_paciente_nota_medica_id_ubicacion_foreign")
   @@index([id_user_confirmacion], map: "hpz_paciente_nota_medica_id_user_confirmacion_foreign")
   @@index([id_user], map: "hpz_paciente_nota_medica_id_user_foreign")
+  @@index([clasificacion], map: "idx_clasificacion")
+  @@index([clasificacion_medico], map: "idx_clasificacion_medico")
+  @@index([clasificacion_sistema], map: "idx_clasificacion_sistema")
+  @@index([clasificacion_triage], map: "idx_clasificacion_triage")
+  @@index([created_at], map: "idx_created_at")
+  @@index([grupo], map: "idx_grupo")
+  @@index([id_cancelo], map: "idx_id_cancelo")
+  @@index([id_evaloracion], map: "idx_id_evaloracion")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([id_referencia], map: "idx_id_referencia")
+  @@index([id_signos], map: "idx_id_signos")
+  @@index([id_ubicacion], map: "idx_id_ubicacion")
+  @@index([id_user], map: "idx_id_user")
+  @@index([id_user_confirmacion], map: "idx_id_user_confirmacion")
+  @@index([motivo_cancelacion(length: 768)], map: "idx_motivo_cancelacion")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([plan(length: 768)], map: "idx_plan")
+  @@index([ref_motivo], map: "idx_ref_motivo")
+  @@index([ref_urgencia], map: "idx_ref_urgencia")
+  @@index([tipo], map: "idx_tipo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model hpz_paciente_nota_trabajo_social {
@@ -2529,6 +3087,24 @@ model hpz_patologia_estudios {
   @@index([id_persona], map: "hpz_patologia_estudios_id_persona_foreign")
   @@index([id_procedimiento], map: "hpz_patologia_estudios_id_procedimiento_foreign")
   @@index([id_tipo], map: "hpz_patologia_estudios_id_tipo_foreign")
+  @@index([anio], map: "idx_anio")
+  @@index([consecutivo], map: "idx_consecutivo")
+  @@index([cortes_sobrantes(length: 768)], map: "idx_cortes_sobrantes")
+  @@index([created_at], map: "idx_created_at")
+  @@index([dx_informal(length: 768)], map: "idx_dx_informal")
+  @@index([estatus(length: 768)], map: "idx_estatus")
+  @@index([id_diagnostico], map: "idx_id_diagnostico")
+  @@index([id_ingreso], map: "idx_id_ingreso")
+  @@index([id_paciente], map: "idx_id_paciente")
+  @@index([id_patologo], map: "idx_id_patologo")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([id_procedimiento], map: "idx_id_procedimiento")
+  @@index([id_tipo], map: "idx_id_tipo")
+  @@index([macroscopica(length: 768)], map: "idx_macroscopica")
+  @@index([microscopica(length: 768)], map: "idx_microscopica")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([revision], map: "idx_revision")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model inc_eventos_adversos {
@@ -2941,6 +3517,15 @@ model nut_pase_comedor {
   created_at     DateTime? @db.Timestamp(0)
   updated_at     DateTime? @db.Timestamp(0)
   deleted_at     DateTime? @db.Timestamp(0)
+
+  @@index([created_at], map: "idx_created_at")
+  @@index([fecha], map: "idx_fecha")
+  @@index([id_empleado], map: "idx_id_empleado")
+  @@index([id_horario], map: "idx_id_horario")
+  @@index([id_tipoPersona], map: "idx_id_tipoPersona")
+  @@index([registro], map: "idx_registro")
+  @@index([tipo_personal], map: "idx_tipo_personal")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model nut_reg_autorizacion {
@@ -3141,6 +3726,22 @@ model rcf_kardex {
   @@index([id_equipo], map: "rcf_kardex_id_equipo_foreign")
   @@index([id_proveedor], map: "rcf_kardex_id_proveedor_foreign")
   @@index([id_turno], map: "rcf_kardex_id_turno_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([descripcion_actividad(length: 768)], map: "idx_descripcion_actividad")
+  @@index([fecha_fin], map: "idx_fecha_fin")
+  @@index([fecha_inicio], map: "idx_fecha_inicio")
+  @@index([fecha_preventivo], map: "idx_fecha_preventivo")
+  @@index([id_equipo], map: "idx_id_equipo")
+  @@index([id_proveedor], map: "idx_id_proveedor")
+  @@index([id_turno], map: "idx_id_turno")
+  @@index([mano_obra], map: "idx_mano_obra")
+  @@index([no_vale], map: "idx_no_vale")
+  @@index([orden_servicio], map: "idx_orden_servicio")
+  @@index([refacciones], map: "idx_refacciones")
+  @@index([servicio], map: "idx_servicio")
+  @@index([tipo_servicio], map: "idx_tipo_servicio")
+  @@index([total], map: "idx_total")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model rcf_listas {
@@ -3329,6 +3930,42 @@ model rch_empleados {
   @@index([id_tipoempleado], map: "rch_empleados_id_tipoempleado_foreign")
   @@index([id_tiporecurso], map: "rch_empleados_id_tiporecurso_foreign")
   @@index([id_turno], map: "rch_empleados_id_turno_foreign")
+  @@index([activo], map: "idx_activo")
+  @@index([atencion_medica], map: "idx_atencion_medica")
+  @@index([cedula_profesional], map: "idx_cedula_profesional")
+  @@index([checa], map: "idx_checa")
+  @@index([created_at], map: "idx_created_at")
+  @@index([cuenta_bancaria], map: "idx_cuenta_bancaria")
+  @@index([fecha_alta], map: "idx_fecha_alta")
+  @@index([fecha_baja], map: "idx_fecha_baja")
+  @@index([fecha_base], map: "idx_fecha_base")
+  @@index([foto], map: "idx_foto")
+  @@index([guardias], map: "idx_guardias")
+  @@index([hora_entrada], map: "idx_hora_entrada")
+  @@index([hora_salida], map: "idx_hora_salida")
+  @@index([idUser], map: "idx_idUser")
+  @@index([id_banco], map: "idx_id_banco")
+  @@index([id_categoria], map: "idx_id_categoria")
+  @@index([id_departamento], map: "idx_id_departamento")
+  @@index([id_financiamiento], map: "idx_id_financiamiento")
+  @@index([id_motivo_baja], map: "idx_id_motivo_baja")
+  @@index([id_pension], map: "idx_id_pension")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([id_plaza], map: "idx_id_plaza")
+  @@index([id_puesto], map: "idx_id_puesto")
+  @@index([id_sindicato], map: "idx_id_sindicato")
+  @@index([id_tipoempleado], map: "idx_id_tipoempleado")
+  @@index([id_tiporecurso], map: "idx_id_tiporecurso")
+  @@index([id_turno], map: "idx_id_turno")
+  @@index([madre], map: "idx_madre")
+  @@index([matricula], map: "idx_matricula")
+  @@index([medico], map: "idx_medico")
+  @@index([motivo_baja(length: 768)], map: "idx_motivo_baja")
+  @@index([nombramiento], map: "idx_nombramiento")
+  @@index([numero_afiliacion], map: "idx_numero_afiliacion")
+  @@index([observaciones(length: 768)], map: "idx_observaciones")
+  @@index([pago_riesgo], map: "idx_pago_riesgo")
+  @@index([updated_at], map: "idx_updated_at")
 }
 
 model rch_empleados_asignaciones {
@@ -3462,7 +4099,7 @@ model rch_empleados_historial_horarios {
 
 model rch_permisos {
   id              Int              @id @default(autoincrement()) @db.UnsignedInt
-  folio           Int
+  folio           Int?
   fecha_inicio    DateTime         @db.DateTime(0)
   fecha_fin       DateTime         @db.DateTime(0)
   observaciones   String?          @db.Text
@@ -3700,6 +4337,16 @@ model users {
 
   @@index([id_persona], map: "users_id_persona_foreign")
   @@index([id_tipopersona], map: "users_id_tipopersona_foreign")
+  @@index([created_at], map: "idx_created_at")
+  @@index([email], map: "idx_email")
+  @@index([id_empleado], map: "idx_id_empleado")
+  @@index([id_persona], map: "idx_id_persona")
+  @@index([id_tipopersona], map: "idx_id_tipopersona")
+  @@index([name], map: "idx_name")
+  @@index([password], map: "idx_password")
+  @@index([remember_token], map: "idx_remember_token")
+  @@index([updated_at], map: "idx_updated_at")
+  @@index([username], map: "idx_username")
 }
 
 enum rcf_resguardo_tipo {

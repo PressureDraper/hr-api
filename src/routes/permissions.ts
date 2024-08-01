@@ -1,8 +1,11 @@
 import { Router } from "express";
-import { getPermissions } from "../controllers/permissions";
+import { createPermissionPerEmployee, getCatPermissions } from "../controllers/permissions";
 
 const router: Router = Router();
 
-router.get('/', getPermissions);
+router.get('/', getCatPermissions);
+/* router.get('/employeesPermissions', getEmployeesPermissions); //relacion de permisos por empleado */
+
+router.post('/create', createPermissionPerEmployee);
 
 export default router;

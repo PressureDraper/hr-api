@@ -1,12 +1,25 @@
-CONTROL ASISTENCIAL
-	rol:
-	rhumanos_control_asistencial
-	
-	permission:
-	rhumanos_kardex_ver = control asistencial view
-	reportes_rhumanos_checadas = reporte checadas
-	
-	
 INCIDENCIAS
-	permission:
-	rhumanos_permisos_ver = permisos tab
+	rol: rhumanos_incidencias
+	permission: rhumanos_incidencias_ver
+	
+	-KARDEX:
+		rol:
+		rhumanos_control_asistencial
+		
+		permission:
+		rhumanos_kardex_ver = control asistencial tab
+		reportes_rhumanos_checadas = reporte checadas
+	
+	-PERMISOS:
+		rol:
+		rhumanos_vacaciones
+		
+		permission:
+		rhumanos_permisos_ver = permisos tab
+	
+	-VACACIONES:
+		rol:
+		rhumanos_vacaciones
+		
+		permission:
+		rhumanos_vacaciones_ver = vacaciones tab
