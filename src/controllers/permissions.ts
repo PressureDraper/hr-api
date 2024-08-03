@@ -1,10 +1,29 @@
 import { Response } from "express";
-import { createPermissionPerEmployeeQuery, getCatPermissionsQuery } from "../helpers/permissionsQueries";
-import { CreatePermissionQueries } from "../interfaces/permissions";
+import { createPermissionPerEmployeeQuery, getCatPermissionsQuery, getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
+import { CreatePermissionQueries, PropsEmployeePermissionsQueries } from "../interfaces/permissions";
 
 export const getCatPermissions = async (req: any, res: Response) => {
     try {
         const queryPermissions = await getCatPermissionsQuery();
+
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: queryPermissions
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const getEmployeesPermissions = async (req: any, res: Response) => {
+    try {
+        const data: PropsEmployeePermissionsQueries = req.query;
+        const queryPermissions = await getEmployeesPermissionsQuery({...data});
 
         res.status(200).json({
             ok: true,

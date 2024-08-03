@@ -5,3 +5,9 @@ export interface CreatePermissionQueries {
     permission_id: number;
     employee_id: number;
 }
+
+export interface PropsEmployeePermissionsQueries {
+    employee_id: string;
+    fecha_ini: string;
+    fecha_fin: string;
+}

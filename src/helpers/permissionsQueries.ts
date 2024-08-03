@@ -1,5 +1,5 @@
 import moment from "moment";
-import { CreatePermissionQueries } from "../interfaces/permissions";
+import { CreatePermissionQueries, PropsEmployeePermissionsQueries } from "../interfaces/permissions";
 import { db } from "../utils/db";
 
 export const getCatPermissionsQuery = () => {
@@ -10,8 +10,8 @@ export const getCatPermissionsQuery = () => {
                     deleted_at: null
                 },
                 select: {
-                   id: true,
-                   nombre: true
+                    id: true,
+                    nombre: true
                 },
                 orderBy: {
                     id: 'asc'
@@ -19,6 +19,37 @@ export const getCatPermissionsQuery = () => {
             });
 
             resolve(catalogue);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissionsQueries) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const permissions = await db.rch_permisos.findMany({
+                where: {
+                    id_empleado: parseInt(props.employee_id),
+                    fecha_inicio: {
+                        lte: new Date(props.fecha_fin),
+                        gte: new Date(props.fecha_ini)
+                    }
+                },
+                select: {
+                    observaciones: true,
+                    fecha_inicio: true,
+                    fecha_fin: true,
+                    cat_permisos: {
+                        select: { id: true, nombre: true }
+                    }
+                },
+                orderBy: {
+                    fecha_inicio: 'asc'
+                }
+            });
+
+            resolve(permissions);
         } catch (error) {
             reject(error);
         }
