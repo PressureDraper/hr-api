@@ -129,6 +129,11 @@ export const getKardexQuery = (id: number) => {
                         select: {
                             nombre: true
                         }
+                    },
+                    cat_categorias: {
+                        select: {
+                            nombre: true
+                        }
                     }
                 }
             });

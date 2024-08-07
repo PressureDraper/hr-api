@@ -72,8 +72,8 @@ export const getVacationQueryPerEmployeeId = ({ id, fecha_ini, fecha_fin }: Prop
                         id: parseInt(id)
                     },
                     OR: [
-                        { fecha_inicio: { gte: new Date(fecha_ini), lte: new Date(fecha_fin) } },
-                        { fecha_fin: { gte: new Date(fecha_ini), lte: new Date(fecha_fin) } }
+                        { fecha_inicio: { gte: new Date(moment(fecha_ini).format('YYYY-MM-DD')), lte: new Date(moment(fecha_fin).format('YYYY-MM-DD')) } },
+                        { fecha_fin: { gte: new Date(moment(fecha_ini).format('YYYY-MM-DD')), lte: new Date(moment(fecha_fin).format('YYYY-MM-DD')) } }
                     ],
                     tipo: 'VACACIONES',
                     deleted_at: null

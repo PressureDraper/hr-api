@@ -4,6 +4,7 @@ export interface CreatePermissionQueries {
     observations: string | null;
     permission_id: number;
     employee_id: number;
+    substitute_id: number;
 }
 
 export interface PropsEmployeePermissionsQueries {
