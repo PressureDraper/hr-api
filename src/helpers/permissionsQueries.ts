@@ -107,7 +107,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
             if (repeated) {
                 resolve({}); //duplicated entry
             } else {
-                if (props.substitute_id === null) {
+                if (props.substitute_id === null) { //si es permiso normal a una persona
                     let record = await db.rch_permisos.create({
                         data: {
                             folio: null,
@@ -123,7 +123,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                         }
                     })
                     resolve(record);
-                } else {
+                } else { //si es estrategia dos personas
                     let record = await db.rch_permisos.create({
                         data: {
                             folio: null,
