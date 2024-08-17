@@ -4,12 +4,11 @@ export interface CreatePermissionQueries {
     observations: string | null;
     permission_id: number;
     employee_id: number;
-    substitute_id: number;
-    strategy: boolean;
-    titularHoraEntrada: string | null;
-    titularHoraSalida: string | null;
-    substituteHoraEntrada: string | null;
-    substituteHoraSalida: string | null;
+    substitute_id?: number;
+    titularHoraEntrada?: string | null;
+    titularHoraSalida?: string | null;
+    substituteHoraEntrada?: string | null;
+    substituteHoraSalida?: string | null;
 }
 
 export interface PropsEmployeePermissionsQueries {

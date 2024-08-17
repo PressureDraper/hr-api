@@ -4,6 +4,7 @@ import { createServer } from 'https';
 import http from 'http';
 import fs from 'fs';
 import cors from 'cors';
+import routerBase from '../routes/base';
 import routeVacation from '../routes/vacation';
 import routeEmployee from '../routes/employees';
 import routePerson from '../routes/person';
@@ -30,6 +31,7 @@ class Server {
     middlewares() {
         this.app.use( express.json() );
         this.app.use( cors( { origin: '*' } ) ); 
+        this.app.use( '/', routerBase );
         this.app.use('/api/rh/vacation', routeVacation);
         this.app.use('/api/rh/employee', routeEmployee);
         this.app.use('/api/rh/person', routePerson);

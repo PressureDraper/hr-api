@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <title>Formato Estrategia</title>
+    <style>
+        p {
+            margin-bottom: -1px;
+        }
+
+        .roundedBox {
+            width: 100%;
+            height: 'auto';
+            border: 2px solid black;
+            border-radius: 10px;
+        }
+
+        .titleBox {
+            font-weight: 500;
+        }
+
+        .paramsBox {
+            font-weight: 400;
+            text-decoration: underline black;
+        }
+
+        .bodyBox {
+            font-weight: 300;
+        }
+
+        .signLine6 {
+            width: 70%;
+            border-top: 1px solid black;
+        }
+
+        .signLine12 {
+            width: 40%;
+            border-top: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <section class="main">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12 d-flex justify-content-center">
+                    <img width="100%" height="90%" src="data:image/png;base64, {imga}" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-7 d-flex">
+                    <div class="m-3">
+                        <p>SECRETARIA DE SALUD</p>
+                        <p>DIRECCIÓN ADMINISTRATIVA</p>
+                        <p>SUBDIRECCIÓN DE RECURSOS HUMANOS</p>
+                        <p>FECHA: <b>{currentDate}</b></p>
+                        <p>FOLIO: </p>
+                    </div>
+                </div>
+                <div class="col-sm-5 d-flex flex-row-reverse">
+                    <div class="m-3">
+                        <h6>FORMATO: SRH03-FACH</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: -5px;">
+                <div class="col-sm-12 d-flex">
+                    <div class="m-3 roundedBox">
+                        <div class="row m-2">
+                            <div class="col-sm-12 d-flex justify-content-center mb-3">
+                                <span class="titleBox">TITULAR</span>
+                            </div>
+                            <div class="col-sm-8 d-flex mb-2">
+                                <span class="bodyBox">NOMBRE: <span class="paramsBox" >{tname}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex">
+                                <span class="bodyBox">MATRICULA: <span class="paramsBox" >{tenrollment}</span></span>
+                            </div>
+                            <div class="col-sm-8 d-flex mb-2">
+                                <span class="bodyBox">ADSCRIPCIÓN: <span class="paramsBox">{tdepartment}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex">
+                                <span class="bodyBox">TURNO: <span class="paramsBox">{tshift}</span></span>
+                            </div>
+                            <div class="col-sm-8 d-flex mb-2">
+                                <span class="bodyBox">CATEGORÍA: <span class="paramsBox">{tcategory}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex">
+                                <span class="bodyBox">HORARIO: <span class="paramsBox">{tschedule}</span></span>
+                            </div>
+                            <div class="col-sm-12 d-flex mb-2">
+                                <span class="bodyBox">FECHA A SUSTITUIR: <span class="paramsBox">{newShift}</span></span>
+                            </div>
+                            <div class="col-sm-12 d-flex justify-content-center mb-2">
+                                <span class="titleBox">CAMBIO DE HORARIO</span>
+                            </div>
+                            <div class="col-sm-12 d-flex">
+                                <span class="bodyBox">HORARIO SOLICITADO: <span class="paramsBox">{tchange}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: -5px;">
+                <div class="col-sm-12 d-flex">
+                    <div class="m-3 roundedBox">
+                        <div class="row m-2">
+                            <div class="col-sm-12 d-flex justify-content-center mb-3">
+                                <span class="titleBox">SUPLENTE</span>
+                            </div>
+                            <div class="col-sm-8 d-flex mb-2">
+                                <span class="bodyBox">NOMBRE: <span class="paramsBox" >{sname}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex">
+                                <span class="bodyBox">MATRICULA: <span class="paramsBox" >{senrollment}</span></span>
+                            </div>
+                            <div class="col-sm-8 d-flex">
+                                <span class="bodyBox">ADSCRIPCIÓN: <span class="paramsBox">{sdepartment}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex mb-2">
+                                <span class="bodyBox">TURNO: <span class="paramsBox">{sshift}</span></span>
+                            </div>
+                            <div class="col-sm-8 d-flex mb-2">
+                                <span class="bodyBox">CATEGORÍA: <span class="paramsBox">{scategory}</span></span>
+                            </div>
+                            <div class="col-sm-4 d-flex">
+                                <span class="bodyBox">HORARIO: <span class="paramsBox">{sschedule}</span></span>
+                            </div>
+                            <div class="col-sm-12 d-flex justify-content-center m-2">
+                                <span class="titleBox">CAMBIO DE HORARIO</span>
+                            </div>
+                            <div class="col-sm-12 d-flex">
+                                <span class="bodyBox">HORARIO SOLICITADO: <span class="paramsBox">{schange}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 70px;">
+                <div class="col-sm-6 d-flex justify-content-center">
+                    <div class="signLine6 text-center">
+                        <span>Titular</span>
+                    </div>
+                </div>
+                <div class="col-sm-6 d-flex justify-content-center">
+                    <div class="signLine6 text-center">
+                        <span>Suplente</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 70px;">
+                <div class="col-sm-12 d-flex justify-content-center">
+                    <div class="signLine12 text-center">
+                        <span>Vo. Bo. JEFATURA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
