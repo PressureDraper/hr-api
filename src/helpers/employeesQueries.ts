@@ -78,6 +78,11 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                                 }
                             }
                         }
+                    },
+                    cat_tipos_empleado: {
+                        select: {
+                            nombre: true
+                        }
                     }
                 },
                 orderBy: {

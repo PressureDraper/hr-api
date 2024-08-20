@@ -52,7 +52,7 @@ export const getExcelChecadas = async (req: any, res: Response) => {
 
 export const getPdfEstrategia = async (req: any, res: Response) => {
     try {
-        //load html template (just for editing template with)
+        //load html template (just for editing template with formatting helpers)
         /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
 
         //get params from front-end
@@ -69,6 +69,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
         const page = await browser.newPage();
 
         //get html template loading params
+        /* const template = format(fs.readFileSync(dir, 'utf8'), templateParams); */ //(just for editing template with formatting helpers)
         const template = format(templateEstrategia, templateParams);
 
         await page.setContent(template);

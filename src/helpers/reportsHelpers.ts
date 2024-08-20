@@ -27,7 +27,7 @@ export const htmlParams = (params: PropsFormatoEstrategia) => {
 }
 
 export const templateEstrategia =
-`<!DOCTYPE html>
+    `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -184,6 +184,11 @@ export const templateEstrategia =
                     <div class="signLine12 text-center">
                         <span>Vo. Bo. JEFATURA</span>
                     </div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 25px;">
+                <div class="col-sm-12 d-flex justify-content-center">
+                    <span style="font-weight: bold; font-style: italic; font-size: medium;">TRABAJADOR: "ASUMO EL COMPROMISO DE CUBRIR EL AUSENTISMO GENERADO DEL TRABAJADOR"</span>
                 </div>
             </div>
         </div>

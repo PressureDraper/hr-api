@@ -91,6 +91,18 @@ if __name__ == "__main__":
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('VACACIONES', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('VACACIONES', now(), now(), NULL)")
+    
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('AUTORIZACIÓN DE SALIDA', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('AUTORIZACIÓN DE SALIDA', now(), now(), NULL)")
+    
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('AUTORIZACIÓN DE ENTRADA', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('AUTORIZACIÓN DE ENTRADA', now(), now(), NULL)")
+
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J91 RETARDO MENOR', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J91 RETARDO MENOR', now(), now(), NULL)")
+
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J93 RETARDO MAYOR', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J93 RETARDO MAYOR', now(), now(), NULL)")
 
     # -------FIN MIGRACIÓN - APLICAR CAMBIOS-------
     database.commit()
