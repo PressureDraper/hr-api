@@ -61,8 +61,8 @@ export const getPermissionDetails = async (req: any, res: Response) => {
 export const createPermissionPerEmployee = async (req: any, res: Response) => {
     try {
         const data: CreatePermissionQueries = req.body;
-        const record: any = await createPermissionPerEmployeeQuery({ ...data });
-        
+        const record: any = await createPermissionPerEmployeeQuery({ ...data });        
+
         if (Object.keys(record).length === 0) {
             res.status(409).json({
                 ok: false,
