@@ -91,6 +91,32 @@ export const getPermissionDetailsQuery = (created_at: string) => {
     })
 }
 
+export const getEconomicosPerYearQuery = (id: string) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
+            const nextYear = (parseInt(currentYear) + 1).toString();
+
+            let record = await db.rch_permisos.count({
+                where: {
+                    id_empleado: parseInt(id),
+                    cat_permisos: {
+                        nombre: { contains: 'ECONÓMICO' }
+                    },
+                    fecha_inicio: {
+                        gte: moment.utc(currentYear).toISOString(),
+                        lt: moment.utc(nextYear).toISOString()
+                    }
+                }
+            });
+
+            resolve(record);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -107,7 +133,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
             if (repeated) {
                 resolve({}); //duplicated entry
             } else {
-                if (props.substitute_id === undefined || props.substitute_id === null ) { //si es permiso normal a una persona
+                if (props.substitute_id === undefined || props.substitute_id === null) { //si es permiso normal a una persona
                     let record = await db.rch_permisos.create({
                         data: {
                             folio: null,
