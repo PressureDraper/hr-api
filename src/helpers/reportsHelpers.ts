@@ -68,6 +68,10 @@ export const templateEstrategia =
             width: 40%;
             border-top: 1px solid black;
         }
+
+        b {
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -167,7 +171,7 @@ export const templateEstrategia =
                     </div>
                 </div>
             </div>
-            <div class="row" style="margin-top: 70px;">
+            <div class="row" style="margin-top: 60px;">
                 <div class="col-sm-6 d-flex justify-content-center">
                     <div class="signLine6 text-center">
                         <span>Titular</span>
@@ -188,7 +192,7 @@ export const templateEstrategia =
             </div>
             <div class="row" style="margin-top: 25px;">
                 <div class="col-sm-12 d-flex justify-content-center">
-                    <span style="font-weight: bold; font-style: italic; font-size: medium;">TRABAJADOR: "ASUMO EL COMPROMISO DE CUBRIR EL AUSENTISMO GENERADO DEL TRABAJADOR"</span>
+                    <span style="font-weight: bold; font-style: italic; font-size: 15px;">TRABAJADOR: "ASUMO EL COMPROMISO DE CUBRIR EL AUSENTISMO GENERADO DEL TRABAJADOR"</span>
                 </div>
             </div>
         </div>

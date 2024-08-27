@@ -3,8 +3,10 @@ import mysql.connector
 if __name__ == "__main__":
     #PUT FOLIO DEFAULT NULL
     # ---Connection---
+    """ database = mysql.connector.connect(
+        host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica") """
     database = mysql.connector.connect(
-        host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica")
+        host="10.30.0.8", user="root", passwd="X2gF$/uB", database="db_sica", port=3376)
 
     # ---Create cursor to manipulate consults---
     cursor2 = database.cursor(buffered=True)
