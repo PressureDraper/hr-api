@@ -3,10 +3,10 @@ import mysql.connector
 if __name__ == "__main__":
     #PUT FOLIO DEFAULT NULL
     # ---Connection---
-    """ database = mysql.connector.connect(
-        host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica") """
     database = mysql.connector.connect(
-        host="10.30.0.8", user="root", passwd="X2gF$/uB", database="db_sica", port=3376)
+        host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica")
+    """ database = mysql.connector.connect(
+        host="10.30.0.8", user="root", passwd="X2gF$/uB", database="db_sica", port=3376) """
 
     # ---Create cursor to manipulate consults---
     cursor2 = database.cursor(buffered=True)
@@ -19,14 +19,22 @@ if __name__ == "__main__":
         cursor2.execute(f"UPDATE cat_permisos SET deleted_at = NOW() WHERE id = {c}")
         c+=1
 
+    #add id_suplente field for strategies permission
+    print("ALTER TABLE rch_permisos ADD id_suplente INT(10) UNSIGNED AFTER `id_empleado`;")
+    cursor2.execute("ALTER TABLE rch_permisos ADD id_suplente INT(10) UNSIGNED AFTER `id_empleado`;")
+
+    print("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_suplente_foreign FOREIGN KEY (id_suplente) REFERENCES rch_empleados(id);")
+    cursor2.execute("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_suplente_foreign FOREIGN KEY (id_suplente) REFERENCES rch_empleados(id);")
+
+    #add updated permission catalog
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('PASE DE SALIDA', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('PASE DE SALIDA', now(), now(), NULL)")
 
-    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE ENTRADA', now(), now(), NULL)")
+    """ print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE ENTRADA', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE ENTRADA', now(), now(), NULL)")
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE SALIDA', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE SALIDA', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE SALIDA', now(), now(), NULL)") """
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('RETARDO MENOR', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('RETARDO MENOR', now(), now(), NULL)")

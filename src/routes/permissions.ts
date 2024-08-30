@@ -1,11 +1,10 @@
 import { Router } from "express";
-import { createPermissionPerEmployee, getCatPermissions, getEconomicosPerYear, getEmployeesPermissions, getPermissionDetails } from "../controllers/permissions";
+import { createPermissionPerEmployee, getCatPermissions, getEconomicosPerYear, getEmployeesPermissions } from "../controllers/permissions";
 
 const router: Router = Router();
 
 router.get('/', getCatPermissions);
-router.get('/employeesPermissions', getEmployeesPermissions); //relacion de permisos por empleado
-router.get('/permissionDetails', getPermissionDetails); //relacion de los detalles del evento eventClick en el calendario
+router.get('/employeesPermissions', getEmployeesPermissions); //relacion de permisos por empleado para reflejar en el calendario y data del eventClick del permiso
 router.get('/count/economicos', getEconomicosPerYear);
 
 router.post('/create', createPermissionPerEmployee);

@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "debian-openssl-1.1.x"]
 }
 
@@ -1826,7 +1826,7 @@ model hcl_historia_clinica {
   toximanias_observaciones                      String?                       @db.Text
   tabaquismo                                    Boolean                       @default(false)
   tabaquismo_tiempo                             String                        @db.VarChar(100)
-  tabaquismo_cigarros                           String?                       @db.VarChar(10)
+  tabaquismo_cigarros                           String?                       @db.VarChar(25)
   ingesta_bebidas_embriagantes                  Boolean                       @default(false)
   llega_embriagez                               Boolean                       @default(false)
   frecuencia_embriaguez                         String?                       @db.VarChar(250)
@@ -3916,6 +3916,7 @@ model rch_empleados {
   rch_empleados_asignaciones                                                               rch_empleados_asignaciones[]
   rch_empleados_historial_estatus                                                          rch_empleados_historial_estatus[]
   rch_permisos                                                                             rch_permisos[]
+  rch_permisos_rch_permisos_id_suplenteTorch_empleados                                     rch_permisos[]                    @relation("rch_permisos_id_suplenteTorch_empleados")
   sgl_tarjeton                                                                             sgl_tarjeton[]
 
   @@index([id_banco], map: "rch_empleados_id_banco_foreign")
@@ -4099,25 +4100,28 @@ model rch_empleados_historial_horarios {
 }
 
 model rch_permisos {
-  id              Int              @id @default(autoincrement()) @db.UnsignedInt
-  folio           Int?
-  fecha_inicio    DateTime         @db.DateTime(0)
-  fecha_fin       DateTime         @db.DateTime(0)
-  observaciones   String?          @db.Text
-  autorizado      Boolean          @default(false)
-  id_empleado     Int?             @db.UnsignedInt
-  id_permiso      Int?             @db.UnsignedInt
-  id_extension    Int?             @db.UnsignedInt
-  created_at      DateTime?        @db.Timestamp(0)
-  updated_at      DateTime?        @db.Timestamp(0)
-  deleted_at      DateTime?        @db.DateTime(0)
-  rch_empleados   rch_empleados?   @relation(fields: [id_empleado], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_empleado_foreign")
-  cat_extensiones cat_extensiones? @relation(fields: [id_extension], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_extension_foreign")
-  cat_permisos    cat_permisos?    @relation(fields: [id_permiso], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_permiso_foreign")
+  id                                                    Int              @id @default(autoincrement()) @db.UnsignedInt
+  folio                                                 Int?
+  fecha_inicio                                          DateTime         @db.DateTime(0)
+  fecha_fin                                             DateTime         @db.DateTime(0)
+  observaciones                                         String?          @db.Text
+  autorizado                                            Boolean          @default(false)
+  id_empleado                                           Int?             @db.UnsignedInt
+  id_suplente                                           Int?             @db.UnsignedInt
+  id_permiso                                            Int?             @db.UnsignedInt
+  id_extension                                          Int?             @db.UnsignedInt
+  created_at                                            DateTime?        @db.Timestamp(0)
+  updated_at                                            DateTime?        @db.Timestamp(0)
+  deleted_at                                            DateTime?        @db.DateTime(0)
+  rch_empleados                                         rch_empleados?   @relation(fields: [id_empleado], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_empleado_foreign")
+  cat_extensiones                                       cat_extensiones? @relation(fields: [id_extension], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_extension_foreign")
+  cat_permisos                                          cat_permisos?    @relation(fields: [id_permiso], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_permiso_foreign")
+  rch_empleados_rch_permisos_id_suplenteTorch_empleados rch_empleados?   @relation("rch_permisos_id_suplenteTorch_empleados", fields: [id_suplente], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_suplente_foreign")
 
   @@index([id_empleado], map: "rch_permisos_id_empleado_foreign")
   @@index([id_extension], map: "rch_permisos_id_extension_foreign")
   @@index([id_permiso], map: "rch_permisos_id_permiso_foreign")
+  @@index([id_suplente], map: "rch_permisos_id_suplente_foreign")
 }
 
 model rch_tipo_empleado_permisos {
