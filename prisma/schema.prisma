@@ -3915,6 +3915,7 @@ model rch_empleados {
   cat_turnos                                                                               cat_turnos                        @relation(fields: [id_turno], references: [id], onUpdate: Restrict, map: "rch_empleados_id_turno_foreign")
   rch_empleados_asignaciones                                                               rch_empleados_asignaciones[]
   rch_empleados_historial_estatus                                                          rch_empleados_historial_estatus[]
+  rch_permisos_rch_permisos_id_blameTorch_empleados                                        rch_permisos[]                    @relation("rch_permisos_id_blameTorch_empleados")
   rch_permisos                                                                             rch_permisos[]
   rch_permisos_rch_permisos_id_suplenteTorch_empleados                                     rch_permisos[]                    @relation("rch_permisos_id_suplenteTorch_empleados")
   sgl_tarjeton                                                                             sgl_tarjeton[]
@@ -4108,11 +4109,13 @@ model rch_permisos {
   autorizado                                            Boolean          @default(false)
   id_empleado                                           Int?             @db.UnsignedInt
   id_suplente                                           Int?             @db.UnsignedInt
+  id_blame                                              Int?             @db.UnsignedInt
   id_permiso                                            Int?             @db.UnsignedInt
   id_extension                                          Int?             @db.UnsignedInt
   created_at                                            DateTime?        @db.Timestamp(0)
   updated_at                                            DateTime?        @db.Timestamp(0)
   deleted_at                                            DateTime?        @db.DateTime(0)
+  rch_empleados_rch_permisos_id_blameTorch_empleados    rch_empleados?   @relation("rch_permisos_id_blameTorch_empleados", fields: [id_blame], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_blame_foreign")
   rch_empleados                                         rch_empleados?   @relation(fields: [id_empleado], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_empleado_foreign")
   cat_extensiones                                       cat_extensiones? @relation(fields: [id_extension], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_extension_foreign")
   cat_permisos                                          cat_permisos?    @relation(fields: [id_permiso], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "rch_permisos_id_permiso_foreign")
@@ -4122,6 +4125,7 @@ model rch_permisos {
   @@index([id_extension], map: "rch_permisos_id_extension_foreign")
   @@index([id_permiso], map: "rch_permisos_id_permiso_foreign")
   @@index([id_suplente], map: "rch_permisos_id_suplente_foreign")
+  @@index([id_blame], map: "rch_permisos_id_blame_foreign")
 }
 
 model rch_tipo_empleado_permisos {

@@ -9,6 +9,7 @@ export interface CreatePermissionQueries {
     titularHoraSalida?: string | null;
     substituteHoraEntrada?: string | null;
     substituteHoraSalida?: string | null;
+    id_blame: number;
 }
 
 export interface PropsEmployeePermissionsQueries {

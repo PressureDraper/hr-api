@@ -62,6 +62,14 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     },
                     cat_permisos: {
                         select: { id: true, nombre: true }
+                    },
+                    rch_empleados_rch_permisos_id_blameTorch_empleados: {
+                        select: { 
+                            matricula: true,
+                            cmp_persona: {
+                                select: { nombres: true, primer_apellido: true, segundo_apellido: true }
+                            }
+                        }
                     }
                 },
                 orderBy: {
@@ -76,47 +84,13 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
     })
 }
 
-export const getPermissionDetailsQuery = (created_at: string) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const details = await db.rch_permisos.findMany({
-                where: {
-                    created_at: created_at
-                },
-                select: {
-                    observaciones: true,
-                    rch_empleados: {
-                        select: {
-                            matricula: true,
-                            cmp_persona: {
-                                select: {
-                                    nombres: true,
-                                    primer_apellido: true,
-                                    segundo_apellido: true
-                                }
-                            }
-                        }
-                    }
-                },
-                orderBy: {
-                    id: 'asc'
-                }
-            });
-
-            resolve(details);
-        } catch (error) {
-            reject(error);
-        }
-    })
-}
-
 export const getEconomicosPerYearQuery = (id: string) => {
     return new Promise(async (resolve, reject) => {
         try {
             const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
             const nextYear = (parseInt(currentYear) + 1).toString();
 
-            let record = await db.rch_permisos.count({
+            let record = await db.rch_permisos.findMany({
                 where: {
                     id_empleado: parseInt(id),
                     cat_permisos: {
@@ -126,6 +100,11 @@ export const getEconomicosPerYearQuery = (id: string) => {
                         gte: moment.utc(currentYear).toISOString(),
                         lt: moment.utc(nextYear).toISOString()
                     }
+                },
+                select: {
+                    id: true,
+                    fecha_inicio: true,
+                    fecha_fin: true
                 }
             });
 
@@ -147,8 +126,6 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                 }
             });
 
-            console.log(props);
-
             if (repeated) {
                 resolve({}); //duplicated entry
             } else {
@@ -161,6 +138,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                         autorizado: true,
                         id_empleado: props.employee_id,
                         id_suplente: props.substitute_id,
+                        id_blame: props.id_blame,
                         id_permiso: props.permission_id,
                         id_extension: null,
                         created_at: moment.utc().subtract(6, 'hour').toISOString(), //gmt -6
@@ -168,55 +146,6 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                     }
                 })
                 resolve(record);
-                /* if (props.substitute_id === undefined || props.substitute_id === null) { //si es permiso normal a una persona
-                    let record = await db.rch_permisos.create({
-                        data: {
-                            folio: null,
-                            fecha_inicio: moment.utc(props.dateInit).toISOString(),
-                            fecha_fin: props.dateFin === null ? moment.utc(props.dateInit).toISOString() : moment.utc(props.dateFin).toISOString(),
-                            observaciones: props.observations,
-                            autorizado: true,
-                            id_empleado: props.employee_id,
-                            id_permiso: props.permission_id,
-                            id_extension: null,
-                            created_at: currentDateTime, //gmt -6
-                            updated_at: currentDateTime
-                        }
-                    })
-                    resolve(record);
-                } else { //si es estrategia dos personas
-                    let record = await db.rch_permisos.create({
-                        data: {
-                            folio: null,
-                            fecha_inicio: moment.utc(props.dateInit).toISOString(),
-                            fecha_fin: props.dateFin === null ? moment.utc(props.dateInit).toISOString() : moment.utc(props.dateFin).toISOString(),
-                            observaciones: props.observations,
-                            autorizado: true,
-                            id_empleado: props.employee_id,
-                            id_permiso: props.permission_id,
-                            id_extension: null,
-                            created_at: currentDateTime, //gmt -6
-                            updated_at: currentDateTime
-                        }
-                    });
-
-                    await db.rch_permisos.create({
-                        data: {
-                            folio: null,
-                            fecha_inicio: moment.utc(props.dateInit).toISOString(),
-                            fecha_fin: props.dateFin === null ? moment.utc(props.dateInit).toISOString() : moment.utc(props.dateFin).toISOString(),
-                            observaciones: props.observations,
-                            autorizado: true,
-                            id_empleado: props.substitute_id,
-                            id_permiso: props.permission_id,
-                            id_extension: null,
-                            created_at: currentDateTime, //gmt -6
-                            updated_at: currentDateTime
-                        }
-                    });
-
-                    resolve(record);
-                } */
             }
         } catch (error) {
             reject(error);

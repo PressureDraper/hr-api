@@ -23,18 +23,19 @@ if __name__ == "__main__":
     print("ALTER TABLE rch_permisos ADD id_suplente INT(10) UNSIGNED AFTER `id_empleado`;")
     cursor2.execute("ALTER TABLE rch_permisos ADD id_suplente INT(10) UNSIGNED AFTER `id_empleado`;")
 
+    #add id_blame field for user that perfomed an action
+    print("ALTER TABLE rch_permisos ADD id_blame INT(10) UNSIGNED AFTER `id_suplente`;")
+    cursor2.execute("ALTER TABLE rch_permisos ADD id_blame INT(10) UNSIGNED AFTER `id_suplente`;")
+
     print("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_suplente_foreign FOREIGN KEY (id_suplente) REFERENCES rch_empleados(id);")
     cursor2.execute("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_suplente_foreign FOREIGN KEY (id_suplente) REFERENCES rch_empleados(id);")
+
+    print("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_blame_foreign FOREIGN KEY (id_blame) REFERENCES rch_empleados(id);")
+    cursor2.execute("ALTER TABLE rch_permisos ADD CONSTRAINT rch_permisos_id_blame_foreign FOREIGN KEY (id_blame) REFERENCES rch_empleados(id);")
 
     #add updated permission catalog
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('PASE DE SALIDA', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('PASE DE SALIDA', now(), now(), NULL)")
-
-    """ print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE ENTRADA', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE ENTRADA', now(), now(), NULL)")
-
-    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE SALIDA', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('OMISION DE SALIDA', now(), now(), NULL)") """
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('RETARDO MENOR', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('RETARDO MENOR', now(), now(), NULL)")
@@ -111,8 +112,14 @@ if __name__ == "__main__":
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J91 RETARDO MENOR', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J91 RETARDO MENOR', now(), now(), NULL)")
 
-    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J93 RETARDO MAYOR', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('J93 RETARDO MAYOR', now(), now(), NULL)")
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('ONOMÁSTICO', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('ONOMÁSTICO', now(), now(), NULL)")
+
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('GUARDERIA', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('GUARDERIA', now(), now(), NULL)")
+
+    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LACTANCIA', now(), now(), NULL)")
+    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LACTANCIA', now(), now(), NULL)")
 
     # -------FIN MIGRACIÓN - APLICAR CAMBIOS-------
     database.commit()
