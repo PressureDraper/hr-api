@@ -64,11 +64,9 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                         select: { id: true, nombre: true }
                     },
                     rch_empleados_rch_permisos_id_blameTorch_empleados: {
-                        select: { 
+                        select: {
                             matricula: true,
-                            cmp_persona: {
-                                select: { nombres: true, primer_apellido: true, segundo_apellido: true }
-                            }
+                            cmp_persona: { select: { users: { select: { username: true } } } }
                         }
                     }
                 },
