@@ -8,6 +8,12 @@ export interface PropsCreateHolidaysQueries {
     fecha: string;
 }
 
+export interface PropsUpdateHolidaysQueries {
+    id: number;
+    descripcion: string;
+    fecha: string;
+}
+
 export interface PropsGetAllHolidays {
     limit: string;
     page: string;

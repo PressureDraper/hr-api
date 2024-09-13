@@ -1,5 +1,5 @@
 import moment from "moment";
-import { PropsCreateHolidaysQueries, PropsGetAllHolidays, PropsGetRangeQueries } from "../interfaces/holidays";
+import { PropsCreateHolidaysQueries, PropsGetAllHolidays, PropsGetRangeQueries, PropsUpdateHolidaysQueries } from "../interfaces/holidays";
 import { db } from "../utils/db";
 
 export const getRangeHolidaysQuery = ({ ...data }: PropsGetRangeQueries) => {
@@ -10,7 +10,8 @@ export const getRangeHolidaysQuery = ({ ...data }: PropsGetRangeQueries) => {
                     fecha: {
                         lte: new Date(data.fecha_fin),
                         gte: new Date(data.fecha_ini)
-                    }
+                    },
+                    deleted_at: null
                 },
                 select: {
                     id: true,
@@ -29,13 +30,16 @@ export const getRangeHolidaysQuery = ({ ...data }: PropsGetRangeQueries) => {
     })
 }
 
-export const getAllHolidaysQuery = ({...props}: PropsGetAllHolidays) => {
+export const getAllHolidaysQuery = ({ ...props }: PropsGetAllHolidays) => {
     return new Promise(async (resolve, reject) => {
         try {
             const rowsPerPage = parseInt(props.limit);
             const min = ((parseInt(props.page) + 1) * rowsPerPage) - rowsPerPage;
 
             const holidays = await db.cat_festivos.findMany({
+                where: {
+                    deleted_at: null
+                },
                 select: {
                     id: true,
                     descripcion: true,
@@ -99,6 +103,55 @@ export const createHolidayQuery = ({ ...props }: PropsCreateHolidaysQueries) => 
                 })
                 resolve(record);
             }
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const updateFestivosQuery = ({ id, ...props }: PropsUpdateHolidaysQueries) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const updatedHoliday = await db.cat_festivos.update({
+                where: {
+                    id
+                },
+                data: {
+                    descripcion: props.descripcion,
+                    fecha: moment.utc(props.fecha).toISOString(),
+                    updated_at: moment.utc().subtract(6, 'hour').toISOString() //gmt -6
+                }
+            });
+
+            resolve(updatedHoliday);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+export const deleteFestivosQuery = (id: number) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const record = await db.cat_festivos.findUnique({
+                where: {
+                    id
+                }
+            });
+
+            record ? (
+                await db.cat_festivos.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        deleted_at: moment.utc().subtract(6, 'hour').toISOString()
+                    }
+                }),
+
+                resolve(true)
+
+            ) : resolve(false);
         } catch (error) {
             reject(error);
         }
