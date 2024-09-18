@@ -86,7 +86,8 @@ export const createHolidayQuery = ({ ...props }: PropsCreateHolidaysQueries) => 
         try {
             const repeated: any = await db.cat_festivos.findFirst({
                 where: {
-                    fecha: moment.utc(props.fecha).toISOString()
+                    fecha: moment.utc(props.fecha).toISOString(),
+                    deleted_at: null
                 }
             });
 
