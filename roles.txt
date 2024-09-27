@@ -1,6 +1,13 @@
 INCIDENCIAS
 	rol: rhumanos_incidencias
-	permission: rhumanos_incidencias_ver
+	permission: rhumanos_incidences_ver
+	
+	SOLO VER
+	rol: rhumanos_incidencias_visitante
+	permission: rhumanos_incidences_ver
+		    rhumanos_kardex_ver
+		    rhumanos_vacaciones_ver
+		    rhumanos_festivos_ver
 	
 	-KARDEX:
 		rol:
@@ -8,14 +15,22 @@ INCIDENCIAS
 		
 		permission:
 		rhumanos_kardex_ver = control asistencial tab
-		reportes_rhumanos_checadas = reporte checadas
-	
+		rhumanos_kardex_editar = control asistencial acciones
+		
+		rol:
+		rhumanos_reporte_checadas
+		
+		permission:
+		reportes_rhumanos_plantilla
+		reportes_rhumanos_checadas
+		
 	-PERMISOS:
 		rol:
-		rhumanos_vacaciones
+		rhumanos_permisos
 		
 		permission:
 		rhumanos_permisos_ver = permisos tab
+		//no es necesario el rol de editar
 	
 	-VACACIONES:
 		rol:
@@ -23,3 +38,20 @@ INCIDENCIAS
 		
 		permission:
 		rhumanos_vacaciones_ver = vacaciones tab
+		rhumanos_vacaciones_editar = vacaciones acciones
+	
+	-FESTIVOS:
+		rol:
+		rhumanos_festivos
+		
+		permission:
+		rhumanos_festivos_ver = festivos tab
+		rhumanos_festivos_editar = festivos acciones
+		
+PENDIENTE:
+-QUITAR permiso rhumanos_incidencias_ver de ROL RHUMANOS_INCIDENCIAS
+-QUITAR A ING ROSI TODOS LOS PERMISOS DE RH Y SOLO DEJARLE RHUMANOS_INCIDENCIAS_VISITANTE y RHUMANOS_ADMIN
+-QUITAR rhumanos_permisos_ver y rhumanos_kardex_ver de RHUMANOS_ADMIN
+-QUITAR rhumanos_permisos_ver DE RHUMANOS_VACACIONES
+-QUITAR reportes_rhumanos_checadas, rhumanos_vacaciones_ver, rhumanos_vacaciones_eliminar, rhumanos_vacaciones_agregar de RHUMANOS_CONTROL_ASISTENCIAL
+-QUITAR rhumanos_kardex_ver, rhumanos_permisos_ver DE RHUMANOS_VACACIONES

@@ -9,6 +9,7 @@ export const htmlParams = (params: PropsFormatoEstrategia) => {
         imga: logoSesver,
         currentDate: moment.utc().subtract(6, 'hour').format('LLLL').toUpperCase(),
         tname: params.titular.cmp_persona.nombres + ' ' + params.titular.cmp_persona.primer_apellido + ' ' + params.titular.cmp_persona.segundo_apellido,
+        folium: params.folium,
         sname: params.suplente.cmp_persona.nombres + ' ' + params.suplente.cmp_persona.primer_apellido + ' ' + params.suplente.cmp_persona.segundo_apellido,
         tenrollment: params.titular.matricula,
         senrollment: params.suplente.matricula,
@@ -89,7 +90,7 @@ export const templateEstrategia =
                         <p>DIRECCIÓN ADMINISTRATIVA</p>
                         <p>SUBDIRECCIÓN DE RECURSOS HUMANOS</p>
                         <p>FECHA: <b>{currentDate}</b></p>
-                        <p>FOLIO: </p>
+                        <p>FOLIO: <b>{folium}</b> </p>
                     </div>
                 </div>
                 <div class="col-sm-5 d-flex flex-row-reverse">

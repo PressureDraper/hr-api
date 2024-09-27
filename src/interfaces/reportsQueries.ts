@@ -96,6 +96,7 @@ export interface ReqKardexEmpleado {
 export interface PropsFormatoEstrategia {
     dateInit: string;
     dateFin: string | null;
+    folium: string | null;
     titular: ReqKardexEmpleado;
     suplente: ReqKardexEmpleado;
     titularHoraEntrada: string | null;

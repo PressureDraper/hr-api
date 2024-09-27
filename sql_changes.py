@@ -4,7 +4,8 @@ if __name__ == "__main__":
     #PUT FOLIO DEFAULT NULL
     # ---Connection---
     database = mysql.connector.connect(
-        host="127.0.0.1", user="root", passwd="siscae1035", database="db_sica")
+        host="10.30.0.10", user="krloz1003", passwd="krloz1003", database="db_sica")
+    """ host="db.ssaver.gob.mx", user="root", passwd="siscae1035", database="db_sica") """
     """ database = mysql.connector.connect(
         host="10.30.0.8", user="root", passwd="X2gF$/uB", database="db_sica", port=3376) """
 
@@ -117,15 +118,6 @@ if __name__ == "__main__":
 
     print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('ART. 160', now(), now(), NULL)")
     cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('ART. 160', now(), now(), NULL)")
-
-    """ print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LICENCIA CON GOCE POR MATRIMONIO', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LICENCIA CON GOCE POR MATRIMONIO', now(), now(), NULL)")
-
-    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LICENCIA AUTORIZACIONES ESPECIALES', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('LICENCIA AUTORIZACIONES ESPECIALES', now(), now(), NULL)")
-
-    print(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('DEFUNCION FAM. 1ER Y 2DO GRADO', now(), now(), NULL)")
-    cursor2.execute(f"INSERT INTO cat_permisos(nombre, created_at, updated_at, deleted_at) VALUES('DEFUNCION FAM. 1ER Y 2DO GRADO', now(), now(), NULL)") """
 
     # -------FIN MIGRACIÓN - APLICAR CAMBIOS-------
     database.commit()

@@ -74,7 +74,7 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     fecha_inicio: 'asc'
                 }
             });
-            
+
             resolve(permissions);
         } catch (error) {
             reject(error);
@@ -116,20 +116,66 @@ export const getEconomicosPerYearQuery = (id: string) => {
 export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const repeated: any = await db.rch_permisos.findFirst({
+            const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
+            const nextYear = (parseInt(currentYear) + 1).toString();
+            let repetedBetween: boolean = false;
+
+            const fetchExistingRange: any = await db.rch_permisos.findMany({
                 where: {
                     id_empleado: props.employee_id,
                     id_permiso: props.permission_id,
-                    fecha_inicio: moment.utc(props.dateInit).toISOString()
+                    created_at: {
+                        gte: moment.utc(currentYear).toISOString(),
+                        lt: moment.utc(nextYear).toISOString()
+                    }
+                },
+                select: {
+                    fecha_inicio: true,
+                    fecha_fin: true
+                }
+            });
+            
+
+            if (fetchExistingRange.length > 0) { //validate if permission start date is between range of another one already registered
+                fetchExistingRange.forEach((item: any) => {
+                    while (moment.utc(item.fecha_inicio).isSameOrBefore(moment.utc(item.fecha_fin))) {                        
+                        if (moment.utc(item.fecha_inicio).format('YYYY-MM-DD') === props.dateInit) {
+                            repetedBetween = true
+                        }
+                        item.fecha_inicio = moment(item.fecha_inicio).add(1, 'day').toISOString()
+                    }
+                });
+            }
+
+            const repeated: any = await db.rch_permisos.findFirst({
+                where: {
+                    OR: [
+                        {
+                            id_empleado: props.employee_id,
+                            id_permiso: props.permission_id,
+                            OR: [
+                                { fecha_inicio: moment.utc(props.dateInit).toISOString() },
+                                { fecha_fin: moment.utc(props.dateInit).toISOString() }
+                            ]
+                        },
+                        {   //validate a strategy cannot have same folium in same year
+                            folio: props.folium != null ? parseInt(props.folium) : null,
+                            cat_permisos: { nombre: 'ESTRATEGIA' },
+                            created_at: {
+                                gte: moment.utc(currentYear).toISOString(),
+                                lt: moment.utc(nextYear).toISOString()
+                            }
+                        }
+                    ]
                 }
             });
 
-            if (repeated) {
+            if (repeated || repetedBetween) {
                 resolve({}); //duplicated entry
             } else {
                 let record = await db.rch_permisos.create({
                     data: {
-                        folio: null,
+                        folio: props.folium ? parseInt(props.folium) : null,
                         fecha_inicio: moment.utc(props.dateInit).toISOString(),
                         fecha_fin: props.dateFin === null ? moment.utc(props.dateInit).toISOString() : moment.utc(props.dateFin).toISOString(),
                         observaciones: props.observations,
@@ -145,6 +191,37 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                 })
                 resolve(record);
             }
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getStrategyFoliumQuery = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
+            const nextYear = (parseInt(currentYear) + 1).toString();
+
+            let record = await db.rch_permisos.findMany({
+                where: {
+                    cat_permisos: {
+                        nombre: { contains: 'ESTRATEGIA' }
+                    },
+                    created_at: {
+                        gte: moment.utc(currentYear).toISOString(),
+                        lt: moment.utc(nextYear).toISOString()
+                    }
+                },
+                select: {
+                    folio: true
+                },
+                orderBy: {
+                    folio: 'desc'
+                }
+            });
+
+            resolve(record);
         } catch (error) {
             reject(error);
         }

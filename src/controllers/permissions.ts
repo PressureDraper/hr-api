@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { createPermissionPerEmployeeQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
+import { createPermissionPerEmployeeQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery, getStrategyFoliumQuery } from '../helpers/permissionsQueries';
 import { CreatePermissionQueries, PropsEmployeePermissionsQueries } from "../interfaces/permissions";
 
 export const getCatPermissions = async (req: any, res: Response) => {
@@ -48,6 +48,24 @@ export const getEconomicosPerYear = async (req: any, res: Response) => {
             ok: true,
             msg: 'Ok',
             data: queryDetails
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const getStrategyFoliumPerYearQuery = async (req: any, res: Response) => {
+    try {
+        const query = await getStrategyFoliumQuery();
+
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: query
         })
     } catch (error) {
         console.log(error);
