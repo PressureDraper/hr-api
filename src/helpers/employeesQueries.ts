@@ -46,14 +46,17 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
         try {
             const rowsPerPage = parseInt(limit);
             const min = ((parseInt(page) + 1) * rowsPerPage) - rowsPerPage;
+            const last_name: string[] = nameFilter.split(' ');
 
             let listEmployee: any = await db.rch_empleados.findMany({
                 where: {
                     cmp_persona: {
                         OR: [
                             { nombres: { contains: nameFilter } },
-                            { primer_apellido: { contains: nameFilter } },
-                            { segundo_apellido: { contains: nameFilter } }
+                            {
+                                primer_apellido: { contains: last_name[0] },
+                                segundo_apellido: { contains: last_name.length > 1 ? last_name[1] : '' }
+                            }
                         ]
                     },
                     matricula: enrollmentFilter ? parseInt(enrollmentFilter) : {},
@@ -90,7 +93,7 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                 },
                 skip: min,
                 take: rowsPerPage
-            })
+            });
 
             resolve(listEmployee);
         } catch (error) {
