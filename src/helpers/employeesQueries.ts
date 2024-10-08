@@ -56,6 +56,9 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                             {
                                 primer_apellido: { contains: last_name[0] },
                                 segundo_apellido: { contains: last_name.length > 1 ? last_name[1] : '' }
+                            },
+                            {
+                                segundo_apellido: { contains: nameFilter }
                             }
                         ]
                     },
