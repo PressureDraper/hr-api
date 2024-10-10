@@ -134,11 +134,11 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                     fecha_fin: true
                 }
             });
-            
+
 
             if (fetchExistingRange.length > 0) { //validate if permission start date is between range of another one already registered
                 fetchExistingRange.forEach((item: any) => {
-                    while (moment.utc(item.fecha_inicio).isSameOrBefore(moment.utc(item.fecha_fin))) {                        
+                    while (moment.utc(item.fecha_inicio).isSameOrBefore(moment.utc(item.fecha_fin))) {
                         if (moment.utc(item.fecha_inicio).format('YYYY-MM-DD') === props.dateInit) {
                             repetedBetween = true
                         }
@@ -159,7 +159,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                             ]
                         },
                         {   //validate a strategy cannot have same folium in same year
-                            folio: props.folium != null ? parseInt(props.folium) : null,
+                            folio: props.folium ? parseInt(props.folium) : null,
                             cat_permisos: { nombre: 'ESTRATEGIA' },
                             created_at: {
                                 gte: moment.utc(currentYear).toISOString(),

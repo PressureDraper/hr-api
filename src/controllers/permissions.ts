@@ -79,7 +79,8 @@ export const getStrategyFoliumPerYearQuery = async (req: any, res: Response) => 
 export const createPermissionPerEmployee = async (req: any, res: Response) => {
     try {
         const data: CreatePermissionQueries = req.body;
-        const record: any = await createPermissionPerEmployeeQuery({ ...data });        
+        const record: any = await createPermissionPerEmployeeQuery({ ...data });
+        console.log(record);    
 
         if (Object.keys(record).length === 0) {
             res.status(409).json({
