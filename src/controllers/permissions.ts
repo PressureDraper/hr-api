@@ -23,7 +23,7 @@ export const getCatPermissions = async (req: any, res: Response) => {
 export const getEmployeesPermissions = async (req: any, res: Response) => {
     try {
         const data: PropsEmployeePermissionsQueries = req.query;
-        const queryPermissions = await getEmployeesPermissionsQuery({...data});
+        const queryPermissions = await getEmployeesPermissionsQuery({ ...data });
 
         res.status(200).json({
             ok: true,
@@ -79,19 +79,27 @@ export const getStrategyFoliumPerYearQuery = async (req: any, res: Response) => 
 export const createPermissionPerEmployee = async (req: any, res: Response) => {
     try {
         const data: CreatePermissionQueries = req.body;
-        const record: any = await createPermissionPerEmployeeQuery({ ...data });   
 
-        if (Object.keys(record).length === 0) {
-            res.status(409).json({
+        if ((data.folium === undefined && data.permission_id === 40) || data.folium === null && data.permission_id === 40) {
+            res.status(400).json({
                 ok: false,
-                msg: 'Incoming entry is already created!'
+                msg: 'Capture el folio de estrategia'
             })
         } else {
-            res.status(200).json({
-                ok: true,
-                msg: 'ok',
-                data: record
-            })
+            const record: any = await createPermissionPerEmployeeQuery({ ...data });
+
+            if (Object.keys(record).length === 0) {
+                res.status(409).json({
+                    ok: false,
+                    msg: 'Incoming entry is already created!'
+                })
+            } else {
+                res.status(200).json({
+                    ok: true,
+                    msg: 'ok',
+                    data: record
+                })
+            }
         }
     } catch (error) {
         console.log(error);
