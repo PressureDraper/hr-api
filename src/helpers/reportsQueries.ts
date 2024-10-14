@@ -36,7 +36,7 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
         try {
             const infoEmployeeType = await db.rch_empleados.findMany({
                 where: {
-                    id_tipoempleado: tipo_emp.id,
+                    id_tipoempleado: tipo_emp.nombre !== "NO APLICA" ? tipo_emp.id : {},
                     matricula: {
                         lte: parseInt(params.mat_final),
                         gte: parseInt(params.mat_inicio)
