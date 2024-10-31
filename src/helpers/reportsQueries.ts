@@ -8,6 +8,7 @@ export const headerListaChecadasExcel: Array<HeaderExcelJSBookElement> = [
     { header: 'MATRICULA', key: 'mat', width: 13 },
     { header: 'NOMBRE DEL TRABAJADOR', key: 'name', width: 40 },
     { header: 'TIPO EMPLEADO', key: 'type', width: 30 },
+    { header: 'TIPO JORNADA', key: 'turn', width: 30 },
     { header: 'RFC ', key: 'rfc', width: 30 },
     { header: 'HORARIO', key: 'schedule', width: 20 },
     { header: 'GUARDIAS', key: 'guards', width: 55 },
@@ -58,6 +59,9 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
                             nombre: true
                         }
                     },
+                    cat_turnos: {
+                        select: { nombre: true }
+                    },
                     hora_entrada: true,
                     hora_salida: true,
                     guardias: true,
@@ -103,6 +107,7 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
             "mat": data.mat,
             "name": employee.cmp_persona.nombres + ' ' + employee.cmp_persona.primer_apellido + ' ' + employee.cmp_persona.segundo_apellido,
             "type": employee.cat_tipos_empleado.nombre,
+            "turn": employee.cat_turnos.nombre,
             "rfc": employee.cmp_persona.rfc,
             "schedule": moment.utc(employee.hora_entrada).format('HH:mm:ss') + ' - ' + moment.utc(employee.hora_salida).format('HH:mm:ss'),
             "guards": employee.guardias != 'null' && employee.guardias != null ? JSON.parse(decodeURIComponent(employee.guardias)).join(',') : '-',
@@ -124,6 +129,7 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
                 mat: obj.mat,
                 name: obj.name,
                 type: obj.type,
+                turn: obj.turn,
                 rfc: obj.rfc,
                 schedule: obj.schedule,
                 guards: obj.guards,

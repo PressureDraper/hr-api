@@ -45,6 +45,7 @@ export interface ReqEmployeeTypeSQLQuery {
     hora_salida: string;
     guardias: string;
     cmp_persona: PropsCmp_PersonaSQLQuery;
+    cat_turnos: Cat_Turnos;
     cat_tipos_empleado: PropsCat_Tipos_EmpleadoSQLQuery;
 }
 
