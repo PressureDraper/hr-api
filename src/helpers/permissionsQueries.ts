@@ -37,9 +37,11 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     fecha_inicio: {
                         lte: new Date(props.fecha_fin),
                         gte: new Date(props.fecha_ini)
-                    }
+                    },
+                    deleted_at: null
                 },
                 select: {
+                    id: true,
                     observaciones: true,
                     fecha_inicio: true,
                     fecha_fin: true,
@@ -127,7 +129,8 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                     created_at: {
                         gte: moment.utc(currentYear).toISOString(),
                         lt: moment.utc(nextYear).toISOString()
-                    }
+                    },
+                    deleted_at: null
                 },
                 select: {
                     fecha_inicio: true,
@@ -166,7 +169,8 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                                 lt: moment.utc(nextYear).toISOString()
                             }
                         }
-                    ]
+                    ],
+                    deleted_at: null
                 }
             });
 
@@ -222,6 +226,34 @@ export const getStrategyFoliumQuery = () => {
             });
 
             resolve(record);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const deletePermissionQuery = (id: number) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const record = await db.rch_permisos.findUnique({
+                where: {
+                    id
+                }
+            });
+
+            record ? (
+                await db.rch_permisos.update({
+                    where: {
+                        id
+                    },
+                    data: {
+                        deleted_at: moment.utc().subtract(6, 'hour').toISOString()
+                    }
+                }),
+
+                resolve(true)
+
+            ) : resolve(false);
         } catch (error) {
             reject(error);
         }

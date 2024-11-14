@@ -66,7 +66,7 @@ export const createVacation = async (req: any, res: Response) => {
         if (Object.keys(query).length === 0 ) {
             res.status(409).json({
                 ok: false,
-                msg: 'Duplicated entry'
+                msg: 'Ya existe un rol capturado para el usuario en las mismas fechas'
             });
         } else {
             res.status(200).json({

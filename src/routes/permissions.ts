@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createPermissionPerEmployee, getCatPermissions, getEconomicosPerYear, getEmployeesPermissions, getStrategyFoliumPerYearQuery } from "../controllers/permissions";
+import { createPermissionPerEmployee, deletePermission, getCatPermissions, getEconomicosPerYear, getEmployeesPermissions, getStrategyFoliumPerYearQuery } from "../controllers/permissions";
 
 const router: Router = Router();
 
@@ -9,5 +9,7 @@ router.get('/count/economicos', getEconomicosPerYear);
 router.get('/folios', getStrategyFoliumPerYearQuery);
 
 router.post('/create', createPermissionPerEmployee);
+
+router.delete('/:id', deletePermission);
 
 export default router;

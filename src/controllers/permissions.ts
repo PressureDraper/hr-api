@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { createPermissionPerEmployeeQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery, getStrategyFoliumQuery } from '../helpers/permissionsQueries';
+import { createPermissionPerEmployeeQuery, deletePermissionQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery, getStrategyFoliumQuery } from '../helpers/permissionsQueries';
 import { CreatePermissionQueries, PropsEmployeePermissionsQueries } from "../interfaces/permissions";
 
 export const getCatPermissions = async (req: any, res: Response) => {
@@ -101,6 +101,30 @@ export const createPermissionPerEmployee = async (req: any, res: Response) => {
                 })
             }
         }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const deletePermission = async (req: any, res: Response) => {
+    try {
+        const id: number = parseInt(req.params.id);
+        const state = await deletePermissionQuery(id);
+
+        state ?
+            res.status(200).json({
+                ok: true,
+                msg: 'Record deleted',
+            })
+            :
+            res.status(404).json({
+                ok: false,
+                msg: 'Record to delete not found'
+            })
     } catch (error) {
         console.log(error);
         res.status(500).json({

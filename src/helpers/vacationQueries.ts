@@ -136,9 +136,12 @@ export const createVacationQuery = ({ ...props }: PropsCreateVacationQueries) =>
                     OR: [
                         { fecha_inicio: moment.utc(props.fec_inicial).toISOString() },
                         { fecha_fin: moment.utc(props.fec_final).toISOString() }
-                    ]
+                    ],
+                    deleted_at: null
                 }
             });
+
+            console.log(repeated);
 
             if (repeated) {
                 resolve({}); //duplicated entry
