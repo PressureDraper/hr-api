@@ -10,6 +10,15 @@ INCIDENCIAS
 		    rhumanos_festivos_ver
 	
 	-KARDEX:
+		***PARA JEFATURAS CONSULTA EXTERNA QUE SOLO PUEDEN VER EL KARDEX***
+		rol: 
+		rhumanos_kardex
+		
+		permission:
+		rhumanos_incidences_ver
+		rhumanos_kardex_ver
+		
+		***PARA RECURSOS HUMANOS***
 		rol:
 		rhumanos_control_asistencial
 		
@@ -30,6 +39,7 @@ INCIDENCIAS
 		
 		permission:
 		rhumanos_permisos_ver = permisos tab
+		rhumanos_permisos_eliminar = boton eliminar en el calendario al seleccionar un permiso
 		//no es necesario el rol de editar
 	
 	-VACACIONES:

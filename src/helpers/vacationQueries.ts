@@ -141,8 +141,6 @@ export const createVacationQuery = ({ ...props }: PropsCreateVacationQueries) =>
                 }
             });
 
-            console.log(repeated);
-
             if (repeated) {
                 resolve({}); //duplicated entry
             } else {
