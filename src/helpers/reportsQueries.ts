@@ -51,7 +51,8 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
                             nombres: true,
                             primer_apellido: true,
                             segundo_apellido: true,
-                            rfc: true
+                            rfc: true,
+                            curp: true
                         }
                     },
                     cat_tipos_empleado: {
@@ -65,7 +66,8 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
                     hora_entrada: true,
                     hora_salida: true,
                     guardias: true,
-                    matricula: true
+                    matricula: true,
+                    cat_departamentos: true
                 }
             });
 
@@ -146,4 +148,90 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
     //ends ChatGPT code
 
     return Object.values(groupedData); //Quitamos la clave única y nos quedamos con los valores en un nuevo array
+}
+
+export const getBosByAppartment = async (term: string) => {
+    try {
+        const notFilters = ['DEL', 'DE'];
+        let spllitedTerm = term.split(' ');
+        spllitedTerm = spllitedTerm.filter((term) => term.length > 2);
+        spllitedTerm = spllitedTerm.filter((term) => !notFilters.includes(term));
+        
+        const filters = spllitedTerm.map((term) => ({
+            nombre: { contains: term }, 
+        }));
+
+        const results = await db.cat_puestos.findMany({
+            where: {
+                jefatura: true,
+                deleted_at: null,
+                OR: filters,
+              
+            },
+        });
+
+        const rankedResults = results
+        .map((result) => {
+            const matchCount = spllitedTerm.reduce((count, term) => {
+            const regex = new RegExp(`\\b${term}\\b`, 'i'); 
+            return count + (regex.test(result.nombre) ? 1 : 0);
+            }, 0);
+
+            return { ...result, matchCount };
+        })
+        .sort((a, b) => b.matchCount - a.matchCount); 
+        if(rankedResults.length == 0) return '';
+        const {id} = rankedResults[0];
+        const nameBoos = await db.rch_empleados.findFirst({
+            where: {
+                id_puesto: id,
+                deleted_at: null,
+                activo: true ,
+            },
+            select: {
+                cmp_persona: {
+                    select: {
+                        id: true,
+                        primer_apellido: true,
+                        nombres: true,
+                        segundo_apellido: true,
+                    },
+                   
+                }
+            }
+        });
+
+        const {cmp_persona = {}} : any = nameBoos || {};
+        const {nombres = '', primer_apellido = '', segundo_apellido = ''} = cmp_persona;
+        return `${nombres} ${primer_apellido} ${segundo_apellido}`;
+    } catch(err) {
+        console.log(err)
+        return null;
+    }
+}
+
+export const calculateQuint = (fec_inicio = '', fec_final = '') => {
+    const inicio = new Date(fec_inicio);
+    const final = new Date(fec_final);
+
+    if (inicio.getUTCFullYear() !== final.getUTCFullYear()) {
+        throw new Error("Ambas fechas deben estar en el mismo año para calcular una quincena");
+    }
+
+    const anio = inicio.getUTCFullYear();
+
+    function obtenerQuincena(fecha = new Date()) {
+        const mes = fecha.getUTCMonth(); 
+        const dia = fecha.getUTCDate();
+        return mes * 2 + (dia <= 15 ? 1 : 2); 
+    }
+
+    const quincenaInicio = obtenerQuincena(inicio);
+    const quincenaFinal = obtenerQuincena(final);
+
+    if (quincenaInicio === quincenaFinal) {
+        return `QNA ${quincenaInicio} / ${anio}`;
+    } else {
+        return `QNA ${quincenaInicio} a QNA ${quincenaFinal} / ${anio}`;
+    }
 }
