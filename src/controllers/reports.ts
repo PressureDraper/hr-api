@@ -196,7 +196,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 rfc: rfc,
                 curp: curp,
                 mat: `${matricula}`,
-                nom: 'NOSE',
+                nom: 'BASIFICADO E201',
                 turno: name_turn,
                 hour: `${moment(hora_entrada).format('hh:ss')} - ${moment(hora_salida).format('hh:ss')}`,
                 guards: guard,
