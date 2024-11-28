@@ -8,6 +8,7 @@ import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
 import { htmlParams, templateEstrategia } from "../helpers/reportsHelpers";
+import { getAttendanceClassify } from "../helpers/attendanceClassify";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -93,6 +94,25 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
         res.status(500).json({
             ok: false,
             msg: err
+        });
+    }
+}
+
+export const getIncidencias = async (req: any, res: Response) => {
+    try {
+        const data: { dateInit: string, dateFin: string, id: string } = req.query;
+        const queryData = await getAttendanceClassify({ ...data });
+
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: queryData
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
         });
     }
 }
