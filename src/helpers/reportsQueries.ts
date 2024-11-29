@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from "axios";
-import { HeaderExcelJSBookElement, PropsAttendances, PropsAttendancesInterface, PropsEmployeeType, PropsReporteChecadas, ReqEmployeeTypeSQLQuery } from "../interfaces/reportsQueries";
+import { HeaderExcelJSBookElement, PropsAttendances, PropsAttendancesInterface, PropsEmployeeType, PropsReporteChecadas, ReqEmployeeTypeSQLQuery, checadasIndividualInterface } from "../interfaces/reportsQueries";
 import { db } from "../utils/db";
 import { biometricosApi } from "../apis/biometricosApi";
 import moment from "moment";
@@ -89,6 +89,18 @@ export const getAttendancesReport = (mat_ini: string, mat_final: string, fec_ini
             })
     })
 }
+
+export const getChecadaEmpleadoRange = (matricula: string | number, fecha_ini: string, fecha_fin: string): Promise<checadasIndividualInterface> => {
+    return new Promise(async (resolve, reject) => {
+        biometricosApi.get('/get_employee_attendance_range', { params: { matricula: matricula, fecha_ini: fecha_ini, fecha_fin: fecha_fin } })
+            .then((res: AxiosResponse) => {
+                resolve(res.data);
+            })
+            .catch((err: AxiosError) => {
+                reject([]);
+            });
+    });
+};
 
 export const formatAttendancesReport = (attendances: PropsAttendances[], employeesType: ReqEmployeeTypeSQLQuery) => {
     const test: any = employeesType.map((data: ReqEmployeeTypeSQLQuery) => {

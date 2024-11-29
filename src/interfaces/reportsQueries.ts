@@ -106,3 +106,61 @@ export interface PropsFormatoEstrategia {
     substituteHoraSalida: string | null;
     type: string;
 }
+
+export interface checadasIndividualInterface {
+    attendances: dataChecadasIndividualInterface[];
+}
+
+export interface dataChecadasIndividualInterface {
+    pop(): unknown;
+    find(arg0: (item: any) => boolean): unknown;
+    reduce(arg0: (acc: any, obj: any) => any, arg1: {}): unknown;
+    forEach(arg0: (data: dataChecadasIndividualInterface) => void): unknown;
+    length: number;
+    biometric: number;
+    dateReg: string;
+    horaReg: string;
+    horaRegSeg: string;
+    mat: number;
+    horaEntrada?: string;
+    horaSalida?: string;
+}
+
+export interface ReqHistorialHorario {
+    sort(arg0: (a: any, b: any) => any): ReqHistorialHorario;
+    length: any;
+    map?(arg0: (data: ReqHistorialHorario) => void): ReqHistorialHorario;
+    fecha_inicio: string;
+    hora_entrada: string;
+    hora_salida: string;
+}
+
+export interface ReqPermisosPerEmpleadoInterface {
+    id: number;
+    forEach(arg0: (element: any) => void): unknown;
+    fecha_fin: string;
+    fecha_inicio: string;
+    observaciones: string;
+    cat_permisos: CatPermisosInterface;
+    rch_empleados: RchEmpleadosPermisosInterface;
+    rch_empleados_rch_permisos_id_suplenteTorch_empleados: RchEmpleadosPermisosInterface | null;
+    rch_empleados_rch_permisos_id_blameTorch_empleados: RchEmpleadosPermisosInterface | null;
+}
+
+export interface CatPermisosInterface {
+    id: number;
+    nombre: string;
+}
+
+export interface RchEmpleadosPermisosInterface {
+    matricula: number;
+    cmp_persona: Cmp_Persona;
+}
+
+export interface ReqVacacionesPerEmpleadoIdInterface {
+    map(arg0: (date: ReqVacacionesPerEmpleadoIdInterface) => void): unknown;
+    forEach(arg0: (element: any) => void): unknown;
+    rol: string;
+    fecha_inicio: string;
+    fecha_fin: string;
+}

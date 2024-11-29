@@ -15,6 +15,7 @@ import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import {v4 as uuid} from 'uuid';
 import { execFile } from 'child_process';
 
+import { getAttendanceClassify } from "../helpers/attendanceClassify";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -242,6 +243,21 @@ export const generareReportIms = async (req: any, res: Response) => {
     }
     catch (err) {
         console.log(err);
+    }
+}
+
+export const getIncidencias = async (req: any, res: Response) => {
+    try {
+        const data: { dateInit: string, dateFin: string, id: string } = req.query;
+        const queryData = await getAttendanceClassify({ ...data });
+
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: queryData
+        })
+    } catch (error) {
+        console.log(error);
         res.status(500).json({
             ok: false,
             msg: 'Server error contact the administrator'
