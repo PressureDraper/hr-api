@@ -46,6 +46,7 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
                     activo: true,
                 },
                 select: {
+                    id: true,
                     cmp_persona: {
                         select: {
                             nombres: true,
