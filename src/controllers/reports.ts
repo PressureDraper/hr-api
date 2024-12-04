@@ -7,7 +7,7 @@ import path from 'path';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
-import _, { first } from 'lodash';
+import _, { first, join } from 'lodash';
 import { htmlParams, templateEstrategia } from "../helpers/reportsHelpers";
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
@@ -120,44 +120,22 @@ const filterByTimeRange = (data: any, mat = 0) => {
         groupByHour[key] = groupByHour[key][0];
     });
 
-
-
     if(Object.keys(groupByHour).length > 1) {
-        // TWO KEYS
         const first : any = groupByHour[Object.keys(groupByHour)[0]];
         const second : any = groupByHour[Object.keys(groupByHour)[1]];
 
         const firstHour = first['horaReg'];
         const secondHour = second['horaReg']
 
-        // console.log({
-        //     first,
-        //     second
-        // });
-        // console.log({
-        //     firstHour,
-        //     secondHour
-        // })
         const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
-        // console.log(diff);
         if(diff < 30) {
-            console.log('Menor a 30 minutos');
             const entries = Object.entries(groupByHour);
-
-            // Eliminar el segundo elemento (índice 1)
             entries.splice(1, 1);
-
-            // Convertir el array de vuelta a un objeto
             const newData = Object.fromEntries(entries);
             groupByHour = newData;
-            // console.log(newData)
         }
         
     }
-    // Object.keys(groupByHour).map(key => {
-
-    //     console.log(groupByHour[key]);
-    // })
 
     // Plain DATA
     let res = [];
@@ -173,21 +151,73 @@ const filterByTimeRange = (data: any, mat = 0) => {
     return testing;
 };
 
+const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '') => {
+    try {
+        let arrPromises: any = [];
+        ids_employees.map(async (id: any) => {
+            arrPromises.push(getAttendanceClassify({ dateInit: fecha_init, dateFin: fecha_fin, id }));
+        })
+
+        const data = await Promise.all(arrPromises);
+        let res : {[key: number]: any} =  {};
+        ids_employees.map((id: any, index: number) => {
+            res[id] = data[index];
+        });
+        return res;
+    } catch (error) {
+        return {};
+    }
+}
+
+const parseIncidents = (all: any = {}, date = '') => {
+    let parseDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    if(all[parseDate]) {
+        let res = '';
+        all[parseDate].map((item: any) => {
+            res += `${item['title']} `;
+        })
+        return res;
+    }
+    return '';
+}
+
+const getAllApartments = async (namesToSearch = [] ) => {
+    try {
+        let arrPromises: any = [];
+        namesToSearch.map((name: any) => {
+            arrPromises.push(getBosByAppartment(name));
+        });
+
+        const data = await Promise.all(arrPromises);
+        let res : any = {};
+
+        namesToSearch.map((name: any, index: number) => {
+            res[name] = data[index];
+        });
+        return res;
+    } catch (error) {
+        console.log(error);
+        return {};   
+    }
+}
+
+
 export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado } : PropsReporteChecadas = req.query;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
         const employeesType: any = await getEmployeeTypeQuery({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
-        const arrPromises: any = [];
         const quin = calculateQuint(fec_inicio, fec_final);
+        const ids_employees = employeesType.map((item: any) => item.id);
+        const incidences = await addIncidents(ids_employees, fec_inicio, fec_final);
+        const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
+        const bossByAppartment = await getAllApartments(deparments);
 
         let employees = employeesType.map((employee: any) => {
             let {hora_entrada, hora_salida, matricula} = employee;
-            // console.log(employee)
             const attendances = grouped_attendeances[employee.matricula] || [];
-            const {nombre} = employee['cat_departamentos'] ?? {};
-            arrPromises.push(getBosByAppartment(nombre));
+            const {nombre: aparment} = employee['cat_departamentos'] ?? {};
 
             hora_entrada = moment(hora_entrada).utc().format('HH:mm');
             hora_salida = moment(hora_salida).utc().format('HH:mm');
@@ -199,7 +229,6 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             Object.keys(grupByDate).map(key => {
                 const assistencedFiltered = filterByTimeRange(grupByDate[key], matricula);
-                // if(matricula == 6149) console.log(assistencedFiltered);
                 filteresAttendances = {
                     ...filteresAttendances,
                     [key]: assistencedFiltered
@@ -238,7 +267,6 @@ export const generareReportIms = async (req: any, res: Response) => {
 
                 const groupPlainCases = _.chunk(plainSpecialCases, 2);
                 if(removeValue) groupPlainCases.unshift([removeValue]);
-                // console.log(groupPlainCases);
                 
                 if(groupPlainCases.length > 0) {
                     groupPlainCases.map((item: any) => {
@@ -289,14 +317,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 }
             })
 
-            if(matricula == 6149) {
-                // console.log('Special');
-                // console.log(finalIncidents);
-                // console.log('final');
-                // console.log(finalSpecial);
-                // console.log('Normal');
-                // console.log(twoAttendances);
-            }
+            // if(matricula == 6149) {
+            // }
 
             finalAttendances = Object.fromEntries(
                 _.sortBy(Object.entries(finalAttendances), ([key]) => new Date(key))
@@ -308,14 +330,16 @@ export const generareReportIms = async (req: any, res: Response) => {
                 diff,
                 hora_entrada,
                 hora_salida,
-                final: finalAttendances
+                final: finalAttendances,
+                incidences: incidences[employee.id] || {},
+                boss: bossByAppartment[aparment] || ''
             }
         });
 
         let mainContent = '';
 
         employees.map((item: any) => {
-            const {id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}} = item || {};
+            const {id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}} = item || {};
             const {nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = ''} = cmp_persona;
             const {nombre: name_apartment = ''} = cat_departamentos || {};
             const {nombre: name_turn = ''} = cat_turnos;
@@ -327,6 +351,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             Object.keys(final).map((key: any) => {
                 let [item1, item2] = final[key];
+                let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');
                
                 body += `
                 <tr>
@@ -336,14 +361,15 @@ export const generareReportIms = async (req: any, res: Response) => {
                     <td>${rfc}</td>
                     <td>${hora_entrada} - ${hora_salida}</td>
                     <td>${guard}</td>
-                    <td>${moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY')}</td>
+                    <td>${dateItem1}</td>
                     <td>${item1['horaReg']}</td>
                     <td>${''}</td>
-                    <td></td>
+                    <td>${parseIncidents(incidences, dateItem1)}</td>
                 </tr>
                 `;
 
                 if(item2) {
+                    let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
                     body += `
                     <tr>
                         <td>${matricula}</td>
@@ -352,10 +378,10 @@ export const generareReportIms = async (req: any, res: Response) => {
                         <td>${rfc}</td>
                         <td>${hora_entrada} - ${hora_salida}</td>
                         <td>${guard}</td>
-                        <td>${moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY')}</td>
+                        <td>${dateItem2}</td>
                         <td>${''}</td>
                         <td>${item2['horaReg']}</td>
-                        <td></td>
+                        <td>${parseIncidents(incidences, dateItem2)}</td>
                     </tr>
                     `;
                 }
