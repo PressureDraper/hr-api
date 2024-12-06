@@ -163,6 +163,7 @@ const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '')
         ids_employees.map((id: any, index: number) => {
             res[id] = data[index];
         });
+
         return res;
     } catch (error) {
         return {};
