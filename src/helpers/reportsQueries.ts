@@ -64,6 +64,9 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
                     cat_turnos: {
                         select: { nombre: true }
                     },
+                    cat_tipos_recurso: {
+                        select: { nombre: true }
+                    },
                     hora_entrada: true,
                     hora_salida: true,
                     guardias: true,

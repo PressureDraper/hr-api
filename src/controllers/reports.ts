@@ -340,11 +340,12 @@ export const generareReportIms = async (req: any, res: Response) => {
         let mainContent = '';
 
         employees.map((item: any) => {
-            const {id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}} = item || {};
+            const {id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {}} = item || {};
             const {nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = ''} = cmp_persona;
             const {nombre: name_apartment = ''} = cat_departamentos || {};
             const {nombre: name_turn = ''} = cat_turnos;
             const {nombre: name_cat = ''} = cat_tipos_empleado;
+            const {nombre: name_recurso = ''} = cat_tipos_recurso;
             let guard = JSON.parse(guardias) || [];
             guard = guard.join(', ');
 
@@ -395,7 +396,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 rfc: rfc,
                 curp: curp,
                 mat: `${matricula}`,
-                nom: 'BASIFICADO E201',
+                nom: `${name_recurso}`,
                 turno: name_turn,
                 hour: `${hora_entrada} - ${hora_salida}`,
                 guards: guard,
