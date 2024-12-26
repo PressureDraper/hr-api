@@ -412,7 +412,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             all_content: mainContent,
         });
         const browser = await puppeteer.launch({
-            // executablePath: "/usr/bin/google-chrome",
+            executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
