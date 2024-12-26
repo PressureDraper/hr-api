@@ -1,15 +1,94 @@
 import moment from "moment";
-import { ReqHistorialHorario, ReqPermisosPerEmpleadoInterface, ReqVacacionesPerEmpleadoIdInterface, dataChecadasIndividualInterface, Cat_Tipos_Empleado } from '../interfaces/reportsQueries';
+import { ReqHistorialHorario, ReqPermisosPerEmpleadoInterface, ReqVacacionesPerEmpleadoIdInterface, dataChecadasIndividualInterface } from '../interfaces/reportsQueries';
 import { db } from "../utils/db";
 import { getChecadaEmpleadoRange } from "./reportsQueries";
 import { getEmployeesPermissionsQuery } from "./permissionsQueries";
 import { groupBy } from 'lodash'
-import { getVacationQueryPerEmployeeId } from "./vacationQueries";
 
-// Función para convertir el tiempo 'HH:MM:SS' a segundos
-const timeToSeconds = (time: string) => {
-    const [hours, minutes, seconds] = time.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
+export const clasificarChecada = (data: dataChecadasIndividualInterface, horaEntrada: string, horaSalida: string, regist: dataChecadasIndividualInterface, j91: string[], aentrada: string[], asalida: string[], tipo_empleado: string, tipo_recurso: string) => {
+    let horaEntradaLimite: string = ''; //variable en función del tipo de empleado
+    let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
+
+    if (tipo_empleado.includes('BASE IMSS BIENESTAR') && tipo_recurso === 'E201' || tipo_empleado.includes('BASE IMSS BIENESTAR') && tipo_recurso === 'DRAFT 2024') {
+        horaEntradaLimite = moment(horaEntrada, "HH:mm").add(6, 'minutes').format('HH:mm'); //entrada sin retardo 6 minutos despues
+        horaEntradaPermitida = moment(horaEntrada, "HH:mm").subtract(1, 'hour').format('HH:mm'); //1 hora antes de hora de entrada
+    } else { //cualquier otro empleado que no sea base imss bienestar
+        horaEntradaLimite = moment(horaEntrada, "HH:mm").add(16, 'minutes').format('HH:mm'); //entrada sin retardo 16 minutos despues
+        horaEntradaPermitida = moment(horaEntrada, "HH:mm").subtract(30, 'minutes').format('HH:mm'); //30 minutos antes de hora de entrada
+    }
+
+    const horaEntradaRetardo = moment(horaEntrada, "HH:mm").add(41, 'minutes').format('HH:mm'); //Manejar retardo menor y mayor
+    const horaSalidaPermitida = moment(horaSalida, "HH:mm").subtract(2, 'hours').format('HH:mm'); //hora de salida menos 2 horas si es que pide pase
+    const horaSalidaLimite = moment(horaSalida, "HH:mm").add(2, 'hours').format('HH:mm'); //2 horas despues de la salida    
+
+    if (data.horaReg >= horaSalidaPermitida && data.horaReg <= horaSalidaLimite) { //salida
+
+        return {
+            title: 'NONE',
+            date: data.dateReg
+        }
+
+    } else if (data.horaReg >= horaEntradaPermitida && data.horaReg < horaEntradaRetardo) {//entrada normal y rmenor
+
+        if (data.horaReg >= horaEntradaPermitida && data.horaReg < horaEntradaLimite) { //condicion de checada normal
+
+            return {
+                title: 'NONE',
+                date: data.dateReg
+            }
+
+        } else if (data.horaReg >= horaEntradaLimite && data.horaReg < horaEntradaRetardo) { //condicion de checada con retardo menor
+
+            if (regist.find(item => item.dateReg === data.dateReg)) { //Evitar etiquetas de retardo menor duplicadas
+                return {
+                    title: 'NONE',
+                    date: data.dateReg
+                }
+            } else {
+                if (j91.includes(data.dateReg)) { //justificar retardo menor
+                    return {
+                        title: 'J91',
+                        date: data.dateReg
+                    }
+                } else {
+                    return {
+                        title: 'RETARDO MENOR',
+                        date: data.dateReg
+                    }
+                }
+            }
+        }
+
+    } else { //omisiones e incidencias
+
+        if (data.horaReg >= horaEntradaRetardo && data.horaReg <= moment(horaEntradaRetardo, "HH:mm").add(2, 'hours').format('HH:mm')) { //condicion omision entrada
+
+            if (regist.find(item => item.dateReg === data.dateReg)) { //Evitar etiquetas de Omision Entrada duplicadas
+                return {
+                    title: 'NONE',
+                    date: data.dateReg
+                }
+            } else {
+                if (aentrada.includes(data.dateReg)) {
+                    return {
+                        title: 'AE',
+                        date: data.dateReg
+                    }
+                } else {
+                    return {
+                        title: 'OMISIÓN ENTRADA',
+                        date: data.dateReg
+                    }
+                }
+            }
+
+        } else { //incidencia, caso fuera de lo normal
+            return {
+                title: 'INCIDENCIA',
+                date: data.dateReg,
+            }
+        }
+    }
 }
 
 export const formatHorarioConHistorial = (historial: any, attendances: any) => {
@@ -95,95 +174,16 @@ export const getLastAttendancePerMinute = (attendances: dataChecadasIndividualIn
     return result;
 }
 
-export const clasificarChecada = (data: dataChecadasIndividualInterface, horaEntrada: string, horaSalida: string, regist: dataChecadasIndividualInterface, j91: string[], aentrada: string[], asalida: string[], tipo_empleado: string) => {
-    let horaEntradaLimite: string = ''; //variable en función del tipo de empleado
-
-    const horaEntradaPermitida = moment(horaEntrada, "HH:mm").subtract(30, 'minutes').format('HH:mm'); //30 minutos antes de hora de entrada
-
-    if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
-        horaEntradaLimite = moment(horaEntrada, "HH:mm").add(6, 'minutes').format('HH:mm'); //entrada sin retardo 6 minutos despues
-    } else {
-        horaEntradaLimite = moment(horaEntrada, "HH:mm").add(16, 'minutes').format('HH:mm'); //entrada sin retardo 16 minutos despues
-    }
-    
-    const horaEntradaRetardo = moment(horaEntrada, "HH:mm").add(41, 'minutes').format('HH:mm'); //Manejar retardo menor y mayor
-    const horaSalidaPermitida = moment(horaSalida, "HH:mm").subtract(2, 'hours').format('HH:mm'); //hora de salida menos 2 horas si es que pide pase
-    const horaSalidaLimite = moment(horaSalida, "HH:mm").add(2, 'hours').format('HH:mm'); //2 horas despues de la salida    
-
-    if (data.horaReg >= horaSalidaPermitida && data.horaReg <= horaSalidaLimite) { //salida
-
-        return {
-            title: 'NONE',
-            date: data.dateReg
-        }
-
-    } else if (data.horaReg >= horaEntradaPermitida && data.horaReg < horaEntradaRetardo) {//entrada normal y rmenor
-
-        if (data.horaReg >= horaEntradaPermitida && data.horaReg < horaEntradaLimite) { //condicion de checada normal
-
-            return {
-                title: 'NONE',
-                date: data.dateReg
-            }
-
-        } else if (data.horaReg >= horaEntradaLimite && data.horaReg < horaEntradaRetardo) { //condicion de checada con retardo menor
-
-            if (regist.find(item => item.dateReg === data.dateReg)) { //Evitar etiquetas de retardo menor duplicadas
-                return {
-                    title: 'NONE',
-                    date: data.dateReg
-                }
-            } else {
-                if (j91.includes(data.dateReg)) { //justificar retardo menor
-                    return {
-                        title: 'J91',
-                        date: data.dateReg
-                    }
-                } else {
-                    return {
-                        title: 'RETARDO MENOR',
-                        date: data.dateReg
-                    }
-                }
-            }
-        }
-
-    } else { //omisiones e incidencias
-
-        if (data.horaReg >= horaEntradaRetardo && data.horaReg <= moment(horaEntradaRetardo, "HH:mm").add(2, 'hours').format('HH:mm')) { //condicion omision entrada
-
-            if (regist.find(item => item.dateReg === data.dateReg)) { //Evitar etiquetas de Omision Entrada duplicadas
-                return {
-                    title: 'NONE',
-                    date: data.dateReg
-                }
-            } else {
-                if (aentrada.includes(data.dateReg)) {
-                    return {
-                        title: 'AE',
-                        date: data.dateReg
-                    }
-                } else {
-                    return {
-                        title: 'OMISIÓN ENTRADA',
-                        date: data.dateReg
-                    }
-                }
-            }
-
-        } else { //incidencia, caso fuera de lo normal
-            return {
-                title: 'INCIDENCIA',
-                date: data.dateReg,
-            }
-        }
-    }
+// Función para convertir el tiempo 'HH:MM:SS' a segundos
+const timeToSeconds = (time: string) => {
+    const [hours, minutes, seconds] = time.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
-const depurarChecadas = (formatAttendance: any[], j91: string[], aentrada: string[], asalida: string[], aeLocal: any[], asLocal: any[], permisosAux: any[], vacacionesAux: any[], tipo_empleado: string) => {
+const depurarChecadas = (formatAttendance: any[], j91: string[], aentrada: string[], asalida: string[], aeLocal: any[], asLocal: any[], permisosAux: any[], vacacionesAux: any[], tipo_empleado: string, tipo_recurso: string) => {
     let regist: any = [];
     const checadas = formatAttendance.map((checada: dataChecadasIndividualInterface) => {
-        const checadaClasificada = clasificarChecada(checada, checada.horaEntrada!, checada.horaSalida!, regist, j91, aentrada, asalida, tipo_empleado);
+        const checadaClasificada = clasificarChecada(checada, checada.horaEntrada!, checada.horaSalida!, regist, j91, aentrada, asalida, tipo_empleado, tipo_recurso);
         regist = [...regist, checada]; //no usar push por que el objeto sufre mutaciones inesperadas, usar spread
 
         if (checadaClasificada?.title.includes('AE')) {
@@ -260,6 +260,9 @@ export const getAttendanceClassify = async ({ ...props }: { dateInit: string, da
                 hora_entrada: true,
                 hora_salida: true,
                 cat_tipos_empleado: {
+                    select: { nombre: true }
+                },
+                cat_tipos_recurso: {
                     select: { nombre: true }
                 }
             }
@@ -364,13 +367,13 @@ export const getAttendanceClassify = async ({ ...props }: { dateInit: string, da
         if (historialHorario.length > 0 && req.attendances.length > 0) {
             const attendance = formatHorarioConHistorial(historialHorario, req.attendances);
             const formatAttendance = getLastAttendancePerMinute(attendance);
-            const checadasDepuradas = depurarChecadas(formatAttendance, j91, aentrada, asalida, aeLocal, asLocal, permisosAux, vacacionesAux, employee.cat_tipos_empleado.nombre);
+            const checadasDepuradas = depurarChecadas(formatAttendance, j91, aentrada, asalida, aeLocal, asLocal, permisosAux, vacacionesAux, employee.cat_tipos_empleado.nombre, employee.cat_tipos_recurso.nombre);
 
             return checadasDepuradas;
         } else {
             const attendance = formatHorarioSinHistorial(req.attendances, employee.hora_entrada, employee.hora_salida);
             const formatAttendance = getLastAttendancePerMinute(attendance);
-            const checadasDepuradas = depurarChecadas(formatAttendance, j91, aentrada, asalida, aeLocal, asLocal, permisosAux, vacacionesAux, employee.cat_tipos_empleado.nombre);
+            const checadasDepuradas = depurarChecadas(formatAttendance, j91, aentrada, asalida, aeLocal, asLocal, permisosAux, vacacionesAux, employee.cat_tipos_empleado.nombre, employee.cat_tipos_recurso.nombre);
 
             return checadasDepuradas;
         }

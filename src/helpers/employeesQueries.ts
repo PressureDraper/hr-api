@@ -145,6 +145,11 @@ export const getKardexQuery = (id: number) => {
                         select: {
                             nombre: true
                         }
+                    },
+                    cat_tipos_recurso: {
+                        select: {
+                            nombre: true
+                        }
                     }
                 }
             });

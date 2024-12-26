@@ -11,7 +11,7 @@ export const imsReportMainContent = `
         <div style="text-align: center; margin-left: 15px;">
             <span style="text-decoration: underline;">SERVICIOS DE SALUD</span>
             <br>
-            <span style="font-weight: bold;">IMS-BIENESTAR</span>
+            <span style="font-weight: bold;">IMSS-BIENESTAR</span>
         </div>
 
     </div>
