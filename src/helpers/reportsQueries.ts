@@ -266,7 +266,8 @@ function descifrarAES(encryptedText = '', secretKey = '', iv = '') {
 export const getFirmaById = async (id: number) => {
     try {
         let desc = ''
-        const firma = await db.cmp_firmas_manuscritas.findFirst({where: {id}});
+        /* const firma = await db.cmp_firmas_manuscritas.findFirst({where: {id}}); */
+        const firma: any = null;
         if(!firma) return '';
         desc = descifrarAES(firma.firma, '12345678901234567890123456789012', '1234567890123456');
         return desc;

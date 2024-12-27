@@ -4459,10 +4459,10 @@ enum cat_proveedores_estatus {
 }
 
 model cmp_firmas_manuscritas {
-  id                                                                                                  Int                                    @id @default(autoincrement()) @db.UnsignedInt
-  id_persona                                                                                          Int                                    @db.UnsignedInt
-  firma                                                                                               String    @db.Text
-  created_at                                                                                          DateTime?                              @db.Timestamp(0)
-  updated_at                                                                                          DateTime?                              @db.Timestamp(0)
-  deleted_at                                                                                          DateTime?                              @db.Timestamp(0)
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  id_persona Int       @db.UnsignedInt
+  firma      String    @db.Text
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  deleted_at DateTime? @db.Timestamp(0)
 }

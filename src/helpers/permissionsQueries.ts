@@ -30,14 +30,30 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
         try {
             const permissions = await db.rch_permisos.findMany({
                 where: {
-                    OR: [
-                        { id_empleado: parseInt(props.employee_id) },
-                        { id_suplente: parseInt(props.employee_id) }
+                    AND: [
+                        {
+                            OR: [
+                                { id_empleado: parseInt(props.employee_id) },
+                                { id_suplente: parseInt(props.employee_id) }
+                            ]
+                        },
+                        {
+                            OR: [
+                                {
+                                    fecha_inicio: {
+                                        lte: new Date(props.fecha_fin),
+                                        gte: new Date(props.fecha_ini)
+                                    }
+                                },
+                                {
+                                    fecha_fin: {
+                                        lte: new Date(props.fecha_fin),
+                                        gte: new Date(props.fecha_ini)
+                                    }
+                                }
+                            ]
+                        }
                     ],
-                    fecha_inicio: {
-                        lte: new Date(props.fecha_fin),
-                        gte: new Date(props.fecha_ini)
-                    },
                     deleted_at: null
                 },
                 select: {
@@ -76,7 +92,7 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     fecha_inicio: 'asc'
                 }
             });
-
+            
             resolve(permissions);
         } catch (error) {
             reject(error);
