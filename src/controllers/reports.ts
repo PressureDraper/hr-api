@@ -106,6 +106,8 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 }
 
 const filterByTimeRange = (data: any, mat = 0) => {
+    console.log('filterByTimeRange()');
+    // console.log(data);
     let aux = data.map((item: any) => {
         return {
             ...item,
@@ -115,20 +117,31 @@ const filterByTimeRange = (data: any, mat = 0) => {
         }
     });
 
+    // console.log(aux)
+
     let groupByHour = _.groupBy(aux, 'hora');
     Object.keys(groupByHour).map(key => {
         groupByHour[key] = groupByHour[key][0];
     });
+    console.log(groupByHour)
 
     if(Object.keys(groupByHour).length > 1) {
+        console.log('DOUBLE')
         const first : any = groupByHour[Object.keys(groupByHour)[0]];
         const second : any = groupByHour[Object.keys(groupByHour)[1]];
 
         const firstHour = first['horaReg'];
         const secondHour = second['horaReg']
 
-        const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
-        if(diff < 30) {
+        // const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
+        const diffInMinutes = moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"), 'minutes');
+
+        console.log({
+            firstHour,
+            secondHour,
+            diffInMinutes
+        })
+        if(diffInMinutes < 30) {
             const entries = Object.entries(groupByHour);
             entries.splice(1, 1);
             const newData = Object.fromEntries(entries);
@@ -242,6 +255,9 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let specialCases: any = [];
             let twoAttendances: any = [];
+
+            // console.log('FILTROS')
+            // console.log(filteresAttendances)
         
             Object.keys(filteresAttendances).map((key: string) => {
                 if(filteresAttendances[key].length == 1) {
@@ -259,6 +275,12 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let finalSpecial : any = {};
             let finalIncidents : any = {};
+            
+            // console.log('hola')
+            // console.log('SPECIAL');
+            // console.log(specialCases)
+            // console.log('TWO');
+            // console.log(twoAttendances)
 
             if(diff >= 12 && specialCases.length > 0) {
                 let removeValue = null;
@@ -320,9 +342,6 @@ export const generareReportIms = async (req: any, res: Response) => {
                     ]
                 }
             })
-
-            // if(matricula == 6149) {
-            // }
 
             finalAttendances = Object.fromEntries(
                 _.sortBy(Object.entries(finalAttendances), ([key]) => new Date(key))
@@ -418,7 +437,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             all_content: mainContent,
         });
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
+            // executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
