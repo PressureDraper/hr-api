@@ -3,6 +3,7 @@ import { HeaderExcelJSBookElement, PropsAttendances, PropsAttendancesInterface, 
 import { db } from "../utils/db";
 import { biometricosApi } from "../apis/biometricosApi";
 import moment from "moment";
+import crypto from 'crypto';
 
 export const headerListaChecadasExcel: Array<HeaderExcelJSBookElement> = [
     { header: 'MATRICULA', key: 'mat', width: 13 },
@@ -248,3 +249,25 @@ export const calculateQuint = (fec_inicio = '', fec_final = '') => {
         return `QNA ${quincenaInicio} a QNA ${quincenaFinal} / ${anio}`;
     }
 }
+function descifrarAES(encryptedText = '', secretKey = '', iv = '') {
+    try {
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secretKey), Buffer.from(iv));
+        let decrypted = decipher.update(encryptedText, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+        return decrypted;
+    } catch (err) {
+        return '';
+    }
+}
+
+export const getFirmaById = async (id: number) => {
+    try {
+        let desc = ''
+        const firma = await db.cmp_firmas_manuscritas.findFirst({where: {id}});
+        if(!firma) return '';
+        desc = descifrarAES(firma.firma, '12345678901234567890123456789012', '1234567890123456');
+        return desc;
+    } catch(err) {
+        return '';
+    }
+};

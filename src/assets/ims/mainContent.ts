@@ -155,29 +155,46 @@ export const imsReportMainContent = `
     </div>
 
     <div id="sub-footer-content" class="d-flex container-lg text-center justify-content-between"
-        style="margin-top: 4rem;">
+    style="margin-top: 4rem; display: flex; justify-content: center; align-items: flex-start; flex-wrap: nowrap; gap: 20px; ">
 
-        <div style="text-align: center; margin-top: 30px; position: relative;">
-            <div style="border-top: 2px solid black; width: 300px; margin: 0 auto; margin-bottom: 10px;"></div>
+    <div style="text-align: center; margin-top: 30px; position: relative;" >
+        <img src="{firma1}" width="100px" height="100px"
+            style="margin-bottom: 10px; position: relative; bottom: 10px; height: auto;" />
+        <div>
+            <div style="border-top: 2px solid black; width: 200px; margin: 0 auto; margin-bottom: 10px;"></div>
             <span>JEFE/A DEL AREA DE {area}</span>
         </div>
+    </div>
 
-        <div style="text-align: center; margin-top: 30px; position: relative;">
-            <div style="border-top: 2px solid black; width: 300px; margin: 0 auto; margin-bottom: 10px;"></div>
+    <div style="text-align: center; margin-top: 30px; position: relative;">
+        <img src="{firma1}" width="100px" height="100px"
+            style="margin-bottom: 10px; position: relative; bottom: 10px; height: auto;" />
+        <div>
+            <div style="border-top: 2px solid black; width: 200px; margin: 0 auto; margin-bottom: 10px;"></div>
             <span>DIRECTOR CAE</span>
         </div>
+    </div>
 
-        <div style="text-align: center; margin-top: 30px; position: relative;">
-            <div style="border-top: 2px solid black; width: 300px; margin: 0 auto; margin-bottom: 10px;"></div>
+    <div style="text-align: center; margin-top: 30px; position: relative;">
+        <img src="{firma1}" width="100px" height="100px"
+            style="margin-bottom: 10px; position: relative; bottom: 10px; height: auto;" />
+        <div>
+            <div style="border-top: 2px solid black; width: 200px; margin: 0 auto; margin-bottom: 10px;"></div>
             <span>JEFA DE RECURSOS HUMANOS</span>
         </div>
+    </div>
 
-        <div style="text-align: center; margin-top: 30px; position: relative;">
-            <div style="border-top: 2px solid black; width: 300px; margin: 0 auto; margin-bottom: 10px;"></div>
+    <div style="text-align: center; margin-top: 30px; position: relative;">
+        <img src="{firma1}"
+            width="100px" height="100px" style="margin-bottom: 10px; position: relative; bottom: 10px; height: auto;" />
+        <div>
+            <div style="border-top: 2px solid black; width: 200px; margin: 0 auto; margin-bottom: 10px;"></div>
             <span>ADMINISTRADOR CAE</span>
         </div>
-
     </div>
+</div>
+
+
 </footer>
 
 <div style="heigh: 1000px"></div>

@@ -1,7 +1,7 @@
 import { Response } from "express";
 import tempfile from "tempfile";
 import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas } from "../interfaces/reportsQueries";
-import { calculateQuint, formatAttendancesReport, getAttendancesReport, getBosByAppartment, getEmployeeTypeQuery, headerListaChecadasExcel } from "../helpers/reportsQueries";
+import { calculateQuint, formatAttendancesReport, getAttendancesReport, getBosByAppartment, getEmployeeTypeQuery, getFirmaById, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import path from 'path';
 import puppeteer from "puppeteer";
@@ -202,6 +202,8 @@ const getAllApartments = async (namesToSearch = [] ) => {
 }
 
 
+
+
 export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado } : PropsReporteChecadas = req.query;
@@ -213,6 +215,7 @@ export const generareReportIms = async (req: any, res: Response) => {
         const incidences = await addIncidents(ids_employees, fec_inicio, fec_final);
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
+        const firma1 = await getFirmaById(5);
 
         let employees = employeesType.map((employee: any) => {
             let {hora_entrada, hora_salida, matricula} = employee;
@@ -402,7 +405,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 booss: `${jefe}`.trim().length > 1 ? jefe : '____________________',
                 area: name_apartment,
                 table_body: body,
-                quince: quin
+                quince: quin,
+                firma1: firma1
             });
 
             mainContent += content;
