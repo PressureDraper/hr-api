@@ -437,7 +437,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             all_content: mainContent,
         });
         const browser = await puppeteer.launch({
-            // executablePath: "/usr/bin/google-chrome",
+            executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
@@ -445,6 +445,7 @@ export const generareReportIms = async (req: any, res: Response) => {
         await page.setContent(final_content);
         const pdfBuffer = await page.pdf({
             format: 'Letter',
+            landscape: true,
             printBackground: true,
             margin: {
                 top: 10,

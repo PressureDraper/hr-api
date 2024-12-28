@@ -1,6 +1,6 @@
 export const imsReportMainContent = `
 
-<div style="position: relative; min-height: 100%; width: 100%;">
+<div style="position: relative; min-height: 100%; width: 100%; page-break-before: always;">
 
 <header class="d-flex justify-content-between container-lg">
     <div id="main-log" class="d-flex align-items-center">
@@ -68,7 +68,7 @@ export const imsReportMainContent = `
 
                 <tr style="border-bottom: none !important;">
                     <td>CENTRO DE TABRAJO:</td>
-                    <td style="border-bottom: 1px solid black;">CAE. DR. RAFAEL LUCIO</td>
+                    <td style="border-bottom: 1px solid black;">CENTRO DE ALTA ESPECIALIDAD DR. RAFAEL LUCIO</td>
                 </tr>
 
                 <tr style="border-bottom: none !important;">
@@ -131,7 +131,7 @@ export const imsReportMainContent = `
     </div>
 </main>
 
-<footer style="bottom: 0; width: 100%; margin-bottom: 15px; margin-top: 20px;">
+<footer style="bottom: 0; width: 100%; margin-bottom: 15px; margin-top: 20px; page-break-before: always;">
     <div id="main-footer-content" class="d-flex container-lg text-center">
         <div>
             <span style="font-weight: bold;">JEFE DE SERVICIO:</span>
@@ -149,13 +149,13 @@ export const imsReportMainContent = `
         </div>
 
         <div>
-            <span style="font-weight: bold;">CERTIFICO</span>
+            <span style="font-weight: bold;">CERTIFICÓ:</span>
             <span>LIC. RUBEN VAZQUEZ RASGADO</span>
         </div>
     </div>
 
     <div id="sub-footer-content" class="d-flex container-lg text-center justify-content-between"
-    style="margin-top: 4rem; display: flex; justify-content: center; align-items: flex-start; flex-wrap: nowrap; gap: 20px; ">
+    style="margin-top: 4rem; display: flex; justify-content: center; align-items: flex-start; flex-wrap: nowrap; gap: 20px;">
 
     <div style="text-align: center; margin-top: 30px; position: relative;" >
         <img src="{firma1}" width="100px" height="100px"
@@ -193,13 +193,6 @@ export const imsReportMainContent = `
         </div>
     </div>
 </div>
-
-
 </footer>
-
-<div style="heigh: 1000px"></div>
 </div>
-<div class="page-break"></div>
-
-
 `;
