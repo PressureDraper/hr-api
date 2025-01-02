@@ -438,22 +438,17 @@ export const generareReportIms = async (req: any, res: Response) => {
         });
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
         const page = await browser.newPage();
 
         await page.setContent(final_content);
+        
         const pdfBuffer = await page.pdf({
             format: 'Letter',
             landscape: true,
-            printBackground: true,
-            margin: {
-                top: 10,
-                bottom: 10,
-                left: 20,
-                right: 20
-            },
-            preferCSSPageSize: true,
+            printBackground: true
         });
 
         await browser.close();
