@@ -436,6 +436,7 @@ export const generareReportIms = async (req: any, res: Response) => {
         let final_content = format(imsWrapperReportContent, {
             all_content: mainContent,
         });
+        
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -446,9 +447,10 @@ export const generareReportIms = async (req: any, res: Response) => {
         await page.setContent(final_content);
         
         const pdfBuffer = await page.pdf({
-            format: 'A4',
+            format: 'Letter',
             landscape: true,
-            printBackground: true
+            printBackground: true,
+            scale: 0.9
         });
 
         await browser.close();
