@@ -19,7 +19,7 @@ export const clasificarChecada = (data: dataChecadasIndividualInterface, horaEnt
 
     const horaEntradaRetardo = moment(horaEntrada, "HH:mm").add(41, 'minutes').format('HH:mm'); //Manejar retardo menor y mayor
     const horaSalidaPermitida = moment(horaSalida, "HH:mm").subtract(2, 'hours').format('HH:mm'); //hora de salida menos 2 horas si es que pide pase
-    const horaSalidaLimite = moment(horaSalida, "HH:mm").add(2, 'hours').format('HH:mm'); //2 horas despues de la salida    
+    const horaSalidaLimite = moment(horaSalida, "HH:mm").add(1, 'hour').add(59, 'minutes').format('HH:mm'); //2 horas despues de la salida  
 
     if (data.horaReg >= horaSalidaPermitida && data.horaReg <= horaSalidaLimite) { //salida
 
