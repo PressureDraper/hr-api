@@ -446,7 +446,7 @@ export const generareReportIms = async (req: any, res: Response) => {
         await page.setContent(final_content);
         
         const pdfBuffer = await page.pdf({
-            format: 'Letter',
+            format: 'A4',
             landscape: true,
             printBackground: true
         });
