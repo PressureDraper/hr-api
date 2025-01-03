@@ -155,7 +155,7 @@ export const imsReportMainContent = `
     </div>
 
     <div id="sub-footer-content" class="d-flex container-lg text-center justify-content-between"
-    style="margin-top: 4rem; display: flex; justify-content: center; align-items: flex-start; flex-wrap: nowrap; gap: 20px;">
+    style="margin-top: 0.5rem; display: flex; justify-content: center; align-items: flex-start; flex-wrap: nowrap; gap: 20px;">
 
     <div style="text-align: center; margin-top: 30px; position: relative;" >
         <img src="{firma1}" width="100px" height="100px"
