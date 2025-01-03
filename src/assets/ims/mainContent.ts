@@ -131,7 +131,7 @@ export const imsReportMainContent = `
     </div>
 </main>
 
-<footer style="bottom: 0; width: 100%; margin-bottom: 15px; margin-top: 20px; page-break-before: always;">
+<footer style="bottom: 0; width: 100%; margin-bottom: 15px; margin-top: 20px;">
     <div id="main-footer-content" class="d-flex container-lg text-center">
         <div>
             <span style="font-weight: bold;">JEFE DE SERVICIO:</span>
@@ -144,7 +144,7 @@ export const imsReportMainContent = `
         </div>
 
         <div>
-            <span style="font-weight: bold;">ENCARGADO CONTROL DE ASISTENCIA:</span>
+            <span style="font-weight: bold;">ENCARGADO CONTROL DE ASISTENCIAL:</span>
             <span>ING. ROSA MARIAL FLORES SOSA</span>
         </div>
 

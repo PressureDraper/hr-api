@@ -83,6 +83,69 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
     })
 }
 
+export const getIMSSN420Employees = ({ ...params }: PropsReporteChecadas) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const infoEmployeeType = await db.rch_empleados.findMany({
+                where: {
+                    OR: [
+                        {
+                            id_tipoempleado: 17, //IMSS BIENESTAR
+                            matricula: {
+                                lte: parseInt(params.mat_final),
+                                gte: parseInt(params.mat_inicio)
+                            },
+                            deleted_at: null,
+                            activo: true
+                        },
+                        {
+                            id_tipoempleado: 18, //BASE 420
+                            matricula: {
+                                lte: parseInt(params.mat_final),
+                                gte: parseInt(params.mat_inicio)
+                            },
+                            deleted_at: null,
+                            activo: true
+                        }
+                    ]
+                },
+                select: {
+                    id: true,
+                    cmp_persona: {
+                        select: {
+                            nombres: true,
+                            primer_apellido: true,
+                            segundo_apellido: true,
+                            rfc: true,
+                            curp: true
+                        }
+                    },
+                    cat_tipos_empleado: {
+                        select: {
+                            nombre: true
+                        }
+                    },
+                    cat_turnos: {
+                        select: { nombre: true }
+                    },
+                    cat_tipos_recurso: {
+                        select: { nombre: true }
+                    },
+                    hora_entrada: true,
+                    hora_salida: true,
+                    guardias: true,
+                    matricula: true,
+                    cat_departamentos: true
+                }
+            });
+
+            resolve(infoEmployeeType);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 export const getAttendancesReport = (mat_ini: string, mat_final: string, fec_ini: string, fec_fin: string): Promise<PropsAttendancesInterface> => {
     return new Promise(async (resolve, reject) => {
         biometricosApi.get(`get_attendances_report?matricula_inicial=${mat_ini}&matricula_final=${mat_final}&fecha_ini=${fec_ini}&fecha_fin=${fec_fin}`, {})
@@ -173,37 +236,52 @@ export const getBosByAppartment = async (term: string) => {
         let spllitedTerm = term.split(' ');
         spllitedTerm = spllitedTerm.filter((term) => term.length > 2);
         spllitedTerm = spllitedTerm.filter((term) => !notFilters.includes(term));
-        
+
         const filters = spllitedTerm.map((term) => ({
-            nombre: { contains: term }, 
+            nombre: { contains: term },
         }));
 
-        const results = await db.cat_puestos.findMany({
+        let results = await db.cat_puestos.findMany({
             where: {
                 jefatura: true,
                 deleted_at: null,
-                OR: filters,
-              
+                OR: filters
             },
         });
 
-        const rankedResults = results
-        .map((result) => {
-            const matchCount = spllitedTerm.reduce((count, term) => {
-            const regex = new RegExp(`\\b${term}\\b`, 'i'); 
-            return count + (regex.test(result.nombre) ? 1 : 0);
-            }, 0);
+        const filters2 = spllitedTerm.map((term) => ({
+            tipo: { contains: term },
+        }));
 
-            return { ...result, matchCount };
-        })
-        .sort((a, b) => b.matchCount - a.matchCount); 
-        if(rankedResults.length == 0) return '';
-        const {id} = rankedResults[0];
+        let results2 = await db.cat_puestos.findMany({
+            where: {
+                jefatura: true,
+                deleted_at: null,
+                OR: filters2
+            },
+        });
+
+        results.length === 0 ? results = results2 : results = results;
+        
+        const rankedResults = results
+            .map((result) => {
+                const matchCount = spllitedTerm.reduce((count, term) => {
+                    const regex = new RegExp(`\\b${term}\\b`, 'i');
+                    return count + (regex.test(result.nombre) ? 1 : 0);
+                }, 0);
+
+                return { ...result, matchCount };
+            })
+            .sort((a, b) => b.matchCount - a.matchCount);
+
+        if (rankedResults.length == 0) return '';
+        const { id } = rankedResults[0];
+
         const nameBoos = await db.rch_empleados.findFirst({
             where: {
                 id_puesto: id,
                 deleted_at: null,
-                activo: true ,
+                activo: true,
             },
             select: {
                 cmp_persona: {
@@ -213,15 +291,15 @@ export const getBosByAppartment = async (term: string) => {
                         nombres: true,
                         segundo_apellido: true,
                     },
-                   
+
                 }
             }
         });
 
-        const {cmp_persona = {}} : any = nameBoos || {};
-        const {nombres = '', primer_apellido = '', segundo_apellido = ''} = cmp_persona;
+        const { cmp_persona = {} }: any = nameBoos || {};
+        const { nombres = '', primer_apellido = '', segundo_apellido = '' } = cmp_persona;
         return `${nombres} ${primer_apellido} ${segundo_apellido}`;
-    } catch(err) {
+    } catch (err) {
         console.log(err)
         return null;
     }
@@ -238,9 +316,9 @@ export const calculateQuint = (fec_inicio = '', fec_final = '') => {
     const anio = inicio.getUTCFullYear();
 
     function obtenerQuincena(fecha = new Date()) {
-        const mes = fecha.getUTCMonth(); 
+        const mes = fecha.getUTCMonth();
         const dia = fecha.getUTCDate();
-        return mes * 2 + (dia <= 15 ? 1 : 2); 
+        return mes * 2 + (dia <= 15 ? 1 : 2);
     }
 
     const quincenaInicio = obtenerQuincena(inicio);
@@ -268,10 +346,10 @@ export const getFirmaById = async (id: number) => {
         let desc = ''
         /* const firma = await db.cmp_firmas_manuscritas.findFirst({where: {id}}); */
         const firma: any = null;
-        if(!firma) return '';
+        if (!firma) return '';
         desc = descifrarAES(firma.firma, '12345678901234567890123456789012', '1234567890123456');
         return desc;
-    } catch(err) {
+    } catch (err) {
         return '';
     }
 };

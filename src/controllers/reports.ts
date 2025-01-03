@@ -1,7 +1,7 @@
 import { Response } from "express";
 import tempfile from "tempfile";
 import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas } from "../interfaces/reportsQueries";
-import { calculateQuint, formatAttendancesReport, getAttendancesReport, getBosByAppartment, getEmployeeTypeQuery, getFirmaById, headerListaChecadasExcel } from "../helpers/reportsQueries";
+import { calculateQuint, formatAttendancesReport, getAttendancesReport, getBosByAppartment, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import path from 'path';
 import puppeteer from "puppeteer";
@@ -86,10 +86,10 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
             printBackground: true,
             margin: {
                 top: 10,
-                bottom: 10,
                 left: 20,
                 right: 20
-            }
+            },
+            scale: 0.95
         });
 
         await browser.close();
@@ -106,7 +106,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 }
 
 const filterByTimeRange = (data: any, mat = 0) => {
-    console.log('filterByTimeRange()');
+    /* console.log('filterByTimeRange()'); */
     // console.log(data);
     let aux = data.map((item: any) => {
         return {
@@ -123,10 +123,10 @@ const filterByTimeRange = (data: any, mat = 0) => {
     Object.keys(groupByHour).map(key => {
         groupByHour[key] = groupByHour[key][0];
     });
-    console.log(groupByHour)
+    /* console.log(groupByHour) */
 
     if(Object.keys(groupByHour).length > 1) {
-        console.log('DOUBLE')
+        /* console.log('DOUBLE') */
         const first : any = groupByHour[Object.keys(groupByHour)[0]];
         const second : any = groupByHour[Object.keys(groupByHour)[1]];
 
@@ -136,11 +136,11 @@ const filterByTimeRange = (data: any, mat = 0) => {
         // const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
         const diffInMinutes = moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"), 'minutes');
 
-        console.log({
+        /* console.log({
             firstHour,
             secondHour,
             diffInMinutes
-        })
+        }) */
         if(diffInMinutes < 30) {
             const entries = Object.entries(groupByHour);
             entries.splice(1, 1);
@@ -222,7 +222,7 @@ export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado } : PropsReporteChecadas = req.query;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
-        const employeesType: any = await getEmployeeTypeQuery({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
+        const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
         const ids_employees = employeesType.map((item: any) => item.id);
@@ -450,7 +450,11 @@ export const generareReportIms = async (req: any, res: Response) => {
             format: 'Letter',
             landscape: true,
             printBackground: true,
-            scale: 0.9
+            scale: 0.88,
+            margin: {
+                top: 10,
+                right: 65
+            }
         });
 
         await browser.close();
