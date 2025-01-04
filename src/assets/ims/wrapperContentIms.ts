@@ -29,6 +29,10 @@ export const imsWrapperReportContent = `
   {all_content} 
 </body>
 
+<!-- <footer>
+  {html_footer}
+</footer> -->
+
 
 </html> 
 `;

@@ -232,7 +232,11 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
 
 export const getBosByAppartment = async (term: string) => {
     try {
+        /* console.log(term); */
+        
         const notFilters = ['DEL', 'DE'];
+        const lastArrayElementFilters = ['URGENCIAS'];
+
         let spllitedTerm = term.split(' ');
         spllitedTerm = spllitedTerm.filter((term) => term.length > 2);
         spllitedTerm = spllitedTerm.filter((term) => !notFilters.includes(term));
@@ -240,7 +244,7 @@ export const getBosByAppartment = async (term: string) => {
         const filters = spllitedTerm.map((term) => ({
             nombre: { contains: term },
         }));
-
+        
         let results = await db.cat_puestos.findMany({
             where: {
                 jefatura: true,
@@ -275,8 +279,12 @@ export const getBosByAppartment = async (term: string) => {
             .sort((a, b) => b.matchCount - a.matchCount);
 
         if (rankedResults.length == 0) return '';
-        const { id } = rankedResults[0];
 
+        let len;
+        lastArrayElementFilters.includes(term) ? len = rankedResults.length - 1 : len = 0;
+
+        const { id } = rankedResults[len];
+        
         const nameBoos = await db.rch_empleados.findFirst({
             where: {
                 id_puesto: id,

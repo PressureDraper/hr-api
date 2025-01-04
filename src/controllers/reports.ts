@@ -12,7 +12,7 @@ import { htmlParams, templateEstrategia } from "../helpers/reportsHelpers";
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
-import {v4 as uuid} from 'uuid';
+import { v4 as uuid } from 'uuid';
 import { execFile } from 'child_process';
 
 import { getAttendanceClassify } from "../helpers/attendanceClassify";
@@ -125,10 +125,10 @@ const filterByTimeRange = (data: any, mat = 0) => {
     });
     /* console.log(groupByHour) */
 
-    if(Object.keys(groupByHour).length > 1) {
+    if (Object.keys(groupByHour).length > 1) {
         /* console.log('DOUBLE') */
-        const first : any = groupByHour[Object.keys(groupByHour)[0]];
-        const second : any = groupByHour[Object.keys(groupByHour)[1]];
+        const first: any = groupByHour[Object.keys(groupByHour)[0]];
+        const second: any = groupByHour[Object.keys(groupByHour)[1]];
 
         const firstHour = first['horaReg'];
         const secondHour = second['horaReg']
@@ -141,13 +141,13 @@ const filterByTimeRange = (data: any, mat = 0) => {
             secondHour,
             diffInMinutes
         }) */
-        if(diffInMinutes < 30) {
+        if (diffInMinutes < 30) {
             const entries = Object.entries(groupByHour);
             entries.splice(1, 1);
             const newData = Object.fromEntries(entries);
             groupByHour = newData;
         }
-        
+
     }
 
     // Plain DATA
@@ -160,7 +160,7 @@ const filterByTimeRange = (data: any, mat = 0) => {
     Object.keys(groupByHour).map(key => {
         testing.push(groupByHour[key]);
     });
-   
+
     return testing;
 };
 
@@ -172,7 +172,7 @@ const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '')
         })
 
         const data = await Promise.all(arrPromises);
-        let res : {[key: number]: any} =  {};
+        let res: { [key: number]: any } = {};
         ids_employees.map((id: any, index: number) => {
             res[id] = data[index];
         });
@@ -185,7 +185,7 @@ const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '')
 
 const parseIncidents = (all: any = {}, date = '') => {
     let parseDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    if(all[parseDate]) {
+    if (all[parseDate]) {
         let res = '';
         all[parseDate].map((item: any) => {
             res += `${item['title']} `;
@@ -195,7 +195,7 @@ const parseIncidents = (all: any = {}, date = '') => {
     return '';
 }
 
-const getAllApartments = async (namesToSearch = [] ) => {
+const getAllApartments = async (namesToSearch = []) => {
     try {
         let arrPromises: any = [];
         namesToSearch.map((name: any) => {
@@ -203,7 +203,7 @@ const getAllApartments = async (namesToSearch = [] ) => {
         });
 
         const data = await Promise.all(arrPromises);
-        let res : any = {};
+        let res: any = {};
 
         namesToSearch.map((name: any, index: number) => {
             res[name] = data[index];
@@ -211,7 +211,7 @@ const getAllApartments = async (namesToSearch = [] ) => {
         return res;
     } catch (error) {
         console.log(error);
-        return {};   
+        return {};
     }
 }
 
@@ -220,25 +220,26 @@ const getAllApartments = async (namesToSearch = [] ) => {
 
 export const generareReportIms = async (req: any, res: Response) => {
     try {
-        const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado } : PropsReporteChecadas = req.query;
+        const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado }: PropsReporteChecadas = req.query;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
         const ids_employees = employeesType.map((item: any) => item.id);
         const incidences = await addIncidents(ids_employees, fec_inicio, fec_final);
+        /* console.log(employeesType); */
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
         const firma1 = await getFirmaById(5);
 
         let employees = employeesType.map((employee: any) => {
-            let {hora_entrada, hora_salida, matricula} = employee;
+            let { hora_entrada, hora_salida, matricula } = employee;
             const attendances = grouped_attendeances[employee.matricula] || [];
-            const {nombre: aparment} = employee['cat_departamentos'] ?? {};
+            const { nombre: aparment } = employee['cat_departamentos'] ?? {};
 
             hora_entrada = moment(hora_entrada).utc().format('HH:mm');
             hora_salida = moment(hora_salida).utc().format('HH:mm');
-            let diff = moment.utc(moment(hora_salida,"HH:mm").diff(moment(hora_entrada,"HH:mm"))).hours();
+            let diff = moment.utc(moment(hora_salida, "HH:mm").diff(moment(hora_entrada, "HH:mm"))).hours();
 
             const grupByDate = _.groupBy(attendances, 'dateReg');
 
@@ -249,7 +250,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 filteresAttendances = {
                     ...filteresAttendances,
                     [key]: assistencedFiltered
-        
+
                 }
             });
 
@@ -258,43 +259,43 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             // console.log('FILTROS')
             // console.log(filteresAttendances)
-        
+
             Object.keys(filteresAttendances).map((key: string) => {
-                if(filteresAttendances[key].length == 1) {
+                if (filteresAttendances[key].length == 1) {
                     specialCases.push(filteresAttendances[key]);
                 } else {
                     // This case is just when have 2 asistencias
                     twoAttendances.push(filteresAttendances[key]);
                 }
             });
-            
+
             const plainSpecialCases = specialCases.map((item: any) => {
                 let plain = item.map((aux: any) => aux);
                 return plain[0];
             });
 
-            let finalSpecial : any = {};
-            let finalIncidents : any = {};
-            
+            let finalSpecial: any = {};
+            let finalIncidents: any = {};
+
             // console.log('hola')
             // console.log('SPECIAL');
             // console.log(specialCases)
             // console.log('TWO');
             // console.log(twoAttendances)
 
-            if(diff >= 12 && specialCases.length > 0) {
+            if (diff >= 12 && specialCases.length > 0) {
                 let removeValue = null;
                 // Horario de 12 horas
                 const diff_first_element = moment.utc(moment(plainSpecialCases[0].horaReg, "HH:mm:ss").diff(moment(hora_entrada, "HH:mm"))).minutes();
                 // TODO Validar si la diferencia es menor a 60 minutos y valida
-                if(diff_first_element > 60) {
+                if (diff_first_element > 60) {
                     removeValue = plainSpecialCases.shift();
                 }
 
                 const groupPlainCases = _.chunk(plainSpecialCases, 2);
-                if(removeValue) groupPlainCases.unshift([removeValue]);
-                
-                if(groupPlainCases.length > 0) {
+                if (removeValue) groupPlainCases.unshift([removeValue]);
+
+                if (groupPlainCases.length > 0) {
                     groupPlainCases.map((item: any) => {
                         const [item1, item2] = item;
                         finalSpecial[item1['dateReg']] = [
@@ -347,27 +348,41 @@ export const generareReportIms = async (req: any, res: Response) => {
                 _.sortBy(Object.entries(finalAttendances), ([key]) => new Date(key))
             );
 
+            //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
+            let finalfinalAttendances = {};
+            const allItems = _.values(finalAttendances);
+            const sortedData = _.sortBy(allItems, item => new Date(item[0].dateReg));
+
+            sortedData.map((item: any) => {
+                finalfinalAttendances = {
+                    ...finalfinalAttendances,
+                    [item[0].dateReg]: [
+                        ...item
+                    ]
+                }
+            });
+
             return {
                 ...employee,
                 attendances,
                 diff,
                 hora_entrada,
                 hora_salida,
-                final: finalAttendances,
+                final: finalfinalAttendances,
                 incidences: incidences[employee.id] || {},
                 boss: bossByAppartment[aparment] || ''
             }
         });
-
+        
         let mainContent = '';
 
         employees.map((item: any) => {
-            const {id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {}} = item || {};
-            const {nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = ''} = cmp_persona;
-            const {nombre: name_apartment = ''} = cat_departamentos || {};
-            const {nombre: name_turn = ''} = cat_turnos;
-            const {nombre: name_cat = ''} = cat_tipos_empleado;
-            const {nombre: name_recurso = ''} = cat_tipos_recurso;
+            const { id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {} } = item || {};
+            const { nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = '' } = cmp_persona;
+            const { nombre: name_apartment = '' } = cat_departamentos || {};
+            const { nombre: name_turn = '' } = cat_turnos;
+            const { nombre: name_cat = '' } = cat_tipos_empleado;
+            const { nombre: name_recurso = '' } = cat_tipos_recurso;
             let guard = JSON.parse(guardias) || [];
             guard = guard.join(', ');
 
@@ -376,7 +391,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             Object.keys(final).map((key: any) => {
                 let [item1, item2] = final[key];
                 let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');
-               
+
                 body += `
                 <tr>
                     <td>${matricula}</td>
@@ -392,7 +407,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 </tr>
                 `;
 
-                if(item2) {
+                if (item2) {
                     let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
                     body += `
                     <tr>
@@ -412,7 +427,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             })
 
             body += '</tbody>';
-           
+
             let content = format(imsReportMainContent, {
                 name: `${nombres} ${primer_apellido} ${segundo_apellido}`,
                 rfc: rfc,
@@ -423,7 +438,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 hour: `${hora_entrada} - ${hora_salida}`,
                 guards: guard,
                 cat: name_cat,
-                booss: `${jefe}`.trim().length > 1 ? jefe : '____________________',
+                booss: `${jefe}`.trim().length > 1 ? jefe : 'NO ESPECIFICADO',
                 area: name_apartment,
                 table_body: body,
                 quince: quin,
@@ -433,10 +448,15 @@ export const generareReportIms = async (req: any, res: Response) => {
             mainContent += content;
         });
 
+        /* const dir = path.join(__dirname, '../../src/assets/ims/auc.html');
+
+        const template = fs.readFileSync(dir, 'utf8'); */
+
         let final_content = format(imsWrapperReportContent, {
             all_content: mainContent,
+            /* html_footer: template */
         });
-        
+
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -445,12 +465,12 @@ export const generareReportIms = async (req: any, res: Response) => {
         const page = await browser.newPage();
 
         await page.setContent(final_content);
-        
+
         const pdfBuffer = await page.pdf({
             format: 'Letter',
             landscape: true,
             printBackground: true,
-            scale: 0.88,
+            scale: 0.85,
             margin: {
                 top: 10,
                 right: 65
