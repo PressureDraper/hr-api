@@ -1,21 +1,19 @@
 import { Response } from "express";
 import tempfile from "tempfile";
 import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas } from "../interfaces/reportsQueries";
-import { calculateQuint, formatAttendancesReport, getAttendancesReport, getBosByAppartment, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
+import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import path from 'path';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
-import _, { first, join } from 'lodash';
-import { htmlParams, templateEstrategia } from "../helpers/reportsHelpers";
+import _ from 'lodash';
+import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia } from "../helpers/reportsHelpers";
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
-import { v4 as uuid } from 'uuid';
-import { execFile } from 'child_process';
-
 import { getAttendanceClassify } from "../helpers/attendanceClassify";
+import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -105,129 +103,18 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
     }
 }
 
-const filterByTimeRange = (data: any, mat = 0) => {
-    /* console.log('filterByTimeRange()'); */
-    // console.log(data);
-    let aux = data.map((item: any) => {
-        return {
-            ...item,
-            hora: moment(item.horaReg, 'HH:mm:ss').hours(),
-            min: moment(item.horaReg, 'HH:mm:ss').minutes()
-
-        }
-    });
-
-    // console.log(aux)
-
-    let groupByHour = _.groupBy(aux, 'hora');
-    Object.keys(groupByHour).map(key => {
-        groupByHour[key] = groupByHour[key][0];
-    });
-    /* console.log(groupByHour) */
-
-    if (Object.keys(groupByHour).length > 1) {
-        /* console.log('DOUBLE') */
-        const first: any = groupByHour[Object.keys(groupByHour)[0]];
-        const second: any = groupByHour[Object.keys(groupByHour)[1]];
-
-        const firstHour = first['horaReg'];
-        const secondHour = second['horaReg']
-
-        // const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
-        const diffInMinutes = moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"), 'minutes');
-
-        /* console.log({
-            firstHour,
-            secondHour,
-            diffInMinutes
-        }) */
-        if (diffInMinutes < 30) {
-            const entries = Object.entries(groupByHour);
-            entries.splice(1, 1);
-            const newData = Object.fromEntries(entries);
-            groupByHour = newData;
-        }
-
-    }
-
-    // Plain DATA
-    let res = [];
-    Object.keys(groupByHour).map(key => {
-        res.push(groupByHour[key]);
-    });
-
-    let testing: any = [];
-    Object.keys(groupByHour).map(key => {
-        testing.push(groupByHour[key]);
-    });
-
-    return testing;
-};
-
-const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '') => {
-    try {
-        let arrPromises: any = [];
-        ids_employees.map(async (id: any) => {
-            arrPromises.push(getAttendanceClassify({ dateInit: fecha_init, dateFin: fecha_fin, id }));
-        })
-
-        const data = await Promise.all(arrPromises);
-        let res: { [key: number]: any } = {};
-        ids_employees.map((id: any, index: number) => {
-            res[id] = data[index];
-        });
-
-        return res;
-    } catch (error) {
-        return {};
-    }
-}
-
-const parseIncidents = (all: any = {}, date = '') => {
-    let parseDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    if (all[parseDate]) {
-        let res = '';
-        all[parseDate].map((item: any) => {
-            res += `${item['title']} `;
-        })
-        return res;
-    }
-    return '';
-}
-
-const getAllApartments = async (namesToSearch = []) => {
-    try {
-        let arrPromises: any = [];
-        namesToSearch.map((name: any) => {
-            arrPromises.push(getBosByAppartment(name));
-        });
-
-        const data = await Promise.all(arrPromises);
-        let res: any = {};
-
-        namesToSearch.map((name: any, index: number) => {
-            res[name] = data[index];
-        });
-        return res;
-    } catch (error) {
-        console.log(error);
-        return {};
-    }
-}
-
-
-
-
 export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado }: PropsReporteChecadas = req.query;
+        const fecha_ini = fec_inicio;
+        const fecha_fin = fec_final;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
         const ids_employees = employeesType.map((item: any) => item.id);
         const incidences = await addIncidents(ids_employees, fec_inicio, fec_final);
-        /* console.log(employeesType); */
+        const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
         const firma1 = await getFirmaById(5);
@@ -257,9 +144,6 @@ export const generareReportIms = async (req: any, res: Response) => {
             let specialCases: any = [];
             let twoAttendances: any = [];
 
-            // console.log('FILTROS')
-            // console.log(filteresAttendances)
-
             Object.keys(filteresAttendances).map((key: string) => {
                 if (filteresAttendances[key].length == 1) {
                     specialCases.push(filteresAttendances[key]);
@@ -276,12 +160,6 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let finalSpecial: any = {};
             let finalIncidents: any = {};
-
-            // console.log('hola')
-            // console.log('SPECIAL');
-            // console.log(specialCases)
-            // console.log('TWO');
-            // console.log(twoAttendances)
 
             if (diff >= 12 && specialCases.length > 0) {
                 let removeValue = null;
@@ -348,6 +226,21 @@ export const generareReportIms = async (req: any, res: Response) => {
                 _.sortBy(Object.entries(finalAttendances), ([key]) => new Date(key))
             );
 
+            //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
+            //1. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
+            const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
+            const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final);
+
+            //2. Eliminar festivos y dias donde ya haya checadas
+            const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances);
+
+            //3. Dar formato al array para anexarlo a finalAttendances
+            const missingData = _.groupBy(debuggedDays, 'dateReg');
+            finalAttendances = {
+                ...finalAttendances,
+                ...missingData
+            };
+
             //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
             let finalfinalAttendances = {};
             const allItems = _.values(finalAttendances);
@@ -373,7 +266,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 boss: bossByAppartment[aparment] || ''
             }
         });
-        
+
         let mainContent = '';
 
         employees.map((item: any) => {
@@ -389,8 +282,8 @@ export const generareReportIms = async (req: any, res: Response) => {
             let body = '<tbody style="font-size: 12px;">';
 
             Object.keys(final).map((key: any) => {
-                let [item1, item2] = final[key];
-                let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');
+                let [item1, item2] = final[key]; //CHECADAS ENTRADA=ITEM1 SALIDA=ITEM2
+                let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
 
                 body += `
                 <tr>

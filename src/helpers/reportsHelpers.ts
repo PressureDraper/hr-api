@@ -1,7 +1,11 @@
 import { PropsFormatoEstrategia } from "../interfaces/reportsQueries";
 import { logoSesver } from '../helpers/images';
 import moment from "moment";
+import _ from "lodash";
+import { getAttendanceClassify } from "./attendanceClassify";
+import { getBosByAppartment } from "./reportsQueries";
 
+//REPORTE ESTRATEGIA
 export const htmlParams = (params: PropsFormatoEstrategia) => {
     moment.locale('es-mx');
 
@@ -199,4 +203,189 @@ export const templateEstrategia =
         </div>
     </section>
 </body>
-</html>`
+</html>`;
+
+//REPORTE INCIDECIAS IMSS
+export const filterByTimeRange = (data: any, mat = 0) => {
+    /* console.log('filterByTimeRange()'); */
+    // console.log(data);
+    let aux = data.map((item: any) => {
+        return {
+            ...item,
+            hora: moment(item.horaReg, 'HH:mm:ss').hours(),
+            min: moment(item.horaReg, 'HH:mm:ss').minutes()
+
+        }
+    });
+
+    // console.log(aux)
+
+    let groupByHour = _.groupBy(aux, 'hora');
+    Object.keys(groupByHour).map(key => {
+        groupByHour[key] = groupByHour[key][0];
+    });
+    /* console.log(groupByHour) */
+
+    if (Object.keys(groupByHour).length > 1) {
+        /* console.log('DOUBLE') */
+        const first: any = groupByHour[Object.keys(groupByHour)[0]];
+        const second: any = groupByHour[Object.keys(groupByHour)[1]];
+
+        const firstHour = first['horaReg'];
+        const secondHour = second['horaReg']
+
+        // const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
+        const diffInMinutes = moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"), 'minutes');
+
+        /* console.log({
+            firstHour,
+            secondHour,
+            diffInMinutes
+        }) */
+        if (diffInMinutes < 30) {
+            const entries = Object.entries(groupByHour);
+            entries.splice(1, 1);
+            const newData = Object.fromEntries(entries);
+            groupByHour = newData;
+        }
+
+    }
+
+    // Plain DATA
+    let res = [];
+    Object.keys(groupByHour).map(key => {
+        res.push(groupByHour[key]);
+    });
+
+    let testing: any = [];
+    Object.keys(groupByHour).map(key => {
+        testing.push(groupByHour[key]);
+    });
+
+    return testing;
+};
+
+export const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fin = '') => {
+    try {
+        let arrPromises: any = [];
+        ids_employees.map(async (id: any) => {
+            arrPromises.push(getAttendanceClassify({ dateInit: fecha_init, dateFin: fecha_fin, id }));
+        })
+
+        const data = await Promise.all(arrPromises);
+        let res: { [key: number]: any } = {};
+        ids_employees.map((id: any, index: number) => {
+            res[id] = data[index];
+        });
+
+        return res;
+    } catch (error) {
+        return {};
+    }
+}
+
+export const parseIncidents = (all: any = {}, date = '') => {
+    let parseDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
+    if (all[parseDate]) {
+        let res = '';
+        all[parseDate].map((item: any) => {
+            res += `${item['title']} `;
+        })
+        return res;
+    }
+    return '';
+}
+
+export const getAllApartments = async (namesToSearch = []) => {
+    try {
+        let arrPromises: any = [];
+        namesToSearch.map((name: any) => {
+            arrPromises.push(getBosByAppartment(name));
+        });
+
+        const data = await Promise.all(arrPromises);
+        let res: any = {};
+
+        namesToSearch.map((name: any, index: number) => {
+            res[name] = data[index];
+        });
+        return res;
+    } catch (error) {
+        console.log(error);
+        return {};
+    }
+}
+
+export const translateDays = (workingDays: string[]) => {
+    const translatedWorkingDays: string[] = workingDays.map((day: string) => {
+        switch (day) {
+            case 'LUNES':
+                return 'Monday';
+
+            case 'MARTES':
+                return 'Tuesday';
+
+            case 'MIERCOLES':
+                return 'Wednesday';
+
+            case 'JUEVES':
+                return 'Thursday';
+
+            case 'VIERNES':
+                return 'Friday';
+
+            case 'SABADO':
+                return 'Saturday'
+
+            case 'DOMINGO':
+                return 'Sunday'
+
+            default:
+                return '';
+        }
+    });
+
+    return translatedWorkingDays;
+}
+
+export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string) => {
+    let parsedDays = [];
+    let copy_ini = fec_inicio;
+    let copy_end = fec_final;
+
+    const translatedDays = translateDays(workingDays);
+
+    while (moment.utc(copy_ini).isSameOrBefore(copy_end)) {
+        parsedDays.push({
+            dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+            day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
+            horaReg: ''
+        });
+        copy_ini = moment(copy_ini).add(1, 'day').toISOString();
+    }
+
+    const debuggedWorkingDays = parsedDays.filter((item) => translatedDays.includes(item.day));
+
+    return debuggedWorkingDays;
+}
+
+export const debugWorkingDays = (parsedWorkingDays: {
+    dateReg: string,
+    day: string,
+    horaReg: string
+}[], festivos: any, attendances: any) => {
+    let purgeDays: string[] = [];
+    const allItems = _.values(attendances);
+
+    festivos.forEach((item: any) => {
+        purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
+    });
+
+    allItems.forEach((item: any) => {
+        purgeDays.push(item[0].dateReg);
+    })
+
+    let debuggedDays = parsedWorkingDays.filter((item) => !purgeDays.includes(item.dateReg));
+
+    return debuggedDays;
+}
