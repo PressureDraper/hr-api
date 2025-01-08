@@ -8,7 +8,7 @@ import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
 import _ from 'lodash';
-import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia } from "../helpers/reportsHelpers";
+import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia, isComingOrOut } from '../helpers/reportsHelpers';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
@@ -143,9 +143,9 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let specialCases: any = [];
             let twoAttendances: any = [];
-
             Object.keys(filteresAttendances).map((key: string) => {
                 if (filteresAttendances[key].length == 1) {
+
                     specialCases.push(filteresAttendances[key]);
                 } else {
                     // This case is just when have 2 asistencias
@@ -160,7 +160,6 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let finalSpecial: any = {};
             let finalIncidents: any = {};
-
             if (diff >= 12 && specialCases.length > 0) {
                 let removeValue = null;
                 // Horario de 12 horas
@@ -170,16 +169,29 @@ export const generareReportIms = async (req: any, res: Response) => {
                     removeValue = plainSpecialCases.shift();
                 }
 
+                const isComingOrOutBool = isComingOrOut(plainSpecialCases[0].horaReg, hora_entrada, hora_salida);
+       
+                if(isComingOrOutBool === 'SALIDA') {
+                    plainSpecialCases.unshift(null);
+                }
+           
                 const groupPlainCases = _.chunk(plainSpecialCases, 2);
                 if (removeValue) groupPlainCases.unshift([removeValue]);
 
                 if (groupPlainCases.length > 0) {
                     groupPlainCases.map((item: any) => {
                         const [item1, item2] = item;
-                        finalSpecial[item1['dateReg']] = [
-                            item1,
-                            item2
-                        ]
+                        if(item1) {
+                            finalSpecial[item1['dateReg']] = [
+                                item1,
+                                item2
+                            ]
+                        } else {
+                            finalSpecial[item2['dateReg']] = [
+                                item1,
+                                item2
+                            ]
+                        }
                     });
                 }
             } else {
@@ -191,6 +203,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     ];
                 });
             }
+
 
             let finalAttendances: any = {
             }
@@ -235,21 +248,29 @@ export const generareReportIms = async (req: any, res: Response) => {
             const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
             //3. Dar formato al array para anexarlo a finalAttendances
-            const missingData = _.groupBy(debuggedDays, 'dateReg');
+            // TODO -> PAJONIX 
+            // const missingData = _.groupBy(debuggedDays, 'dateReg');
             finalAttendances = {
                 ...finalAttendances,
-                ...missingData
+                // TODO -> PAJONIX
+                // ...missingData
             };
 
             //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
             let finalfinalAttendances = {};
+
             const allItems = _.values(finalAttendances);
-            const sortedData = _.sortBy(allItems, item => new Date(item[0].dateReg));
+            
+            const sortedData = _.sortBy(allItems, item => {
+                return item[0] ? new Date(item[0].dateReg) : new Date(item[1].dateReg);
+            });
+
 
             sortedData.map((item: any) => {
+                const date = item[0] ? item[0].dateReg : item[1].dateReg;
                 finalfinalAttendances = {
                     ...finalfinalAttendances,
-                    [item[0].dateReg]: [
+                    [date]: [
                         ...item
                     ]
                 }
@@ -283,22 +304,25 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             Object.keys(final).map((key: any) => {
                 let [item1, item2] = final[key]; //CHECADAS ENTRADA=ITEM1 SALIDA=ITEM2
-                let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
+                
+                if(item1) {
+                    let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
 
-                body += `
-                <tr>
-                    <td>${matricula}</td>
-                    <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                    <td>${name_cat}</td>
-                    <td>${rfc}</td>
-                    <td>${hora_entrada} - ${hora_salida}</td>
-                    <td>${guard}</td>
-                    <td>${dateItem1}</td>
-                    <td>${item1['horaReg']}</td>
-                    <td>${''}</td>
-                    <td>${parseIncidents(incidences, dateItem1, item1, item2)}</td>
-                </tr>
-                `;
+                    body += `
+                    <tr>
+                        <td>${matricula}</td>
+                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
+                        <td>${name_cat}</td>
+                        <td>${rfc}</td>
+                        <td>${hora_entrada} - ${hora_salida}</td>
+                        <td>${guard}</td>
+                        <td>${dateItem1}</td>
+                        <td>${item1['horaReg']}</td>
+                        <td>${''}</td>
+                        <td>${parseIncidents(incidences, dateItem1, item1, item2)}</td>
+                    </tr>
+                    `;    
+                }
 
                 if (item2) {
                     let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');

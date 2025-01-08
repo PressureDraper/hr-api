@@ -398,15 +398,30 @@ export const debugWorkingDays = (parsedWorkingDays: {
             purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
         });
     }
-
-    allAttendances.forEach((item: any) => {
-        purgeDays.push(item[0].dateReg);
-        if (item[1] !== undefined) {//quitar este IF cuando se resuelva el bug (mat 3295) del chaketonix LF236
-            purgeDays.push(item[1].dateReg);
-        }
-    });
+    // TODO -> PAJONIX
+    // allAttendances.forEach((item: any) => {
+    //     purgeDays.push(item[0].dateReg);
+    //     if (item[1] !== undefined) {//quitar este IF cuando se resuelva el bug (mat 3295) del chaketonix LF236
+    //         purgeDays.push(item[1].dateReg);
+    //     }
+    // });
 
     let debuggedDays = parsedWorkingDays.filter((item) => !purgeDays.includes(item.dateReg));
 
     return debuggedDays;
+}
+
+export const isComingOrOut = (eval_hour: string, star_hour: string, end_hour: string ) : 'ENTRADA' | 'SALIDA' => {  
+    let eval_hour_moment = moment.utc(eval_hour, 'HH:mm:ss');
+    let star_hour_moment = moment.utc(star_hour, 'HH:mm:ss');
+    let end_hour_moment = moment.utc(end_hour, 'HH:mm:ss');
+    end_hour_moment = end_hour_moment.add(4, 'hours');
+    star_hour_moment = star_hour_moment.subtract(1, 'hours');
+
+    if (eval_hour_moment.isBetween(star_hour_moment, end_hour_moment)) {
+        return 'ENTRADA';
+    } else {
+        return 'SALIDA';
+    }
+
 }
