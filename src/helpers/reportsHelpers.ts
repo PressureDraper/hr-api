@@ -1,7 +1,7 @@
 import { PropsFormatoEstrategia } from "../interfaces/reportsQueries";
 import { logoSesver } from '../helpers/images';
 import moment from "moment";
-import _ from "lodash";
+import _, { toString } from "lodash";
 import { getAttendanceClassify } from "./attendanceClassify";
 import { getBosByAppartment } from "./reportsQueries";
 
@@ -207,8 +207,6 @@ export const templateEstrategia =
 
 //REPORTE INCIDECIAS IMSS
 export const filterByTimeRange = (data: any, mat = 0) => {
-    /* console.log('filterByTimeRange()'); */
-    // console.log(data);
     let aux = data.map((item: any) => {
         return {
             ...item,
@@ -218,30 +216,19 @@ export const filterByTimeRange = (data: any, mat = 0) => {
         }
     });
 
-    // console.log(aux)
-
     let groupByHour = _.groupBy(aux, 'hora');
     Object.keys(groupByHour).map(key => {
         groupByHour[key] = groupByHour[key][0];
     });
-    /* console.log(groupByHour) */
 
     if (Object.keys(groupByHour).length > 1) {
-        /* console.log('DOUBLE') */
         const first: any = groupByHour[Object.keys(groupByHour)[0]];
         const second: any = groupByHour[Object.keys(groupByHour)[1]];
 
         const firstHour = first['horaReg'];
         const secondHour = second['horaReg']
-
-        // const diff = moment.utc(moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"))).minutes();
         const diffInMinutes = moment(secondHour, "HH:mm:ss").diff(moment(firstHour, "HH:mm:ss"), 'minutes');
 
-        /* console.log({
-            firstHour,
-            secondHour,
-            diffInMinutes
-        }) */
         if (diffInMinutes < 30) {
             const entries = Object.entries(groupByHour);
             entries.splice(1, 1);
@@ -284,15 +271,19 @@ export const addIncidents = async (ids_employees = [], fecha_init = '', fecha_fi
     }
 }
 
-export const parseIncidents = (all: any = {}, date = '') => {
+export const parseIncidents = (all: any = {}, date = '', hora_entrada: any, hora_salida: any) => {
     let parseDate = moment(date, 'DD/MM/YYYY').format('YYYY-MM-DD');
-    if (all[parseDate]) {
+
+    if (all[parseDate]) {//si el dia tiene permisos
         let res = '';
         all[parseDate].map((item: any) => {
             res += `${item['title']} `;
         })
         return res;
+    } else if (hora_salida === undefined && hora_entrada.horaReg === '') {//si no hay checadas ni permisos
+        return '<span style="color: red;">FALTA</span>'
     }
+
     return '';
 }
 
@@ -348,10 +339,19 @@ export const translateDays = (workingDays: string[]) => {
     return translatedWorkingDays;
 }
 
-export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string) => {
+export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any) => {
+    if (workingDays === null || workingDays === undefined) {//quitar este IF cuando los de RH se dignen a poner bien las guardias >:( y no devuelva null
+        return [];
+    }
+
     let parsedDays = [];
-    let copy_ini = fec_inicio;
+    let copy_ini = fec_inicio; //crear nuevas instancias de las fechas para evitar bugs
     let copy_end = fec_final;
+    let debuggedWorkingDays: {
+        dateReg: string;
+        day: string;
+        horaReg: string;
+    }[];
 
     const translatedDays = translateDays(workingDays);
 
@@ -364,7 +364,19 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
         copy_ini = moment(copy_ini).add(1, 'day').toISOString();
     }
 
-    const debuggedWorkingDays = parsedDays.filter((item) => translatedDays.includes(item.day));
+    festivos.forEach((item: any) => {
+        parsedDays.push({
+            dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+            day: 'FESTIVO',
+            horaReg: ''
+        });
+    });
+
+    if (workingDays.includes('FESTIVOS')) {
+        debuggedWorkingDays = parsedDays.filter((item) => (translatedDays.includes(item.day) || item.day === 'FESTIVO'));
+    } else {
+        debuggedWorkingDays = parsedDays.filter((item) => translatedDays.includes(item.day));
+    }
 
     return debuggedWorkingDays;
 }
@@ -373,17 +385,26 @@ export const debugWorkingDays = (parsedWorkingDays: {
     dateReg: string,
     day: string,
     horaReg: string
-}[], festivos: any, attendances: any) => {
+}[], festivos: any, attendances: any, notParsedWorkingDays: string[]) => {
+    if (parsedWorkingDays.length === 0) {//quitar este IF cuando los de RH se dignen a poner bien las guardias >:( y no devuelva null
+        return [];
+    }
+
     let purgeDays: string[] = [];
-    const allItems = _.values(attendances);
+    const allAttendances = _.values(attendances);
 
-    festivos.forEach((item: any) => {
-        purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
-    });
+    if (!notParsedWorkingDays.includes('FESTIVOS')) { //si no labora festivos
+        festivos.forEach((item: any) => {
+            purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
+        });
+    }
 
-    allItems.forEach((item: any) => {
+    allAttendances.forEach((item: any) => {
         purgeDays.push(item[0].dateReg);
-    })
+        if (item[1] !== undefined) {//quitar este IF cuando se resuelva el bug (mat 3295) del chaketonix LF236
+            purgeDays.push(item[1].dateReg);
+        }
+    });
 
     let debuggedDays = parsedWorkingDays.filter((item) => !purgeDays.includes(item.dateReg));
 

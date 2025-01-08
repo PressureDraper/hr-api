@@ -229,10 +229,10 @@ export const generareReportIms = async (req: any, res: Response) => {
             //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
             //1. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
             const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
-            const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final);
+            const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
 
-            //2. Eliminar festivos y dias donde ya haya checadas
-            const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances);
+            //2. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
+            const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
             //3. Dar formato al array para anexarlo a finalAttendances
             const missingData = _.groupBy(debuggedDays, 'dateReg');
@@ -296,7 +296,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     <td>${dateItem1}</td>
                     <td>${item1['horaReg']}</td>
                     <td>${''}</td>
-                    <td>${parseIncidents(incidences, dateItem1)}</td>
+                    <td>${parseIncidents(incidences, dateItem1, item1, item2)}</td>
                 </tr>
                 `;
 
@@ -313,7 +313,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                         <td>${dateItem2}</td>
                         <td>${''}</td>
                         <td>${item2['horaReg']}</td>
-                        <td>${parseIncidents(incidences, dateItem2)}</td>
+                        <td>${parseIncidents(incidences, dateItem2, item1, item2)}</td>
                     </tr>
                     `;
                 }
