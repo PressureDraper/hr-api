@@ -398,30 +398,31 @@ export const debugWorkingDays = (parsedWorkingDays: {
             purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
         });
     }
-    // TODO -> PAJONIX
-    // allAttendances.forEach((item: any) => {
-    //     purgeDays.push(item[0].dateReg);
-    //     if (item[1] !== undefined) {//quitar este IF cuando se resuelva el bug (mat 3295) del chaketonix LF236
-    //         purgeDays.push(item[1].dateReg);
-    //     }
-    // });
+
+    allAttendances.forEach((item: any) => {
+        if (item[0] !== null) {
+            purgeDays.push(item[0].dateReg);
+        }
+
+        if (item[1] !== null && item[1] !== undefined) {
+            purgeDays.push(item[1].dateReg);
+        }
+    });
 
     let debuggedDays = parsedWorkingDays.filter((item) => !purgeDays.includes(item.dateReg));
 
     return debuggedDays;
 }
 
-export const isComingOrOut = (eval_hour: string, star_hour: string, end_hour: string ) : 'ENTRADA' | 'SALIDA' => {  
-    let eval_hour_moment = moment.utc(eval_hour, 'HH:mm:ss');
-    let star_hour_moment = moment.utc(star_hour, 'HH:mm:ss');
-    let end_hour_moment = moment.utc(end_hour, 'HH:mm:ss');
-    end_hour_moment = end_hour_moment.add(4, 'hours');
-    star_hour_moment = star_hour_moment.subtract(1, 'hours');
+export const isComingOrOut = (eval_hour: string, star_hour: string, end_hour: string) => {
+    const horaFormateada = moment(eval_hour, "HH:mm").format('HH:mm');
+    const horaSalidaPermitida = moment(end_hour, "HH:mm").subtract(2, 'hours').format('HH:mm'); //hora de salida menos 2 horas si es que pide pase
+    const horaSalidaLimite = moment(end_hour, "HH:mm").add(3, 'hour').add(59, 'minutes').format('HH:mm'); //4 horas despues de la salida
 
-    if (eval_hour_moment.isBetween(star_hour_moment, end_hour_moment)) {
-        return 'ENTRADA';
+    if (horaFormateada <= horaSalidaLimite && horaFormateada >= horaSalidaPermitida ) {
+        return 'SALIDA'
     } else {
-        return 'SALIDA';
+        return 'ENTRADA'
     }
 
-}
+};

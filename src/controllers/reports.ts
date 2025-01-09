@@ -160,17 +160,19 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let finalSpecial: any = {};
             let finalIncidents: any = {};
-            if (diff >= 12 && specialCases.length > 0) {
+
+            if (diff >= 11 && specialCases.length > 0) {
                 let removeValue = null;
                 // Horario de 12 horas
                 const diff_first_element = moment.utc(moment(plainSpecialCases[0].horaReg, "HH:mm:ss").diff(moment(hora_entrada, "HH:mm"))).minutes();
+                
                 // TODO Validar si la diferencia es menor a 60 minutos y valida
                 if (diff_first_element > 60) {
                     removeValue = plainSpecialCases.shift();
                 }
 
-                const isComingOrOutBool = isComingOrOut(plainSpecialCases[0].horaReg, hora_entrada, hora_salida);
-       
+                const isComingOrOutBool = isComingOrOut(plainSpecialCases[0].horaReg, `${hora_entrada}:00`, `${hora_salida}:00`);
+
                 if(isComingOrOutBool === 'SALIDA') {
                     plainSpecialCases.unshift(null);
                 }
@@ -248,12 +250,10 @@ export const generareReportIms = async (req: any, res: Response) => {
             const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
             //3. Dar formato al array para anexarlo a finalAttendances
-            // TODO -> PAJONIX 
-            // const missingData = _.groupBy(debuggedDays, 'dateReg');
+            const missingData = _.groupBy(debuggedDays, 'dateReg');
             finalAttendances = {
                 ...finalAttendances,
-                // TODO -> PAJONIX
-                // ...missingData
+                ...missingData
             };
 
             //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
@@ -263,8 +263,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             
             const sortedData = _.sortBy(allItems, item => {
                 return item[0] ? new Date(item[0].dateReg) : new Date(item[1].dateReg);
-            });
-
+            }); 
 
             sortedData.map((item: any) => {
                 const date = item[0] ? item[0].dateReg : item[1].dateReg;
