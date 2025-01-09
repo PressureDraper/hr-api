@@ -12,6 +12,13 @@ export interface PropsReporteChecadas {
     tipo_empleado: string;
 }
 
+export interface PropsReporteIMSS {
+    fec_inicio: string;
+    fec_final: string;
+    mat_inicio: string;
+    mat_final: string;
+}
+
 export interface PropsAttendances {
     biometric: number;
     dateReg: string;

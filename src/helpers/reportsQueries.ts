@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from "axios";
-import { HeaderExcelJSBookElement, PropsAttendances, PropsAttendancesInterface, PropsEmployeeType, PropsReporteChecadas, ReqEmployeeTypeSQLQuery, checadasIndividualInterface } from "../interfaces/reportsQueries";
+import { HeaderExcelJSBookElement, PropsAttendances, PropsAttendancesInterface, PropsEmployeeType, PropsReporteChecadas, PropsReporteIMSS, ReqEmployeeTypeSQLQuery, checadasIndividualInterface } from "../interfaces/reportsQueries";
 import { db } from "../utils/db";
 import { biometricosApi } from "../apis/biometricosApi";
 import moment from "moment";
@@ -83,7 +83,7 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
     })
 }
 
-export const getIMSSN420Employees = ({ ...params }: PropsReporteChecadas) => {
+export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
     return new Promise(async (resolve, reject) => {
         try {
             const infoEmployeeType = await db.rch_empleados.findMany({

@@ -1,6 +1,6 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas } from "../interfaces/reportsQueries";
+import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas, PropsReporteIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import path from 'path';
@@ -105,11 +105,11 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 
 export const generareReportIms = async (req: any, res: Response) => {
     try {
-        const { mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado }: PropsReporteChecadas = req.query;
+        const { mat_final, mat_inicio, fec_final, fec_inicio }: PropsReporteIMSS = req.query;
         const fecha_ini = fec_inicio;
         const fecha_fin = fec_final;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
-        const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio, tipo_empleado });
+        const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
         const ids_employees = employeesType.map((item: any) => item.id);
