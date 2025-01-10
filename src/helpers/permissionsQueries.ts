@@ -92,7 +92,7 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     fecha_inicio: 'asc'
                 }
             });
-            
+
             resolve(permissions);
         } catch (error) {
             reject(error);
@@ -165,6 +165,9 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                     }
                 });
             }
+            
+            const permissionYear = moment.utc(props.dateInit.split('-')[0]).toISOString();
+            const permissionNextYear = (parseInt(permissionYear) + 1).toString();
 
             const repeated: any = await db.rch_permisos.findFirst({
                 where: {
@@ -180,9 +183,13 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                         {   //validate a strategy cannot have same folium in same year
                             folio: props.folium ? parseInt(props.folium) : null,
                             cat_permisos: { nombre: 'ESTRATEGIA' },
-                            created_at: {
-                                gte: moment.utc(currentYear).toISOString(),
-                                lt: moment.utc(nextYear).toISOString()
+                            fecha_inicio: {
+                                gte: moment.utc(permissionYear).toISOString(),
+                                lt: moment.utc(permissionNextYear).toISOString()
+                            },
+                            fecha_fin: {
+                                gte: moment.utc(permissionYear).toISOString(),
+                                lt: moment.utc(permissionNextYear).toISOString()
                             }
                         }
                     ],
