@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { createPermissionPerEmployeeQuery, deletePermissionQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery, getStrategyFoliumQuery } from '../helpers/permissionsQueries';
-import { CreatePermissionQueries, PropsEmployeePermissionsQueries } from "../interfaces/permissions";
+import { createPermissionPerEmployeeQuery, deletePermissionQuery, getCatPermissionsQuery, getEconomicosPerYearQuery, getEmployeesPermissionsQuery, getStrategiesInfoQuery, getStrategyFoliumQuery } from '../helpers/permissionsQueries';
+import { CreatePermissionQueries, PropsEmployeePermissionsQueries, PropsStrategiesQueries } from "../interfaces/permissions";
 
 export const getCatPermissions = async (req: any, res: Response) => {
     try {
@@ -29,6 +29,26 @@ export const getEmployeesPermissions = async (req: any, res: Response) => {
             ok: true,
             msg: 'Ok',
             data: queryPermissions
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Server error contact the administrator'
+        });
+    }
+}
+
+export const getStrategiesInfo = async (req: any, res: Response) => {
+    try {
+        const data: PropsStrategiesQueries = req.query;
+        const queryStrategies = await getStrategiesInfoQuery({ ...data });
+
+        res.status(200).json({
+            ok: true,
+            msg: 'Ok',
+            data: queryStrategies.data,
+            count: queryStrategies.count
         })
     } catch (error) {
         console.log(error);

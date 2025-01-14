@@ -18,3 +18,13 @@ export interface PropsEmployeePermissionsQueries {
     fecha_ini: string;
     fecha_fin: string;
 }
+
+export interface PropsStrategiesQueries {
+    limit: string;
+    page: string;
+    matricula: string;
+    folio: string;
+    fec_inicial: string;
+    fec_captura: string;
+    ano_captura: string;
+}
