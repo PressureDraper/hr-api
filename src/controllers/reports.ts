@@ -3,10 +3,8 @@ import tempfile from "tempfile";
 import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas, PropsReporteIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
-import path from 'path';
 import puppeteer from "puppeteer";
 import format from 'string-template';
-import fs from 'fs';
 import _ from 'lodash';
 import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia, isComingOrOut } from '../helpers/reportsHelpers';
 import { imsReportMainContent } from "../assets/ims/mainContent";
@@ -14,6 +12,7 @@ import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getAttendanceClassify } from "../helpers/attendanceClassify";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
+import { SignService } from './presentation/services/sign.service';
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -117,7 +116,15 @@ export const generareReportIms = async (req: any, res: Response) => {
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
-        const firma1 = await getFirmaById(5);
+        // TODO: Get firma by user
+        const sings = new SignService();
+        let firma1 : any = await sings.getLastSingByUserId(2);
+        if(firma1) {
+            firma1 = firma1[0].firma;
+        } else {
+            firma1 = '';
+        }
+
 
         let employees = employeesType.map((employee: any) => {
             let { hora_entrada, hora_salida, matricula } = employee;
@@ -374,8 +381,8 @@ export const generareReportIms = async (req: any, res: Response) => {
         });
 
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            // executablePath: "/usr/bin/google-chrome",
+            // args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
         const page = await browser.newPage();
