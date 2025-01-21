@@ -233,7 +233,7 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
 export const getBosByAppartment = async (term: string) => {
     try {
         /* console.log(term); */
-        
+
         const notFilters = ['DEL', 'DE'];
         const lastArrayElementFilters = ['URGENCIAS'];
 
@@ -244,7 +244,7 @@ export const getBosByAppartment = async (term: string) => {
         const filters = spllitedTerm.map((term) => ({
             nombre: { contains: term },
         }));
-        
+
         let results = await db.cat_puestos.findMany({
             where: {
                 jefatura: true,
@@ -266,7 +266,7 @@ export const getBosByAppartment = async (term: string) => {
         });
 
         results.length === 0 ? results = results2 : results = results;
-        
+
         const rankedResults = results
             .map((result) => {
                 const matchCount = spllitedTerm.reduce((count, term) => {
@@ -284,7 +284,7 @@ export const getBosByAppartment = async (term: string) => {
         lastArrayElementFilters.includes(term) ? len = rankedResults.length - 1 : len = 0;
 
         const { id } = rankedResults[len];
-        
+
         const nameBoos = await db.rch_empleados.findFirst({
             where: {
                 id_puesto: id,
@@ -361,3 +361,30 @@ export const getFirmaById = async (id: number) => {
         return '';
     }
 };
+
+export const getVacationIMSSReport = (id: number, fec_inicio: string, fec_final: string) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let vacaciones: any = await db.rch_empleado_vacaciones.findMany({
+                where: {
+                    rch_empleados: {
+                        id
+                    },
+                    fecha_inicio: { lte: new Date(moment(fec_final).format('YYYY-MM-DD')) },
+                    fecha_fin: { gte: new Date(moment(fec_inicio).format('YYYY-MM-DD')) },
+                    tipo: 'VACACIONES',
+                    deleted_at: null
+                },
+                select: {
+                    rol: true,
+                    fecha_inicio: true,
+                    fecha_fin: true
+                }
+            });
+            
+            resolve(vacaciones);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}

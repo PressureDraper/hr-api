@@ -3,7 +3,8 @@ import { logoSesver } from '../helpers/images';
 import moment from "moment";
 import _, { toString } from "lodash";
 import { getAttendanceClassify } from "./attendanceClassify";
-import { getBosByAppartment } from "./reportsQueries";
+import { getBosByAppartment, getVacationIMSSReport } from "./reportsQueries";
+import { db } from "../utils/db";
 
 //REPORTE ESTRATEGIA
 export const htmlParams = (params: PropsFormatoEstrategia) => {
@@ -340,10 +341,9 @@ export const translateDays = (workingDays: string[]) => {
 }
 
 export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any) => {
-    if (workingDays === null || workingDays === undefined) {//quitar este IF cuando los de RH se dignen a poner bien las guardias >:( y no devuelva null
+    if (workingDays === null || workingDays === undefined) {
         return [];
     }
-
     let parsedDays = [];
     let copy_ini = fec_inicio; //crear nuevas instancias de las fechas para evitar bugs
     let copy_end = fec_final;
@@ -372,6 +372,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
         });
     });
 
+    //Devuelve solo los dias laborales del empleado y festivos si aplica
     if (workingDays.includes('FESTIVOS')) {
         debuggedWorkingDays = parsedDays.filter((item) => (translatedDays.includes(item.day) || item.day === 'FESTIVO'));
     } else {
@@ -391,7 +392,6 @@ export const debugWorkingDays = (parsedWorkingDays: {
     }
 
     let purgeDays: string[] = [];
-    const allAttendances = _.values(attendances);
 
     if (!notParsedWorkingDays.includes('FESTIVOS')) { //si no labora festivos
         festivos.forEach((item: any) => {
@@ -399,14 +399,8 @@ export const debugWorkingDays = (parsedWorkingDays: {
         });
     }
 
-    allAttendances.forEach((item: any) => {
-        if (item[0] !== null) {
-            purgeDays.push(item[0].dateReg);
-        }
-
-        if (item[1] !== null && item[1] !== undefined) {
-            purgeDays.push(item[1].dateReg);
-        }
+    attendances.forEach((item: any) => {
+        purgeDays.push(item.dateReg);
     });
 
     let debuggedDays = parsedWorkingDays.filter((item) => !purgeDays.includes(item.dateReg));
@@ -414,15 +408,161 @@ export const debugWorkingDays = (parsedWorkingDays: {
     return debuggedDays;
 }
 
-export const isComingOrOut = (eval_hour: string, star_hour: string, end_hour: string) => {
-    const horaFormateada = moment(eval_hour, "HH:mm").format('HH:mm');
-    const horaSalidaPermitida = moment(end_hour, "HH:mm").subtract(2, 'hours').format('HH:mm'); //hora de salida menos 2 horas si es que pide pase
-    const horaSalidaLimite = moment(end_hour, "HH:mm").add(3, 'hour').add(59, 'minutes').format('HH:mm'); //4 horas despues de la salida
+const horariosMafufos = [
+    { matricula: 7461, hora_entrada2: '07:00:00', hora_salida2: '21:30:00' }
+];
 
-    if (horaFormateada <= horaSalidaLimite && horaFormateada >= horaSalidaPermitida ) {
-        return 'SALIDA'
-    } else {
-        return 'ENTRADA'
+export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: any) => {
+    let horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
+    let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
+
+    if (employee.cat_tipos_empleado.nombre.includes('BASE IMSS BIENESTAR')) {
+        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+    } else { //cualquier otro empleado que no sea base imss bienestar
+        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
     }
 
+    //verificar si el empleado tiene otro horario aparte del primario
+    const arrSegundoHorario = horariosMafufos.filter((item) => item.matricula === employee.matricula);
+    let checadasClasificadas: any[] = [];
+
+    if (arrSegundoHorario.length > 0) { //si tiene otro horario
+        const horaEntradaLimite2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
+        const horaEntradaPermitida2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+
+        checadas.forEach((item) => {
+            if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
+                if (checadasClasificadas.length > 0 && checadasClasificadas[checadasClasificadas.length - 1].type === 'ENTRADA') {
+                    checadasClasificadas.push({
+                        ...item,
+                        type: 'SALIDA'
+                    });
+                } else {
+                    checadasClasificadas.push({
+                        ...item,
+                        type: 'ENTRADA'
+                    });
+                }
+            } else if (item.horaReg >= horaEntradaPermitida2 && item.horaReg <= horaEntradaLimite2) {
+                if (checadasClasificadas.length > 0 && checadasClasificadas[checadasClasificadas.length - 1].type === 'ENTRADA') {
+                    checadasClasificadas.push({
+                        ...item,
+                        type: 'SALIDA'
+                    });
+                } else {
+                    checadasClasificadas.push({
+                        ...item,
+                        type: 'ENTRADA'
+                    });
+                }
+            } else {
+                checadasClasificadas.push({
+                    ...item,
+                    type: 'SALIDA'
+                });
+            }
+        });
+    } else { //si no tiene otro horario
+        checadas.forEach((item) => {
+            if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
+                checadasClasificadas.push({
+                    ...item,
+                    type: 'ENTRADA'
+                });
+            } else {
+                checadasClasificadas.push({
+                    ...item,
+                    type: 'SALIDA'
+                });
+            }
+        });
+    }
+
+    return checadasClasificadas;
 };
+
+export const classifyEventType = (attendances: any, vacaciones: any, permisos: any, employee: any, fec_inicio: string, fec_final: string, hora_entrada: string) => {
+    let attendancesAuxWithPermissions: any[] = []; //array de incidencias a anexar a las checadas
+    let purgeSameDays = [];
+
+    //VACATIONS
+    vacaciones.forEach((item: any) => {
+        while (moment.utc(item.fecha_inicio).isSameOrBefore(moment.utc(item.fecha_fin))) {
+            if (moment.utc(item.fecha_inicio).isSameOrAfter(moment.utc(fec_inicio)) && moment.utc(item.fecha_inicio).isSameOrBefore(moment.utc(fec_final))) {
+                attendancesAuxWithPermissions.push({
+                    dateReg: moment(new Date(item.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                    horaReg: '',
+                    type: 'EVENTO',
+                    event: `VACACIONES ROL ${item.rol}`
+                });
+            }
+            item.fecha_inicio = moment(item.fecha_inicio).add(1, 'day').toISOString();
+        }
+    });
+
+    //SUSPENSIONS - MINOR DELAY
+    let horaEntradaLimite = '';
+    let horaEntradaPermitida = '';
+    let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
+
+    if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
+        horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
+        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+    } else { //cualquier otro empleado que no sea base imss bienestar
+        horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
+        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
+    }
+
+    let classifiedAttendances = attendances.map((item: any) => {
+        if (item.type === 'ENTRADA') {
+            if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
+                return { ...item, event: '' }
+            } else {
+                return { ...item, event: tipo_empleado.includes('BASE IMSS BIENESTAR') ? 'SUSPENSIÓN' : 'RETARDO MENOR' }
+            }
+        } else {
+            return { ...item, event: '' }
+        }
+    });
+
+    //PERMISOS
+    let sharedDays: any[] = [];
+
+    //TO DO: VALIDAR QUE LOS PERMISOS APAREZCAN EN ENTRADA, SALIDA O EN DIA COMPLETO
+    permisos.forEach((item: any) => {
+        attendancesAuxWithPermissions.push({
+            dateReg: moment(new Date(item.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+            horaReg: '',
+            type: 'EVENTO',
+            event: `${item.cat_permisos.nombre}`
+        });
+    });
+
+    classifiedAttendances.forEach((item1: any) => {
+        //Obtener de los permisos aquellos que se muestran en dias con checadas
+        attendancesAuxWithPermissions.forEach((item2: any, index: number) => {
+            if (item1.dateReg === item2.dateReg) {
+                attendancesAuxWithPermissions.splice(index, 1);
+                sharedDays.push(item2);
+            }
+        });
+    });
+
+    classifiedAttendances.forEach((item1: any) => {
+        // Buscar si la fecha de item1 coincide con alguna en array2
+        const matchingItem = sharedDays.find(item2 => item2.dateReg === item1.dateReg);
+
+        // Si se encuentra un elemento coincidente, agregar el valor de 'event'
+        if (matchingItem) {
+            if (item1.event === '') {
+                item1.event = matchingItem.event;   
+            } else {
+                item1.event = item1.event + ', ' + matchingItem.event;
+            }
+        }
+    });
+
+    classifiedAttendances.push(...attendancesAuxWithPermissions);
+
+    return classifiedAttendances;
+}

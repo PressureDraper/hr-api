@@ -294,7 +294,7 @@ export const getAttendanceClassify = async ({ ...props }: { dateInit: string, da
                 fecha_inicio: true,
                 fecha_fin: true
             }
-        })
+        });
 
         employee.historial = Historial;
 
