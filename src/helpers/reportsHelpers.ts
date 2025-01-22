@@ -205,6 +205,29 @@ export const templateEstrategia =
 </html>`;
 
 //REPORTE INCIDECIAS IMSS
+export const generateRow = (item1: any, item2: any) => {
+    const dateItem = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
+    const event = item2.event || '';
+
+    let guard = JSON.parse(item1.guardias) || [];
+    guard = guard.join(', ');
+
+    return `
+        <tr>
+            <td>${item1.matricula}</td>
+            <td>${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}</td>
+            <td>${item1.cat_tipos_empleado.nombre}</td>
+            <td>${item1.cmp_persona.rfc}</td>
+            <td>${item1.hora_entrada} - ${item1.hora_salida}</td>
+            <td>${guard}</td>
+            <td>${dateItem}</td>
+            <td>${item2.type === 'ENTRADA' ? item2['horaReg'] : ''}</td>
+            <td>${item2.type === 'SALIDA' ? item2['horaReg'] : ''}</td>
+            <td>${event}</td>
+        </tr>
+    `;
+};
+
 export const getAllApartments = async (namesToSearch = []) => {
     try {
         let arrPromises: any = [];

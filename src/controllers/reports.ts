@@ -8,7 +8,7 @@ import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
 import _ from 'lodash';
-import { debugWorkingDays, getAllApartments, htmlParams, parseWorkingDays, templateEstrategia, isComingOrOut, classifyEventType } from '../helpers/reportsHelpers';
+import { debugWorkingDays, getAllApartments, htmlParams, parseWorkingDays, templateEstrategia, isComingOrOut, classifyEventType, generateRow } from '../helpers/reportsHelpers';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
@@ -165,89 +165,26 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         let mainContent = '';
 
-        employees.map((item1: any) => {
-            const { matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {} } = item1 || {};
-            const { nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = '' } = cmp_persona;
-            const { nombre: name_apartment = '' } = cat_departamentos || {};
-            const { nombre: name_turn = '' } = cat_turnos;
-            const { nombre: name_cat = '' } = cat_tipos_empleado;
-            const { nombre: name_recurso = '' } = cat_tipos_recurso;
-            let guard = JSON.parse(guardias) || [];
-            guard = guard.join(', ');
-
+        employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
 
-            final.map((item2: any) => {
-                if (item2.type === 'ENTRADA') {
-                    let dateItem1 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
-
-                    body += `
-                    <tr>
-                        <td>${matricula}</td>
-                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                        <td>${name_cat}</td>
-                        <td>${rfc}</td>
-                        <td>${hora_entrada} - ${hora_salida}</td>
-                        <td>${guard}</td>
-                        <td>${dateItem1}</td>
-                        <td>${item2['horaReg']}</td>
-                        <td>${''}</td>
-                        <td>${item2.event}</td>
-                    </tr>
-                    `;
-                }
-
-                if (item2.type === 'SALIDA') {
-                    let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
-                    body += `
-                    <tr>
-                        <td>${matricula}</td>
-                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                        <td>${name_cat}</td>
-                        <td>${rfc}</td>
-                        <td>${hora_entrada} - ${hora_salida}</td>
-                        <td>${guard}</td>
-                        <td>${dateItem2}</td>
-                        <td>${''}</td>
-                        <td>${item2['horaReg']}</td>
-                        <td>${item2.event}</td>
-                    </tr>
-                    `;
-                }
-
-                if (item2.type === 'EVENTO') {
-                    let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
-                    body += `
-                    <tr>
-                        <td>${matricula}</td>
-                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                        <td>${name_cat}</td>
-                        <td>${rfc}</td>
-                        <td>${hora_entrada} - ${hora_salida}</td>
-                        <td>${guard}</td>
-                        <td>${dateItem2}</td>
-                        <td>${''}</td>
-                        <td>${''}</td>
-                        <td>${item2.event}</td>
-                    </tr>
-                    `;
-                }
+            item1.final.forEach((item2: any) => {
+                body += generateRow(item1, item2);
             })
 
             body += '</tbody>';
 
             let content = format(imsReportMainContent, {
-                name: `${nombres} ${primer_apellido} ${segundo_apellido}`,
-                rfc: rfc,
-                curp: curp,
-                mat: `${matricula}`,
-                nom: `${name_recurso}`,
-                turno: name_turn,
-                hour: `${hora_entrada} - ${hora_salida}`,
-                guards: guard,
-                cat: name_cat,
-                booss: `${jefe}`.trim().length > 1 ? jefe : 'NO ESPECIFICADO',
-                area: name_apartment,
+                name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
+                rfc: item1.cmp_persona.rfc,
+                curp: item1.cmp_persona.curp,
+                mat: `${item1.matricula}`,
+                nom: `${item1.cat_tipos_recurso.nombre}`,
+                turno: item1.cat_turnos.nombre,
+                hour: `${item1.hora_entrada} - ${item1.hora_salida}`,
+                guards: JSON.parse(item1.guardias).join(', '),
+                cat: item1.cat_tipos_empleado.nombre,
+                area: item1.cat_departamentos.nombre,
                 table_body: body,
                 quince: quin,
                 firma1: firma1
