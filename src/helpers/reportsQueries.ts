@@ -232,8 +232,6 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
 
 export const getBosByAppartment = async (term: string) => {
     try {
-        /* console.log(term); */
-
         const notFilters = ['DEL', 'DE'];
         const lastArrayElementFilters = ['URGENCIAS'];
 

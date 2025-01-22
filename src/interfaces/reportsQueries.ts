@@ -171,3 +171,12 @@ export interface ReqVacacionesPerEmpleadoIdInterface {
     fecha_inicio: string;
     fecha_fin: string;
 }
+
+//REPORT IMSS
+interface Permiso {
+    type: 'SALIDA' | 'ENTRADA';
+}
+
+export interface IOPermisosInterface {
+    [key: string]: Permiso;
+}

@@ -8,11 +8,10 @@ import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
 import _ from 'lodash';
-import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia, isComingOrOut, classifyEventType } from '../helpers/reportsHelpers';
+import { debugWorkingDays, getAllApartments, htmlParams, parseWorkingDays, templateEstrategia, isComingOrOut, classifyEventType } from '../helpers/reportsHelpers';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
-import { getAttendanceClassify } from "../helpers/attendanceClassify";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
 
@@ -113,289 +112,61 @@ export const generareReportIms = async (req: any, res: Response) => {
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
-        /* const ids_employees = employeesType.map((item: any) => item.id); */
-        /* const incidences = await addIncidents(ids_employees, fec_inicio, fec_final); */
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
-        let vacaciones: any = await getVacationIMSSReport(employeesType[0].id, fec_inicio, fec_final);
-        const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employeesType[0].id, fecha_ini: fec_inicio, fecha_fin: fec_final });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
         const firma1 = await getFirmaById(5);
 
-        let employees = employeesType.map((employee: any) => {
-            let { hora_entrada, hora_salida, matricula } = employee;
-            const attendances = grouped_attendeances[employee.matricula] || [];
-            const { nombre: aparment } = employee['cat_departamentos'] ?? {};
-            hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
-            hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
+        const employees: any = await Promise.all(
+            employeesType.map(async (employee: any) => {
+                let { hora_entrada, hora_salida } = employee;
+                const attendances = grouped_attendeances[employee.matricula] || [];
+                const { nombre: aparment } = employee['cat_departamentos'] ?? {};
+                const vacaciones: any = await getVacationIMSSReport(employee.id, fec_inicio, fec_final);
+                const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fec_inicio, fecha_fin: fec_final });
+                hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
+                hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
 
-            //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
-            // Agrupar los elementos por la fecha (sin la hora)
-            const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
+                //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
+                // Agrupar los elementos por la fecha (sin la hora)
+                const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
 
-            // Obtener la primer checada de cada hora dentro de cada grupo de fecha
-            const result = _.flatMap(groupedByDate, (items) => {
-                return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
-            });
+                // Obtener la primer checada de cada hora dentro de cada grupo de fecha
+                const result = _.flatMap(groupedByDate, (items) => {
+                    return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
+                });
 
-            //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
-            const endOutAttendances = isComingOrOut(hora_entrada, result, employee);
+                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee);
 
-            //3. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
-            const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada);
+                //3. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada);
 
-            let finalAttendances = {
-                '0': [
-                    {
-                        biometric: 1,
-                        dateReg: 'Sun, 22 Dec 2024 00:00:00 GMT',
-                        horaReg: '01:00:04',
-                        mat: 5492,
-                        hora: 1,
-                        min: 0
-                    },
-                    {
-                        biometric: 1,
-                        dateReg: 'Sun, 22 Dec 2024 00:00:00 GMT',
-                        horaReg: '13:14:36',
-                        mat: 5492,
-                        hora: 13,
-                        min: 14
-                    }
-                ],
-                '1': [
-                    {
-                        biometric: 1,
-                        dateReg: 'Sun, 29 Dec 2024 00:00:00 GMT',
-                        horaReg: '01:00:07',
-                        mat: 5492,
-                        hora: 1,
-                        min: 0
-                    },
-                    {
-                        biometric: 7,
-                        dateReg: 'Sun, 29 Dec 2024 00:00:00 GMT',
-                        horaReg: '13:23:25',
-                        mat: 5492,
-                        hora: 13,
-                        min: 23
-                    }
-                ],
-                'Mon, 16 Dec 2024 00:00:00 GMT': [
-                    null,
-                    {
-                        biometric: 1,
-                        dateReg: 'Mon, 16 Dec 2024 00:00:00 GMT',
-                        horaReg: '01:00:21',
-                        mat: 5492,
-                        hora: 1,
-                        min: 0
-                    }
-                ],
-                'Sat, 21 Dec 2024 00:00:00 GMT': [
-                    {
-                        biometric: 7,
-                        dateReg: 'Sat, 21 Dec 2024 00:00:00 GMT',
-                        horaReg: '13:14:59',
-                        mat: 5492,
-                        hora: 13,
-                        min: 14
-                    },
-                    {
-                        biometric: 1,
-                        dateReg: 'Mon, 23 Dec 2024 00:00:00 GMT',
-                        horaReg: '01:03:43',
-                        mat: 5492,
-                        hora: 1,
-                        min: 3
-                    }
-                ],
-                'Sat, 28 Dec 2024 00:00:00 GMT': [
-                    {
-                        biometric: 1,
-                        dateReg: 'Sat, 28 Dec 2024 00:00:00 GMT',
-                        horaReg: '12:57:46',
-                        mat: 5492,
-                        hora: 12,
-                        min: 57
-                    },
-                    {
-                        biometric: 1,
-                        dateReg: 'Mon, 30 Dec 2024 00:00:00 GMT',
-                        horaReg: '01:00:04',
-                        mat: 5492,
-                        hora: 1,
-                        min: 0
-                    }
-                ]
-            }
+                //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
+                //4. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
+                const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
+                const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
 
+                //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
+                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
-            //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
-            //SOLO SE NECESITA finalAttendances
-            //4. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
-            const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
-            const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
+                //6. finalmente ordenar el array ascendentemente por dateReg
+                const sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
 
-            //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
-            const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
-
-            console.log(classifiedAttendances, debuggedDays);
-
-            //6. Dar formato al array para anexarlo a finalAttendances
-            /* const missingData = _.groupBy(debuggedDays, 'dateReg');
-            finalAttendances = {
-                ...finalAttendances,
-                ...missingData
-            }; */
-
-            //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
-            let finalfinalAttendances = {};
-
-            const allItems = _.values(finalAttendances);
-
-            const sortedData = _.sortBy(allItems, item => {
-                return item[0] ? new Date(item[0].dateReg) : new Date(item[1]!.dateReg);
-            });
-
-            sortedData.map((item: any) => {
-                const date = item[0] ? item[0].dateReg : item[1].dateReg;
-                finalfinalAttendances = {
-                    ...finalfinalAttendances,
-                    [date]: [
-                        ...item
-                    ]
+                return {
+                    ...employee,
+                    hora_entrada,
+                    hora_salida,
+                    final: sortedData,
+                    boss: bossByAppartment[aparment] || ''
                 }
-            });
-
-            //TO DO: give better format to attendance object this way:
-            /* {
-                biometric: 1,
-                dateReg: 'Sun, 01 Dec 2024 00:00:00 GMT',
-                horaReg: '01:04:32',
-                type: 'ENTRADA', //OR SALIDA
-                event: INCIDENCIA, //OR ANY PERMISSION
-                mat: 5492
-            } */
-
-            //THIS IS FINALFINALATTENDANCES
-            /* {
-                'Sun, 01 Dec 2024 00:00:00 GMT': [
-                  {
-                    biometric: 1,
-                    dateReg: 'Sun, 01 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:04:32',
-                    mat: 5492,
-                    hora: 1,
-                    min: 4
-                  },
-                  {
-                    biometric: 7,
-                    dateReg: 'Sun, 01 Dec 2024 00:00:00 GMT',
-                    horaReg: '13:22:00',
-                    mat: 5492,
-                    hora: 13,
-                    min: 22
-                  }
-                ],
-                'Mon, 02 Dec 2024 00:00:00 GMT': [
-                  null,
-                  {
-                    biometric: 1,
-                    dateReg: 'Mon, 02 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:02:10',
-                    mat: 5492,
-                    hora: 1,
-                    min: 2
-                  }
-                ],
-                'Sat, 07 Dec 2024 00:00:00 GMT': [
-                  {
-                    biometric: 7,
-                    dateReg: 'Sat, 07 Dec 2024 00:00:00 GMT',
-                    horaReg: '13:10:40',
-                    mat: 5492,
-                    hora: 13,
-                    min: 10
-                  },
-                  {
-                    biometric: 1,
-                    dateReg: 'Mon, 09 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:05:32',
-                    mat: 5492,
-                    hora: 1,
-                    min: 5
-                  }
-                ],
-                'Sun, 08 Dec 2024 00:00:00 GMT': [
-                  {
-                    biometric: 1,
-                    dateReg: 'Sun, 08 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:02:57',
-                    mat: 5492,
-                    hora: 1,
-                    min: 2
-                  },
-                  {
-                    biometric: 1,
-                    dateReg: 'Sun, 08 Dec 2024 00:00:00 GMT',
-                    horaReg: '13:16:41',
-                    mat: 5492,
-                    hora: 13,
-                    min: 16
-                  }
-                ],
-                'Sat, 14 Dec 2024 00:00:00 GMT': [
-                  {
-                    biometric: 7,
-                    dateReg: 'Sat, 14 Dec 2024 00:00:00 GMT',
-                    horaReg: '13:14:59',
-                    mat: 5492,
-                    hora: 13,
-                    min: 14
-                  },
-                  {
-                    biometric: 1,
-                    dateReg: 'Mon, 16 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:00:21',
-                    mat: 5492,
-                    hora: 1,
-                    min: 0
-                  }
-                ],
-                'Sun, 15 Dec 2024 00:00:00 GMT': [
-                  {
-                    biometric: 1,
-                    dateReg: 'Sun, 15 Dec 2024 00:00:00 GMT',
-                    horaReg: '01:05:18',
-                    mat: 5492,
-                    hora: 1,
-                    min: 5
-                  },
-                  {
-                    biometric: 7,
-                    dateReg: 'Sun, 15 Dec 2024 00:00:00 GMT',
-                    horaReg: '13:13:23',
-                    mat: 5492,
-                    hora: 13,
-                    min: 13
-                  }
-                ]
-              } */
-
-            return {
-                ...employee,
-                hora_entrada,
-                hora_salida,
-                final: finalfinalAttendances,
-                boss: bossByAppartment[aparment] || ''
-            }
-        });
+            })
+        );
 
         let mainContent = '';
 
-        employees.map((item: any) => {
-            const { matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {} } = item || {};
+        employees.map((item1: any) => {
+            const { matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {} } = item1 || {};
             const { nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = '' } = cmp_persona;
             const { nombre: name_apartment = '' } = cat_departamentos || {};
             const { nombre: name_turn = '' } = cat_turnos;
@@ -406,11 +177,9 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             let body = '<tbody style="font-size: 12px;">';
 
-            Object.keys(final).map((key: any) => {
-                let [item1, item2] = final[key]; //CHECADAS ENTRADA=ITEM1 SALIDA=ITEM2
-
-                if (item1) {
-                    let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
+            final.map((item2: any) => {
+                if (item2.type === 'ENTRADA') {
+                    let dateItem1 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
 
                     body += `
                     <tr>
@@ -421,14 +190,14 @@ export const generareReportIms = async (req: any, res: Response) => {
                         <td>${hora_entrada} - ${hora_salida}</td>
                         <td>${guard}</td>
                         <td>${dateItem1}</td>
-                        <td>${item1['horaReg']}</td>
+                        <td>${item2['horaReg']}</td>
                         <td>${''}</td>
-                        <td>${''}</td>
+                        <td>${item2.event}</td>
                     </tr>
                     `;
                 }
 
-                if (item2) {
+                if (item2.type === 'SALIDA') {
                     let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
                     body += `
                     <tr>
@@ -441,7 +210,25 @@ export const generareReportIms = async (req: any, res: Response) => {
                         <td>${dateItem2}</td>
                         <td>${''}</td>
                         <td>${item2['horaReg']}</td>
+                        <td>${item2.event}</td>
+                    </tr>
+                    `;
+                }
+
+                if (item2.type === 'EVENTO') {
+                    let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
+                    body += `
+                    <tr>
+                        <td>${matricula}</td>
+                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
+                        <td>${name_cat}</td>
+                        <td>${rfc}</td>
+                        <td>${hora_entrada} - ${hora_salida}</td>
+                        <td>${guard}</td>
+                        <td>${dateItem2}</td>
                         <td>${''}</td>
+                        <td>${''}</td>
+                        <td>${item2.event}</td>
                     </tr>
                     `;
                 }
@@ -505,25 +292,6 @@ export const generareReportIms = async (req: any, res: Response) => {
     }
     catch (err) {
         console.log(err);
-        res.status(500).json({
-            ok: false,
-            msg: 'Server error contact the administrator'
-        });
-    }
-}
-
-export const getIncidencias = async (req: any, res: Response) => {
-    try {
-        const data: { dateInit: string, dateFin: string, id: string } = req.query;
-        const queryData = await getAttendanceClassify({ ...data });
-
-        res.status(200).json({
-            ok: true,
-            msg: 'Ok',
-            data: queryData
-        })
-    } catch (error) {
-        console.log(error);
         res.status(500).json({
             ok: false,
             msg: 'Server error contact the administrator'
