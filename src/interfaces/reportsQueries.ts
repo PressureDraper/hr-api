@@ -174,7 +174,7 @@ export interface ReqVacacionesPerEmpleadoIdInterface {
 
 //REPORT IMSS
 interface Permiso {
-    type: 'SALIDA' | 'ENTRADA';
+    type: 'SALIDA' | 'ENTRADA' | 'AMBOS';
 }
 
 export interface IOPermisosInterface {

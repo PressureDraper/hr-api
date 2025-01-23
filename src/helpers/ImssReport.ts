@@ -245,7 +245,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
     return checadasClasificadas;
 };
 
-const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde deben aparecer
+const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde aparecen checadas. Los permisos donde no aparecen checadas son añadidos en otro proceso
     'PASE DE SALIDA': {
         type: 'SALIDA'
     },
@@ -256,10 +256,13 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
         type: 'ENTRADA' //Aparece en checada de entrada
     },
     'AUTORIZACIÓN DE ENTRADA': {
-        type: 'SALIDA' //Aparece en checada de salida
+        type: 'ENTRADA'
     },
     'J91 RETARDO MENOR': {
         type: 'ENTRADA'
+    },
+    'SUSPENSION': {
+        type: 'AMBOS'
     }
 }
 
@@ -302,7 +305,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
             if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
                 return { ...item, event: '' }
             } else {
-                return { ...item, event: 'RETARDO MENOR'}
+                return { ...item, event: 'RETARDO MENOR' }
             }
         } else {
             return { ...item, event: '' }
@@ -336,15 +339,22 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         // Buscar si la fecha de item1 coincide con alguna en array2
         const matchingItem = sharedDays.find(item2 => item2.dateReg === item1.dateReg);
 
-        // Si se encuentra un elemento coincidente, agregar el valor de 'event' dependiendo del permiso a entrada o salida
-        if (matchingItem) {
-            const permisoType = IOPermisos[matchingItem.event]?.type;
+        // Si se encuentra un elemento coincidente, agregar el valor de 'event' dependiendo del permiso a entrada, salida o ambos
+        if (!matchingItem) {
+            return
+        }
 
-            if (permisoType === item1.type) {
+        const permisoType = IOPermisos[matchingItem.event]?.type;
 
+        if (permisoType === item1.type) {
+            if (item1.event === 'RETARDO MENOR' && matchingItem.event === 'AUTORIZACIÓN DE ENTRADA') {
+                item1.event = matchingItem.event;
+            } else {
                 //si item1.event es '', 
                 item1.event += item1.event ? `, ${matchingItem.event}` : matchingItem.event;
             }
+        } else if (permisoType === 'AMBOS') {
+            item1.event += item1.event ? `, ${matchingItem.event}` : matchingItem.event;
         }
     });
 
