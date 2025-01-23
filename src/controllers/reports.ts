@@ -8,12 +8,13 @@ import puppeteer from "puppeteer";
 import format from 'string-template';
 import fs from 'fs';
 import _ from 'lodash';
-import { debugWorkingDays, getAllApartments, htmlParams, parseWorkingDays, templateEstrategia, isComingOrOut, classifyEventType, generateRow } from '../helpers/reportsHelpers';
+import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
+import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -139,13 +140,13 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
                 const endOutAttendances = isComingOrOut(hora_entrada, result, employee);
 
-                //3. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
-                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada);
-
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
-                //4. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
+                //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
                 const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
                 const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
+
+                //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada, parsedWorkingDays);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
                 const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
@@ -173,7 +174,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             })
 
             body += '</tbody>';
-
+            
             let content = format(imsReportMainContent, {
                 name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
                 rfc: item1.cmp_persona.rfc,
@@ -182,7 +183,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 nom: `${item1.cat_tipos_recurso.nombre}`,
                 turno: item1.cat_turnos.nombre,
                 hour: `${item1.hora_entrada} - ${item1.hora_salida}`,
-                guards: JSON.parse(item1.guardias).join(', '),
+                guards: item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', '),
                 cat: item1.cat_tipos_empleado.nombre,
                 area: item1.cat_departamentos.nombre,
                 table_body: body,
