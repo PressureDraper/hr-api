@@ -1,18 +1,19 @@
 import { Response } from "express";
 import tempfile from "tempfile";
 import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas, PropsReporteIMSS } from "../interfaces/reportsQueries";
-import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, headerListaChecadasExcel } from "../helpers/reportsQueries";
+import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import _ from 'lodash';
-import { addIncidents, debugWorkingDays, filterByTimeRange, getAllApartments, htmlParams, parseIncidents, parseWorkingDays, templateEstrategia, isComingOrOut } from '../helpers/reportsHelpers';
+import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
-import { getAttendanceClassify } from "../helpers/attendanceClassify";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { SignService } from './presentation/services/sign.service';
+import { getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
+import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -111,8 +112,6 @@ export const generareReportIms = async (req: any, res: Response) => {
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
-        const ids_employees = employeesType.map((item: any) => item.id);
-        const incidences = await addIncidents(ids_employees, fec_inicio, fec_final);
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
@@ -126,243 +125,74 @@ export const generareReportIms = async (req: any, res: Response) => {
         }
 
 
-        let employees = employeesType.map((employee: any) => {
-            let { hora_entrada, hora_salida, matricula } = employee;
-            const attendances = grouped_attendeances[employee.matricula] || [];
-            const { nombre: aparment } = employee['cat_departamentos'] ?? {};
+        const employees: any = await Promise.all(
+            employeesType.map(async (employee: any) => {
+                let { hora_entrada, hora_salida } = employee;
+                const attendances = grouped_attendeances[employee.matricula] || [];
+                const { nombre: aparment } = employee['cat_departamentos'] ?? {};
+                const vacaciones: any = await getVacationIMSSReport(employee.id, fec_inicio, fec_final);
+                const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fec_inicio, fecha_fin: fec_final });
+                hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
+                hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
 
-            hora_entrada = moment(hora_entrada).utc().format('HH:mm');
-            hora_salida = moment(hora_salida).utc().format('HH:mm');
-            let diff = moment.utc(moment(hora_salida, "HH:mm").diff(moment(hora_entrada, "HH:mm"))).hours();
+                //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
+                // Agrupar los elementos por la fecha (sin la hora)
+                const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
 
-            const grupByDate = _.groupBy(attendances, 'dateReg');
-
-            let filteresAttendances: any = {};
-
-            Object.keys(grupByDate).map(key => {
-                const assistencedFiltered = filterByTimeRange(grupByDate[key], matricula);
-                filteresAttendances = {
-                    ...filteresAttendances,
-                    [key]: assistencedFiltered
-
-                }
-            });
-
-            let specialCases: any = [];
-            let twoAttendances: any = [];
-            Object.keys(filteresAttendances).map((key: string) => {
-                if (filteresAttendances[key].length == 1) {
-
-                    specialCases.push(filteresAttendances[key]);
-                } else {
-                    // This case is just when have 2 asistencias
-                    twoAttendances.push(filteresAttendances[key]);
-                }
-            });
-
-            const plainSpecialCases = specialCases.map((item: any) => {
-                let plain = item.map((aux: any) => aux);
-                return plain[0];
-            });
-
-            let finalSpecial: any = {};
-            let finalIncidents: any = {};
-
-            if (diff >= 11 && specialCases.length > 0) {
-                let removeValue = null;
-                // Horario de 12 horas
-                const diff_first_element = moment.utc(moment(plainSpecialCases[0].horaReg, "HH:mm:ss").diff(moment(hora_entrada, "HH:mm"))).minutes();
-                
-                // TODO Validar si la diferencia es menor a 60 minutos y valida
-                if (diff_first_element > 60) {
-                    removeValue = plainSpecialCases.shift();
-                }
-
-                const isComingOrOutBool = isComingOrOut(plainSpecialCases[0].horaReg, `${hora_entrada}:00`, `${hora_salida}:00`);
-
-                if(isComingOrOutBool === 'SALIDA') {
-                    plainSpecialCases.unshift(null);
-                }
-           
-                const groupPlainCases = _.chunk(plainSpecialCases, 2);
-                if (removeValue) groupPlainCases.unshift([removeValue]);
-
-                if (groupPlainCases.length > 0) {
-                    groupPlainCases.map((item: any) => {
-                        const [item1, item2] = item;
-                        if(item1) {
-                            finalSpecial[item1['dateReg']] = [
-                                item1,
-                                item2
-                            ]
-                        } else {
-                            finalSpecial[item2['dateReg']] = [
-                                item1,
-                                item2
-                            ]
-                        }
-                    });
-                }
-            } else {
-                specialCases.map((item: any) => {
-                    let [element] = item;
-                    finalIncidents[element['dateReg']] = [
-                        element,
-                        undefined
-                    ];
+                // Obtener la primer checada de cada hora dentro de cada grupo de fecha
+                const result = _.flatMap(groupedByDate, (items) => {
+                    return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
                 });
-            }
 
+                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee);
 
-            let finalAttendances: any = {
-            }
+                //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
+                //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
+                const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
+                const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
 
-            Object.keys(twoAttendances).map((key: any) => {
-                finalAttendances = {
-                    ...finalAttendances,
-                    [key]: [
-                        ...twoAttendances[key]
-                    ]
+                //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada, parsedWorkingDays);
+
+                //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
+                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
+
+                //6. finalmente ordenar el array ascendentemente por dateReg
+                const sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+                return {
+                    ...employee,
+                    hora_entrada,
+                    hora_salida,
+                    final: sortedData,
+                    boss: bossByAppartment[aparment] || ''
                 }
             })
-
-            Object.keys(finalIncidents).map((key: any) => {
-                finalAttendances = {
-                    ...finalAttendances,
-                    [key]: [
-                        ...finalIncidents[key]
-                    ]
-                }
-            })
-
-            Object.keys(finalSpecial).map((key: any) => {
-                finalAttendances = {
-                    ...finalAttendances,
-                    [key]: [
-                        ...finalSpecial[key]
-                    ]
-                }
-            })
-
-            finalAttendances = Object.fromEntries(
-                _.sortBy(Object.entries(finalAttendances), ([key]) => new Date(key))
-            );
-
-            //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
-            //1. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
-            const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
-            const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
-
-            //2. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
-            const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, finalAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
-
-            //3. Dar formato al array para anexarlo a finalAttendances
-            const missingData = _.groupBy(debuggedDays, 'dateReg');
-            finalAttendances = {
-                ...finalAttendances,
-                ...missingData
-            };
-
-            //OrderyBy date ascendant - hotfix para permisos que aparecen hasta abajo de tabla sin respetar el orden cronologico
-            let finalfinalAttendances = {};
-
-            const allItems = _.values(finalAttendances);
-            
-            const sortedData = _.sortBy(allItems, item => {
-                return item[0] ? new Date(item[0].dateReg) : new Date(item[1].dateReg);
-            }); 
-
-            sortedData.map((item: any) => {
-                const date = item[0] ? item[0].dateReg : item[1].dateReg;
-                finalfinalAttendances = {
-                    ...finalfinalAttendances,
-                    [date]: [
-                        ...item
-                    ]
-                }
-            });
-
-            return {
-                ...employee,
-                attendances,
-                diff,
-                hora_entrada,
-                hora_salida,
-                final: finalfinalAttendances,
-                incidences: incidences[employee.id] || {},
-                boss: bossByAppartment[aparment] || ''
-            }
-        });
+        );
 
         let mainContent = '';
 
-        employees.map((item: any) => {
-            const { id, matricula = 0, guardias = '', hora_entrada, hora_salida, cmp_persona = {}, cat_turnos = {}, boss: jefe, cat_departamentos = {}, attendances = {}, cat_tipos_empleado = {}, final = {}, incidences = {}, cat_tipos_recurso = {} } = item || {};
-            const { nombres = '', primer_apellido = '', segundo_apellido = '', rfc = '', curp = '' } = cmp_persona;
-            const { nombre: name_apartment = '' } = cat_departamentos || {};
-            const { nombre: name_turn = '' } = cat_turnos;
-            const { nombre: name_cat = '' } = cat_tipos_empleado;
-            const { nombre: name_recurso = '' } = cat_tipos_recurso;
-            let guard = JSON.parse(guardias) || [];
-            guard = guard.join(', ');
-
+        employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
 
-            Object.keys(final).map((key: any) => {
-                let [item1, item2] = final[key]; //CHECADAS ENTRADA=ITEM1 SALIDA=ITEM2
-                
-                if(item1) {
-                    let dateItem1 = moment.utc(new Date(item1['dateReg'])).format('DD/MM/YYYY');// CAMPO FECHA
-
-                    body += `
-                    <tr>
-                        <td>${matricula}</td>
-                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                        <td>${name_cat}</td>
-                        <td>${rfc}</td>
-                        <td>${hora_entrada} - ${hora_salida}</td>
-                        <td>${guard}</td>
-                        <td>${dateItem1}</td>
-                        <td>${item1['horaReg']}</td>
-                        <td>${''}</td>
-                        <td>${parseIncidents(incidences, dateItem1, item1, item2)}</td>
-                    </tr>
-                    `;    
-                }
-
-                if (item2) {
-                    let dateItem2 = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
-                    body += `
-                    <tr>
-                        <td>${matricula}</td>
-                        <td>${nombres} ${primer_apellido} ${segundo_apellido}</td>
-                        <td>${name_cat}</td>
-                        <td>${rfc}</td>
-                        <td>${hora_entrada} - ${hora_salida}</td>
-                        <td>${guard}</td>
-                        <td>${dateItem2}</td>
-                        <td>${''}</td>
-                        <td>${item2['horaReg']}</td>
-                        <td>${parseIncidents(incidences, dateItem2, item1, item2)}</td>
-                    </tr>
-                    `;
-                }
+            item1.final.forEach((item2: any) => {
+                body += generateRow(item1, item2);
             })
 
             body += '</tbody>';
-
+            
             let content = format(imsReportMainContent, {
-                name: `${nombres} ${primer_apellido} ${segundo_apellido}`,
-                rfc: rfc,
-                curp: curp,
-                mat: `${matricula}`,
-                nom: `${name_recurso}`,
-                turno: name_turn,
-                hour: `${hora_entrada} - ${hora_salida}`,
-                guards: guard,
-                cat: name_cat,
-                booss: `${jefe}`.trim().length > 1 ? jefe : 'NO ESPECIFICADO',
-                area: name_apartment,
+                name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
+                rfc: item1.cmp_persona.rfc,
+                curp: item1.cmp_persona.curp,
+                mat: `${item1.matricula}`,
+                nom: `${item1.cat_tipos_recurso.nombre}`,
+                turno: item1.cat_turnos.nombre,
+                hour: `${item1.hora_entrada} - ${item1.hora_salida}`,
+                guards: item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', '),
+                cat: item1.cat_tipos_empleado.nombre,
+                area: item1.cat_departamentos.nombre,
                 table_body: body,
                 quince: quin,
                 firma1: firma1
@@ -407,25 +237,6 @@ export const generareReportIms = async (req: any, res: Response) => {
     }
     catch (err) {
         console.log(err);
-        res.status(500).json({
-            ok: false,
-            msg: 'Server error contact the administrator'
-        });
-    }
-}
-
-export const getIncidencias = async (req: any, res: Response) => {
-    try {
-        const data: { dateInit: string, dateFin: string, id: string } = req.query;
-        const queryData = await getAttendanceClassify({ ...data });
-
-        res.status(200).json({
-            ok: true,
-            msg: 'Ok',
-            data: queryData
-        })
-    } catch (error) {
-        console.log(error);
         res.status(500).json({
             ok: false,
             msg: 'Server error contact the administrator'
