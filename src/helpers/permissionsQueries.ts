@@ -266,6 +266,30 @@ export const getEconomicosPerYearQuery = (id: string) => {
     })
 }
 
+export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear: string, orderBy: any): Promise<number> => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            let foliumList: any = await db.rch_permisos.findMany({
+                where: {
+                    cat_permisos: { nombre: 'ESTRATEGIA' },
+                    fecha_inicio: {
+                        gte: moment.utc(permissionYear).toISOString(),
+                        lt: moment.utc(permissionNextYear).toISOString()
+                    },
+                    deleted_at: null
+                },
+                select: { folio: true },
+                orderBy: orderBy
+            });
+
+            resolve(foliumList);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -304,7 +328,7 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
             const permissionYear = moment.utc(props.dateInit.split('-')[0]).toISOString();
             const permissionNextYear = (parseInt(permissionYear) + 1).toString();
 
-            const repeated: any = await db.rch_permisos.findFirst({
+            let repeated: any = await db.rch_permisos.findFirst({
                 where: {
                     OR: [
                         {
@@ -332,7 +356,21 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                 }
             });
 
-            if (repeated || repetedBetween) {
+            if (repeated && props.folium) {//if permission is registered and is strategy. This sentence is for covering cases where a strategy is created in current year but captured in any other year.
+                let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { folio: 'asc' });
+                let nextFolium: number = 1;
+                let isFound: any = {};
+
+                while (isFound) {// while founds foliums
+                    isFound = foliumList.find((item: any) => item.folio === nextFolium);
+                    isFound && nextFolium++;// suma 1 hasta encontrar uno disponible
+                }
+
+                props.folium = nextFolium.toString(); //takes last folium from year and adds 1
+                repeated = undefined; //removes repeated sentence for allowing saving in DB
+            }
+
+            if (repeated || repetedBetween) {//if general permission is already registered
                 resolve({}); //duplicated entry
             } else {
                 let record = await db.rch_permisos.create({
@@ -359,31 +397,41 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
     })
 }
 
-export const getStrategyFoliumQuery = () => {
+export const getStrategyFoliumQuery = (fecha_ini: string): Promise<number> => {
     return new Promise(async (resolve, reject) => {
         try {
             const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
-            const nextYear = (parseInt(currentYear) + 1).toString();
+            const permissionYear = fecha_ini.split('-')[0];
+            const nextYear = (parseInt(fecha_ini === '' ? currentYear : permissionYear) + 1).toString();
+            let nextFolium: number = 1;
 
             let record = await db.rch_permisos.findMany({
                 where: {
                     cat_permisos: {
                         nombre: { contains: 'ESTRATEGIA' }
                     },
-                    created_at: {
-                        gte: moment.utc(currentYear).toISOString(),
+                    fecha_inicio: {
+                        gte: moment.utc(fecha_ini === '' ? currentYear : permissionYear).toISOString(),
                         lt: moment.utc(nextYear).toISOString()
-                    }
+                    },
+                    deleted_at: null
                 },
                 select: {
                     folio: true
                 },
                 orderBy: {
-                    folio: 'desc'
+                    folio: 'asc'
                 }
             });
 
-            resolve(record);
+            let isFound: any = {};
+
+            while (isFound) {// mientras encuentre folios ya registrados
+                isFound = record.find(item => item.folio === nextFolium);
+                isFound && nextFolium++;// suma 1 hasta encontrar uno disponible
+            }
+
+            resolve(nextFolium);
         } catch (error) {
             reject(error);
         }
