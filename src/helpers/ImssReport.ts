@@ -18,11 +18,11 @@ export const generateRow = (item1: any, item2: any) => {
             <td>${item1.cat_tipos_empleado.nombre}</td>
             <td>${item1.cmp_persona.rfc}</td>
             <td>${item1.hora_entrada} - ${item1.hora_salida}</td>
-            <td>${guard}</td>
+            <td style="font-size: 11px">${guard}</td>
             <td>${dateItem}</td>
             <td>${item2.type === 'ENTRADA' ? item2['horaReg'] : ''}</td>
             <td>${item2.type === 'SALIDA' ? item2['horaReg'] : ''}</td>
-            <td>${event}</td>
+            <td style="width: 8%">${event}</td>
         </tr>
     `;
 };
@@ -287,10 +287,11 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
     });
 
-    //MINOR DELAY
+    //RETARDOS
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
+    let horaEntradaMaxima = moment(hora_entrada, "HH:mm:ss").add(40, 'minutes').format('HH:mm:ss');;
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
@@ -304,8 +305,10 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         if (item.type === 'ENTRADA') {
             if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
                 return { ...item, event: '' }
-            } else {
+            } else if (item.horaReg >= horaEntradaLimite && item.horaReg < horaEntradaMaxima) {
                 return { ...item, event: 'RETARDO MENOR' }
+            } else {
+                return { ...item, event: 'OMISIÓN ENTRADA' }
             }
         } else {
             return { ...item, event: '' }
@@ -317,12 +320,20 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
 
     //VALIDAR QUE LOS PERMISOS APAREZCAN EN ENTRADA, SALIDA O EN DIA COMPLETO
     permisos.forEach((item: any) => {
-        attendancesAuxWithPermissions.push({
-            dateReg: moment(new Date(item.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
-            horaReg: '',
-            type: 'EVENTO',
-            event: `${item.cat_permisos.nombre}`
-        });
+        let itemAux = { ...item }
+        while (moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(itemAux.fecha_fin))) {
+            if (moment.utc(itemAux.fecha_inicio).isSameOrAfter(moment.utc(fec_inicio)) && moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(fec_final))) {
+                if (parsedWorkingDays[1].includes(moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0])) {
+                    attendancesAuxWithPermissions.push({
+                        dateReg: moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                        horaReg: '',
+                        type: 'EVENTO',
+                        event: `${item.cat_permisos.nombre}`
+                    });
+                }
+            }
+            itemAux.fecha_inicio = moment(itemAux.fecha_inicio).add(1, 'day').toISOString();
+        }
     });
 
     classifiedAttendances.forEach((item1: any) => {

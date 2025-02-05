@@ -13,6 +13,10 @@ export const imsWrapperReportContent = `
       background-color: red;
     }
 
+    th {
+      font-size: 12px;
+    }
+
     thead { 
       display: table-header-group !important; 
   }

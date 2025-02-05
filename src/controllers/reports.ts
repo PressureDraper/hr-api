@@ -177,7 +177,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             item1.final.forEach((item2: any) => {
                 body += generateRow(item1, item2);
-            })
+            });
 
             body += '</tbody>';
 
@@ -225,7 +225,8 @@ export const generareReportIms = async (req: any, res: Response) => {
             scale: 0.85,
             margin: {
                 top: 10,
-                right: 65
+                right: 0,
+                left: 0
             }
         });
 

@@ -26,11 +26,11 @@ export const imsReportMainContent = `
 </header>
 
 <main class="container-fluid" style="position: relative;">
-    <div id="tile" style="font-weight: bold;    top: -12px; position: relative;"
+    <div id="tile" style="font-weight: bold; position: relative;"
         class="d-flex align-items-center justify-content-center">
         REGISTRO DE ASISTENCIA
     </div>
-    <div class="container-lg d-flex justify-content-end pb-5">
+    <div class="container-lg d-flex justify-content-end pb-3">
 
         <div>
             <span class="ml-4" style="margin-right: 10px;">
@@ -43,7 +43,7 @@ export const imsReportMainContent = `
         </div>
     </div>
 
-    <div class="table d-flex justify-content-between container-sm">
+    <div class="table d-flex justify-content-between container-sm pb-3">
         <table>
             <thead>
                 <tr style="border-bottom: none !important;">
@@ -108,12 +108,12 @@ export const imsReportMainContent = `
         </table>
     </div>
 
-    <div class="container-lg">
-        <table class="table">
+    <div style="margin-left: 15px; width: 100%;">
+        <table class="table" style="width: 100%; table-layout: auto;">
             <thead class="thead-dark">
                 <tr>
                     <th>MATRICULA</th>
-                    <th>NOMBRE TRABAJADOR</th>
+                    <th >NOMBRE TRABAJADOR</th>
                     <th>TIPO EMPLEADO</th>
                     <th>RFC</th>
                     <th>HORARIO</th>
@@ -124,9 +124,7 @@ export const imsReportMainContent = `
                     <th>EVENTO</th>
                 </tr>
             </thead>
-
             {table_body}
-               
         </table>
     </div>
 </main>
@@ -136,10 +134,10 @@ export const imsReportMainContent = `
 
         <div class="row mt-3">
             <div class="col-sm-6 justify-content-center">
-                <span style="font-weight: bold; font-size: 15px">ENCARGADO CONTROL ASISTENCIAL</span>
+                <span style="font-weight: bold; font-size: 12px">ENCARGADO CONTROL ASISTENCIAL</span>
             </div>
             <div class="col-sm-6 justify-content-center">
-                <span style="font-weight: bold; font-size: 15px">CERTIFICÓ</span>
+                <span style="font-weight: bold; font-size: 12px">CERTIFICÓ</span>
             </div>
         </div>
         <div class="row mt-3" style="margin-bottom: 60px; display: flex; justify-content: space-around;">
@@ -158,10 +156,10 @@ export const imsReportMainContent = `
                 <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
             </div>
         </div>
-        
+
         <div class="row">
             <div class="col-sm-12 justify-content-center">
-                <span style="font-weight: bold; font-size: 15px">TITULAR DE LA UNIDAD</span>
+                <span style="font-weight: bold; font-size: 12px">TITULAR DE LA UNIDAD</span>
             </div>
         </div>
         <div class="row mt-3" style="margin-bottom: 30px; display: flex; justify-content: space-around;">
