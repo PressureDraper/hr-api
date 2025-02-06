@@ -256,7 +256,7 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
         type: 'ENTRADA' //Aparece en checada de entrada
     },
     'AUTORIZACIÓN DE ENTRADA': {
-        type: 'ENTRADA'
+        type: 'AMBOS'
     },
     'J91 RETARDO MENOR': {
         type: 'ENTRADA'

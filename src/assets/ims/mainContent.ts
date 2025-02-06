@@ -108,20 +108,20 @@ export const imsReportMainContent = `
         </table>
     </div>
 
-    <div style="margin-left: 15px; width: 100%;">
-        <table class="table" style="width: 100%; table-layout: auto;">
+    <div style="padding-left: 15px; padding-right: 15px; width: 100%;">
+        <table class="table" style="width: 100%;">
             <thead class="thead-dark">
                 <tr>
-                    <th>MATRICULA</th>
-                    <th >NOMBRE TRABAJADOR</th>
-                    <th>TIPO EMPLEADO</th>
-                    <th>RFC</th>
-                    <th>HORARIO</th>
-                    <th>GUARDIAS</th>
-                    <th>FECHA</th>
-                    <th>ENTRADA</th>
-                    <th>SALIDA</th>
-                    <th>EVENTO</th>
+                    <th style="width: 5%;">MATRICULA</th>
+                    <th style="width: 20%;">NOMBRE TRABAJADOR</th>
+                    <th style="width: 10%;">TIPO EMPLEADO</th>
+                    <th style="width: 5%;">RFC</th>
+                    <th style="width: 5%;">HORARIO</th>
+                    <th style="width: 25%;">GUARDIAS</th>
+                    <th style="width: 10%;">FECHA</th>
+                    <th style="width: 5%;">ENTRADA</th>
+                    <th style="width: 5%;">SALIDA</th>
+                    <th style="width: 10%;">EVENTO</th>
                 </tr>
             </thead>
             {table_body}
@@ -131,44 +131,38 @@ export const imsReportMainContent = `
 
 <footer style="page-break-inside: avoid !important;">
     <div id="main-footer-content" class="container-fluid text-center">
-
         <div class="row mt-3">
-            <div class="col-sm-6 justify-content-center">
+            <div class="col-sm-4 justify-content-center">
                 <span style="font-weight: bold; font-size: 12px">ENCARGADO CONTROL ASISTENCIAL</span>
             </div>
-            <div class="col-sm-6 justify-content-center">
+            <div class="col-sm-4 justify-content-center">
                 <span style="font-weight: bold; font-size: 12px">CERTIFICÓ</span>
             </div>
-        </div>
-        <div class="row mt-3" style="margin-bottom: 60px; display: flex; justify-content: space-around;">
-            <div class="col-sm-4 justify-content-center" style="position: relative;">
-                <span>ING. ROSA MARIAL FLORES SOSA</span>
-                <div style="border-top: 1px solid black;">
-                    <span style="font-size: 14px;">JEFA DE RECURSOS HUMANOS</span>
-                </div>
-                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
-            </div>
-            <div class="col-sm-4 justify-content-center" style="position: relative;">
-                <span>LIC. RUBEN VAZQUEZ RASGADO</span>
-                <div style="border-top: 1px solid black;">
-                    <span style="font-size: 14px;">ADMINISTRADOR CAE</span>
-                </div>
-                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-sm-12 justify-content-center">
+            <div class="col-sm-4 justify-content-center">
                 <span style="font-weight: bold; font-size: 12px">TITULAR DE LA UNIDAD</span>
             </div>
         </div>
-        <div class="row mt-3" style="margin-bottom: 30px; display: flex; justify-content: space-around;">
-            <div class="col-sm-12 justify-content-center" style="position: relative;">
-                <span>DR. RAFAEL NORBERTO HERNANDEZ GOMEZ</span>
-                <div style="border-top: 1px solid black; width: 40%; display: flex; margin: auto;">
-                    <span style="font-size: 14px; display: flex; margin: auto;">DIRECTOR CAE</span>
+        <div class="row mt-3" style="margin-bottom: 60px; display: flex; justify-content: space-evenly;">
+            <div class="col-sm-4 justify-content-center" style="position: relative;">
+                <span style="font-size: 14px;">ING. ROSA MARIA FLORES SOSA</span>
+                <div style="border-top: 1px solid black; width: 300px; margin-left: auto; margin-right: auto;">
+                    <span style="font-size: 12px;">JEFA DE RECURSOS HUMANOS</span>
                 </div>
-                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 45.7%;" />
+                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
+            </div>
+            <div class="col-sm-4 justify-content-center" style="position: relative;">
+                <span style="font-size: 14px;">LIC. RUBEN VAZQUEZ RASGADO</span>
+                <div style="border-top: 1px solid black; width: 300px; margin-left: auto; margin-right: auto;">
+                    <span style="font-size: 12px;">ADMINISTRADOR CAE</span>
+                </div>
+                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
+            </div>
+            <div class="col-sm-4 justify-content-center" style="position: relative;">
+                <span style="font-size: 14px;">DR. RAFAEL NORBERTO HERNANDEZ GOMEZ</span>
+                <div style="border-top: 1px solid black; width: 300px; display: flex; margin: auto;">
+                    <span style="font-size: 12px; display: flex; margin: auto;">DIRECTOR CAE</span>
+                </div>
+                <img src="{firma1}" width="100px" height="100px" style="position: absolute; top: -70%; left: 37.5%;" />
             </div>
         </div>
     </div>
