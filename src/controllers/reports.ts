@@ -222,7 +222,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             format: 'Letter',
             landscape: true,
             printBackground: true,
-            scale: 0.85,
+            scale: 0.70,
             margin: {
                 top: 10,
                 right: 0,
