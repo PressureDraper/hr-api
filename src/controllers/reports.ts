@@ -12,7 +12,7 @@ import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { SignService } from './presentation/services/sign.service';
-import { getEmployeesPermissionsQuery } from "../helpers/permissionsQueries";
+import { getEmployeesPermissionsQuery, getLastFoliumFromYear } from "../helpers/permissionsQueries";
 import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
@@ -63,7 +63,13 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 
         //get params from front-end
         const stringParams: any = req.query;
-        const params: PropsFormatoEstrategia = JSON.parse(decodeURIComponent(stringParams.encodedURI));
+        let params: PropsFormatoEstrategia = JSON.parse(decodeURIComponent(stringParams.encodedURI));
+
+        //get last folium captured from table to update pdf report
+        const permissionYear = moment.utc(params.dateInit.split('-')[0]).toISOString();
+        const permissionNextYear = (parseInt(permissionYear) + 1).toString();
+        let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' });
+        params.folium = (foliumList[0].folio).toString(); //update folium
 
         //get params to substitute inside html template
         const templateParams = htmlParams(params);
@@ -181,7 +187,7 @@ export const generareReportIms = async (req: any, res: Response) => {
             })
 
             body += '</tbody>';
-            
+
             let content = format(imsReportMainContent, {
                 name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
                 rfc: item1.cmp_persona.rfc,
