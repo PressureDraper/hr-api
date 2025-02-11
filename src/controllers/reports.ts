@@ -123,14 +123,13 @@ export const generareReportIms = async (req: any, res: Response) => {
         const bossByAppartment = await getAllApartments(deparments);
         // TODO: Get firma by user
         const sings = new SignService();
-        let firma1 : any = await sings.getLastSingByUserId(2);
+        let firma1 : any = await sings.getLastSingByUserId(72120);
         if(firma1) {
             firma1 = firma1[0].firma;
         } else {
             firma1 = '';
         }
-
-
+        
         const employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
                 let { hora_entrada, hora_salida } = employee;

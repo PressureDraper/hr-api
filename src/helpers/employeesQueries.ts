@@ -71,6 +71,7 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
                     matricula: true,
                     cmp_persona: {
                         select: {
+                            id: true,
                             nombres: true,
                             primer_apellido: true,
                             segundo_apellido: true,
@@ -121,6 +122,7 @@ export const getKardexQuery = (id: number) => {
                     guardias: true,
                     cmp_persona: {
                         select: {
+                            id: true,
                             nombres: true,
                             primer_apellido: true,
                             segundo_apellido: true,
