@@ -1,6 +1,6 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas, PropsReporteIMSS } from "../interfaces/reportsQueries";
+import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReporteIMSS, PropsReqIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
@@ -111,7 +111,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 
 export const generareReportIms = async (req: any, res: Response) => {
     try {
-        const { mat_final, mat_inicio, fec_final, fec_inicio }: PropsReporteIMSS = req.query;
+        const { mat_final, mat_inicio, fec_final, fec_inicio, id_rh, id_admin, id_director }: PropsReqIMSS = req.query;
         const fecha_ini = fec_inicio;
         const fecha_fin = fec_final;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
@@ -121,14 +121,19 @@ export const generareReportIms = async (req: any, res: Response) => {
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
-        // TODO: Get firma by user
+
         const sings = new SignService();
-        let firma1 : any = await sings.getLastSingByUserId(72120);
-        if(firma1) {
-            firma1 = firma1[0].firma;
-        } else {
-            firma1 = '';
-        }
+        const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
+        const id_admin_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_admin));
+        const id_director_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_director));
+        
+        let firma1 : any = await sings.getLastSingByUserId(id_rh_json.id_persona);
+        let firma2 : any = await sings.getLastSingByUserId(id_admin_json.id_persona);
+        let firma3 : any = await sings.getLastSingByUserId(id_director_json.id_persona);
+
+        firma1 ? firma1 = firma1[0].firma : firma1 = '';
+        firma2 ? firma2 = firma2[0].firma : firma2 = '';
+        firma3 ? firma3 = firma3[0].firma : firma3 = '';
         
         const employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
@@ -200,7 +205,12 @@ export const generareReportIms = async (req: any, res: Response) => {
                 area: item1.cat_departamentos.nombre,
                 table_body: body,
                 quince: quin,
-                firma1: firma1
+                firma1: firma1,
+                jefe_rh: id_rh_json.nombre,
+                firma2: firma2,
+                admin_cae: id_admin_json.nombre,
+                firma3: firma3,
+                director_cae: id_director_json.nombre
             });
 
             mainContent += content;

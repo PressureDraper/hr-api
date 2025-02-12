@@ -50,6 +50,19 @@ export class SingEntity {
         return data;
     }
 
+    async update(id_persona: number, img: string) {
+        const data = await db.cmp_firmas_manuscritas.updateMany({
+            where: {
+                id_persona: id_persona
+            },
+            data: {
+                firma: img,
+                updated_at: moment.utc().subtract(6, 'hour').toISOString()
+            }
+        });
+        return data;
+    }
+
     async findOne(id: number) {
         const data = await db.cmp_firmas_manuscritas.findFirst({
             where: {

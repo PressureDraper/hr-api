@@ -144,25 +144,25 @@ export const imsReportMainContent = `
         </div>
         <div class="row mt-3" style="margin-bottom: 60px; display: flex; justify-content: space-evenly;">
             <div class="col-sm-4 justify-content-center" style="position: relative;">
-                <span style="font-size: 14px;">ING. ROSA MARIA FLORES SOSA</span>
+                <span style="font-size: 14px;">{jefe_rh}</span>
                 <div style="border-top: 1px solid black; width: 300px; margin-left: auto; margin-right: auto;">
                     <span style="font-size: 12px;">JEFA DE RECURSOS HUMANOS</span>
                 </div>
-                <img src="{firma1}" width="200px" height="200px" style="position: absolute; top: -250%; left: 32.5%;" />
+                <img src="{firma1}" width="200px" height="100px" style="position: absolute; top: -120%; left: 30.5%;" />
             </div>
             <div class="col-sm-4 justify-content-center" style="position: relative;">
-                <span style="font-size: 14px;">LIC. RUBEN VAZQUEZ RASGADO</span>
+                <span style="font-size: 14px;">{admin_cae}</span>
                 <div style="border-top: 1px solid black; width: 300px; margin-left: auto; margin-right: auto;">
                     <span style="font-size: 12px;">ADMINISTRADOR CAE</span>
                 </div>
-                <img src="{firma1}" width="200px" height="200px" style="position: absolute; top: -250%; left: 32.5%;" />
+                <img src="{firma2}" width="200px" height="100px" style="position: absolute; top: -120%; left: 30.5%;" />
             </div>
             <div class="col-sm-4 justify-content-center" style="position: relative;">
-                <span style="font-size: 14px;">DR. RAFAEL NORBERTO HERNANDEZ GOMEZ</span>
+                <span style="font-size: 14px;">{director_cae}</span>
                 <div style="border-top: 1px solid black; width: 300px; display: flex; margin: auto;">
                     <span style="font-size: 12px; display: flex; margin: auto;">DIRECTOR CAE</span>
                 </div>
-                <img src="{firma1}" width="200px" height="200px" style="position: absolute; top: -250%; left: 32.5%;" />
+                <img src="{firma3}" width="200px" height="100px" style="position: absolute; top: -120%; left: 30.5%;" />
             </div>
         </div>
     </div>

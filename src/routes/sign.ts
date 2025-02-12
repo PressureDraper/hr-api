@@ -11,6 +11,7 @@ router.get('/', controller.getSign);
 router.get('/:id', controller.getOne);
 router.get('/history/get/:id', controller.getHistory);
 router.post('/', [FileUploadMiddleware.containFile], controller.createSing);
+router.put('/', [FileUploadMiddleware.containFile], controller.updateSign)
 router.delete('/:id', controller.deleteSign);
 
 export default router;

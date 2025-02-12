@@ -31,6 +31,11 @@ export class SignService {
         return await this.singDatasource.create(createSingDto['id_persona'], encodedBuff);
     }
 
+    async update(createSingDto: CreateSingDto) {
+        let encodedBuff = await this.cipher.encrypt(createSingDto['fileBuffer'] as any);
+        return await this.singDatasource.update(createSingDto['id_persona'], encodedBuff);
+    }
+
     async findOne(id: number) {
         const data = await this.singDatasource.findOne(id);
         if(!data) return null;
