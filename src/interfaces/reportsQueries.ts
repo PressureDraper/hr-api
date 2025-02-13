@@ -12,11 +12,22 @@ export interface PropsReporteChecadas {
     tipo_empleado: string;
 }
 
+export interface PropsPersonSign {
+    id_persona: number;
+    nombre: string;
+}
+
 export interface PropsReporteIMSS {
     fec_inicio: string;
     fec_final: string;
     mat_inicio: string;
     mat_final: string;
+}
+
+export interface PropsReqIMSS extends PropsReporteIMSS {
+    id_rh: string;
+    id_admin: string;
+    id_director: string;
 }
 
 export interface PropsAttendances {

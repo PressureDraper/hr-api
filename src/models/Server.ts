@@ -12,6 +12,8 @@ import routeHolidays from '../routes/holidays';
 import routeShifts from '../routes/shifts';
 import routeReports from '../routes/reports';
 import routePermissions from '../routes/permissions';
+import routerSign from '../routes/sign';
+import fileUpload from 'express-fileupload';
 
 class Server {
     private app: Express;
@@ -30,7 +32,11 @@ class Server {
 
     middlewares() {
         this.app.use( express.json() );
+        this.app.use( express.urlencoded( { extended: true } ) );
         this.app.use( cors( { origin: '*' } ) ); 
+        this.app.use(fileUpload({
+            limits: { fileSize: 50 * 1024 * 1024 },
+        }));
         this.app.use( '/', routerBase );
         this.app.use('/api/rh/vacation', routeVacation);
         this.app.use('/api/rh/employee', routeEmployee);
@@ -39,6 +45,7 @@ class Server {
         this.app.use('/api/rh/shifts', routeShifts);
         this.app.use('/api/rh/reports', routeReports);
         this.app.use('/api/rh/permissions', routePermissions);
+        this.app.use('/api/rh/sing', routerSign);
     }
 
     execute() {

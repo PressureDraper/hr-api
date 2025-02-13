@@ -1,18 +1,17 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsReporteChecadas, PropsReporteIMSS } from "../interfaces/reportsQueries";
+import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReporteIMSS, PropsReqIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
-import path from 'path';
 import puppeteer from "puppeteer";
 import format from 'string-template';
-import fs from 'fs';
 import _ from 'lodash';
 import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
+import { SignService } from './presentation/services/sign.service';
 import { getEmployeesPermissionsQuery, getLastFoliumFromYear } from "../helpers/permissionsQueries";
 import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 
@@ -112,7 +111,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
 
 export const generareReportIms = async (req: any, res: Response) => {
     try {
-        const { mat_final, mat_inicio, fec_final, fec_inicio }: PropsReporteIMSS = req.query;
+        const { mat_final, mat_inicio, fec_final, fec_inicio, id_rh, id_admin, id_director }: PropsReqIMSS = req.query;
         const fecha_ini = fec_inicio;
         const fecha_fin = fec_final;
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
@@ -122,8 +121,20 @@ export const generareReportIms = async (req: any, res: Response) => {
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
         const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
         const bossByAppartment = await getAllApartments(deparments);
-        const firma1 = await getFirmaById(5);
 
+        const sings = new SignService();
+        const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
+        const id_admin_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_admin));
+        const id_director_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_director));
+        
+        let firma1 : any = await sings.getLastSingByUserId(id_rh_json.id_persona);
+        let firma2 : any = await sings.getLastSingByUserId(id_admin_json.id_persona);
+        let firma3 : any = await sings.getLastSingByUserId(id_director_json.id_persona);
+
+        firma1 ? firma1 = firma1[0].firma : firma1 = '';
+        firma2 ? firma2 = firma2[0].firma : firma2 = '';
+        firma3 ? firma3 = firma3[0].firma : firma3 = '';
+        
         const employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
                 let { hora_entrada, hora_salida } = employee;
@@ -177,7 +188,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             item1.final.forEach((item2: any) => {
                 body += generateRow(item1, item2);
-            })
+            });
 
             body += '</tbody>';
 
@@ -194,7 +205,12 @@ export const generareReportIms = async (req: any, res: Response) => {
                 area: item1.cat_departamentos.nombre,
                 table_body: body,
                 quince: quin,
-                firma1: firma1
+                firma1: firma1,
+                jefe_rh: id_rh_json.nombre,
+                firma2: firma2,
+                admin_cae: id_admin_json.nombre,
+                firma3: firma3,
+                director_cae: id_director_json.nombre
             });
 
             mainContent += content;
@@ -210,8 +226,8 @@ export const generareReportIms = async (req: any, res: Response) => {
         });
 
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            // executablePath: "/usr/bin/google-chrome",
+            // args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
         const page = await browser.newPage();
@@ -222,10 +238,11 @@ export const generareReportIms = async (req: any, res: Response) => {
             format: 'Letter',
             landscape: true,
             printBackground: true,
-            scale: 0.85,
+            scale: 0.70,
             margin: {
                 top: 10,
-                right: 65
+                right: 0,
+                left: 0
             }
         });
 
