@@ -23,7 +23,7 @@ export const htmlParams = (params: PropsFormatoEstrategia) => {
         tschedule: moment.utc(params.titular.hora_entrada).format('HH:mm') + ' A ' + moment.utc(params.titular.hora_salida).format('HH:mm'),
         sschedule: moment.utc(params.suplente.hora_entrada).format('HH:mm') + ' A ' + moment.utc(params.suplente.hora_salida).format('HH:mm'),
         newShift: params.dateFin === null ? moment.utc(params.dateInit).format('L').toUpperCase() : moment.utc(params.dateInit).format('L').toUpperCase() + ' AL ' + moment.utc(params.dateFin).format('L').toUpperCase(),
-        tchange: params.titularHoraEntrada === null ? 'NO APLICA' : 'DE ' + params.titularHoraEntrada + ' A ' + params.titularHoraSalida,
+        tchange: params.titularHoraEntrada === null ? 'NO APLICA' : 'DE ' + params.titularHoraEntrada + ' A ' + params.titularHoraSalida + ' HRS',
         schange: params.substituteHoraEntrada === null ? 'NO APLICA' : 'DE ' + params.substituteHoraEntrada + ' A ' + params.substituteHoraSalida + ' HRS',
     }
 }
