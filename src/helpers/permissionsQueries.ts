@@ -196,6 +196,7 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     observaciones: true,
                     fecha_inicio: true,
                     fecha_fin: true,
+                    folio: true,
                     created_at: true,
                     rch_empleados: { //titular
                         select: {
@@ -379,6 +380,10 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
                         fecha_inicio: moment.utc(props.dateInit).toISOString(),
                         fecha_fin: props.dateFin === null ? moment.utc(props.dateInit).toISOString() : moment.utc(props.dateFin).toISOString(),
                         observaciones: props.observations,
+                        ini_horario_titular: props.titularHoraEntrada ? moment.utc(props.titularHoraEntrada, 'HH:mm').toISOString() : null,
+                        fin_horario_titular: props.titularHoraSalida ? moment.utc(props.titularHoraSalida, 'HH:mm').toISOString() : null,
+                        ini_horario_suplente: props.substituteHoraEntrada ? moment.utc(props.substituteHoraEntrada, 'HH:mm').toISOString() : null,
+                        fin_horario_suplente: props.substituteHoraSalida ? moment.utc(props.substituteHoraSalida, 'HH:mm').toISOString() : null,
                         autorizado: true,
                         id_empleado: props.employee_id,
                         id_suplente: props.substitute_id,

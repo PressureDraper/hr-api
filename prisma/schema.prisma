@@ -1511,6 +1511,7 @@ model cmp_persona {
   cmp_domicilios           cmp_domicilios[]
   cmp_educacion            cmp_educacion[]
   cmp_familiares           cmp_familiares[]
+  firmas                   cmp_firmas_manuscritas[]
   cat_escolaridades        cat_escolaridades?       @relation(fields: [id_escolaridad], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cmp_persona_id_escolaridad_foreign")
   cat_estado_civil         cat_estado_civil         @relation(fields: [id_estadocivil], references: [id], onUpdate: Restrict, map: "cmp_persona_id_estadocivil_foreign")
   cat_nacionalidades       cat_nacionalidades?      @relation(fields: [id_nacionalidad], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cmp_persona_id_nacionalidad_foreign")
@@ -1522,7 +1523,6 @@ model cmp_persona {
   rch_empleados            rch_empleados[]
   rch_empleados_externos   rch_empleados_externos[]
   users                    users[]
-  firmas                   cmp_firmas_manuscritas[]
 
   @@index([id_escolaridad], map: "cmp_persona_id_escolaridad_foreign")
   @@index([id_estadocivil], map: "cmp_persona_id_estadocivil_foreign")
@@ -2508,6 +2508,7 @@ model hpz_ingreso_hospitalario {
   hpz_clue_historial                                                            hpz_clue_historial[]
   hpz_dx_historial                                                              hpz_dx_historial[]
   hpz_enf_intervenciones                                                        hpz_enf_intervenciones[]
+  hpz_hemovigilacia                                                             hpz_hemovigilacia[]
   hpz_indicacion_medicamentos                                                   hpz_indicacion_medicamentos[]
   hpz_indicaciones_medicas                                                      hpz_indicaciones_medicas[]
   hpz_ingreso_consulta                                                          hpz_ingreso_consulta[]
@@ -2610,29 +2611,31 @@ model hpz_ingreso_nom046 {
 }
 
 model hpz_ingreso_signos_vitales {
-  id                                                  BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  id                                                  BigInt                        @id @default(autoincrement()) @db.UnsignedBigInt
   tension_arterial_sistolica                          Int?
   tension_arterial_diastolica                         Int?
   frecuencia_cardiaca                                 Int?
   frecuencia_respiratoria                             Int?
   peso                                                Int?
   talla                                               Int?
-  temperatura                                         Decimal?                   @db.Decimal(10, 2)
-  uresis                                              Decimal?                   @db.Decimal(10, 2)
+  temperatura                                         Decimal?                      @db.Decimal(10, 2)
+  uresis                                              Decimal?                      @db.Decimal(10, 2)
   glucemia_capilar                                    Int?
   saturacion_parcial_oxigeno                          Int?
-  cancelacion                                         String?                    @db.Text
-  id_ingreso                                          Int                        @db.UnsignedInt
-  id_user                                             Int?                       @db.UnsignedInt
-  id_autorizo                                         Int?                       @db.UnsignedInt
-  id_cancelo                                          Int?                       @db.UnsignedInt
-  created_at                                          DateTime?                  @db.Timestamp(0)
-  updated_at                                          DateTime?                  @db.Timestamp(0)
-  users_hpz_ingreso_signos_vitales_id_autorizoTousers users?                     @relation("hpz_ingreso_signos_vitales_id_autorizoTousers", fields: [id_autorizo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_autorizo_foreign")
-  users_hpz_ingreso_signos_vitales_id_canceloTousers  users?                     @relation("hpz_ingreso_signos_vitales_id_canceloTousers", fields: [id_cancelo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_cancelo_foreign")
-  hpz_ingreso_hospitalario                            hpz_ingreso_hospitalario   @relation(fields: [id_ingreso], references: [id], onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_ingreso_foreign")
-  users_hpz_ingreso_signos_vitales_id_userTousers     users?                     @relation("hpz_ingreso_signos_vitales_id_userTousers", fields: [id_user], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_user_foreign")
+  cancelacion                                         String?                       @db.Text
+  id_ingreso                                          Int                           @db.UnsignedInt
+  id_user                                             Int?                          @db.UnsignedInt
+  id_autorizo                                         Int?                          @db.UnsignedInt
+  id_cancelo                                          Int?                          @db.UnsignedInt
+  created_at                                          DateTime?                     @db.Timestamp(0)
+  updated_at                                          DateTime?                     @db.Timestamp(0)
+  hpz_hemovigilacia                                   hpz_hemovigilacia[]
+  users_hpz_ingreso_signos_vitales_id_autorizoTousers users?                        @relation("hpz_ingreso_signos_vitales_id_autorizoTousers", fields: [id_autorizo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_autorizo_foreign")
+  users_hpz_ingreso_signos_vitales_id_canceloTousers  users?                        @relation("hpz_ingreso_signos_vitales_id_canceloTousers", fields: [id_cancelo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_cancelo_foreign")
+  hpz_ingreso_hospitalario                            hpz_ingreso_hospitalario      @relation(fields: [id_ingreso], references: [id], onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_ingreso_foreign")
+  users_hpz_ingreso_signos_vitales_id_userTousers     users?                        @relation("hpz_ingreso_signos_vitales_id_userTousers", fields: [id_user], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_ingreso_signos_vitales_id_user_foreign")
   hpz_paciente_nota_medica                            hpz_paciente_nota_medica[]
+  hpz_pivote_vitals_sigs_hemo                         hpz_pivote_vitals_sigs_hemo[]
 
   @@index([id_autorizo], map: "hpz_ingreso_signos_vitales_id_autorizo_foreign")
   @@index([id_cancelo], map: "hpz_ingreso_signos_vitales_id_cancelo_foreign")
@@ -4107,6 +4110,10 @@ model rch_permisos {
   fecha_inicio                                          DateTime         @db.DateTime(0)
   fecha_fin                                             DateTime         @db.DateTime(0)
   observaciones                                         String?          @db.Text
+  ini_horario_titular                                   DateTime?        @db.Time(0)
+  fin_horario_titular                                   DateTime?        @db.Time(0)
+  ini_horario_suplente                                  DateTime?        @db.Time(0)
+  fin_horario_suplente                                  DateTime?        @db.Time(0)
   autorizado                                            Boolean          @default(false)
   id_empleado                                           Int?             @db.UnsignedInt
   id_suplente                                           Int?             @db.UnsignedInt
@@ -4322,6 +4329,7 @@ model users {
   hpz_enf_intervenciones_hpz_enf_intervenciones_id_autorizoTousers                                    hpz_enf_intervenciones[]               @relation("hpz_enf_intervenciones_id_autorizoTousers")
   hpz_enf_intervenciones_hpz_enf_intervenciones_id_canceloTousers                                     hpz_enf_intervenciones[]               @relation("hpz_enf_intervenciones_id_canceloTousers")
   hpz_enf_intervenciones_hpz_enf_intervenciones_id_userTousers                                        hpz_enf_intervenciones[]               @relation("hpz_enf_intervenciones_id_userTousers")
+  hpz_hemovigilacia                                                                                   hpz_hemovigilacia[]
   hpz_indicacion_medicamentos_hpz_indicacion_medicamentos_id_autorizoTousers                          hpz_indicacion_medicamentos[]          @relation("hpz_indicacion_medicamentos_id_autorizoTousers")
   hpz_indicacion_medicamentos_hpz_indicacion_medicamentos_id_suspendioTousers                         hpz_indicacion_medicamentos[]          @relation("hpz_indicacion_medicamentos_id_suspendioTousers")
   hpz_indicacion_medicamentos_hpz_indicacion_medicamentos_id_userTousers                              hpz_indicacion_medicamentos[]          @relation("hpz_indicacion_medicamentos_id_userTousers")
@@ -4342,6 +4350,7 @@ model users {
   hpz_paciente_nota_medica_hpz_paciente_nota_medica_id_user_confirmacionTousers                       hpz_paciente_nota_medica[]             @relation("hpz_paciente_nota_medica_id_user_confirmacionTousers")
   hpz_paciente_nota_medica_hpz_paciente_nota_medica_id_userTousers                                    hpz_paciente_nota_medica[]             @relation("hpz_paciente_nota_medica_id_userTousers")
   hpz_paciente_nota_trabajo_social                                                                    hpz_paciente_nota_trabajo_social[]
+  hpz_pivote_vitals_sigs_hemo                                                                         hpz_pivote_vitals_sigs_hemo[]
   cmp_persona                                                                                         cmp_persona                            @relation(fields: [id_persona], references: [id], onUpdate: Restrict, map: "users_id_persona_foreign")
   cat_tipos_persona                                                                                   cat_tipos_persona                      @relation(fields: [id_tipopersona], references: [id], onUpdate: Restrict, map: "users_id_tipopersona_foreign")
 
@@ -4357,6 +4366,62 @@ model users {
   @@index([remember_token], map: "idx_remember_token")
   @@index([updated_at], map: "idx_updated_at")
   @@index([username], map: "idx_username")
+}
+
+model cmp_firmas_manuscritas {
+  id         BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  id_persona Int?         @db.UnsignedInt
+  firma      String       @db.LongText
+  created_at DateTime?    @db.Timestamp(0)
+  updated_at DateTime?    @db.Timestamp(0)
+  deleted_at DateTime?    @db.Timestamp(0)
+  active     Boolean?     @default(true)
+  persona    cmp_persona? @relation(fields: [id_persona], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "cmp_firmas_manuscritas_id_persona_foreign")
+
+  @@index([id_persona], map: "cmp_firmas_manuscritas_id_persona_foreign")
+}
+
+model hpz_hemovigilacia {
+  id                          Int                           @id @default(autoincrement()) @db.UnsignedInt
+  id_signs_vitals             BigInt                        @db.UnsignedBigInt
+  authorized_id               Int                           @db.UnsignedInt
+  id_ingress                  Int                           @db.UnsignedInt
+  observations                String?                       @db.Text
+  created_at                  DateTime?                     @db.Timestamp(0)
+  updated_at                  DateTime?                     @db.Timestamp(0)
+  no_unit                     String?                       @db.Text
+  type_unity                  String?                       @db.Text
+  start_hour                  String?                       @db.Text
+  end_hourr                   String?                       @db.Text
+  status                      hpz_hemovigilacia_status      @default(start)
+  final_hour                  String?                       @db.Text
+  history_notes               String?                       @db.LongText
+  users                       users                         @relation(fields: [authorized_id], references: [id], onUpdate: Restrict, map: "hpz_hemovigilacia_authorized_id_foreign")
+  hpz_ingreso_hospitalario    hpz_ingreso_hospitalario      @relation(fields: [id_ingress], references: [id], onUpdate: Restrict, map: "hpz_hemovigilacia_id_ingress_foreign")
+  hpz_ingreso_signos_vitales  hpz_ingreso_signos_vitales    @relation(fields: [id_signs_vitals], references: [id], onUpdate: Restrict, map: "hpz_hemovigilacia_id_signs_vitals_foreign")
+  hpz_pivote_vitals_sigs_hemo hpz_pivote_vitals_sigs_hemo[]
+
+  @@index([authorized_id], map: "hpz_hemovigilacia_authorized_id_foreign")
+  @@index([id_ingress], map: "hpz_hemovigilacia_id_ingress_foreign")
+  @@index([id_signs_vitals], map: "hpz_hemovigilacia_id_signs_vitals_foreign")
+}
+
+model hpz_pivote_vitals_sigs_hemo {
+  id                         Int                        @id @default(autoincrement()) @db.UnsignedInt
+  vital_sign_id              BigInt                     @db.UnsignedBigInt
+  hemo_note_id               Int                        @db.UnsignedInt
+  observacion                String?                    @db.Text
+  type                       String?                    @db.Text
+  created_at                 DateTime?                  @db.Timestamp(0)
+  updated_at                 DateTime?                  @db.Timestamp(0)
+  user_id                    Int?                       @db.UnsignedInt
+  hpz_hemovigilacia          hpz_hemovigilacia          @relation(fields: [hemo_note_id], references: [id], onUpdate: Restrict, map: "hpz_pivote_vitals_sigs_hemo_hemo_note_id_foreign")
+  users                      users?                     @relation(fields: [user_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_pivote_vitals_sigs_hemo_user_id_foreign")
+  hpz_ingreso_signos_vitales hpz_ingreso_signos_vitales @relation(fields: [vital_sign_id], references: [id], onUpdate: Restrict, map: "hpz_pivote_vitals_sigs_hemo_vital_sign_id_foreign")
+
+  @@index([hemo_note_id], map: "hpz_pivote_vitals_sigs_hemo_hemo_note_id_foreign")
+  @@index([user_id], map: "hpz_pivote_vitals_sigs_hemo_user_id_foreign")
+  @@index([vital_sign_id], map: "hpz_pivote_vitals_sigs_hemo_vital_sign_id_foreign")
 }
 
 enum rcf_resguardo_tipo {
@@ -4459,13 +4524,8 @@ enum cat_proveedores_estatus {
   Inactivo
 }
 
-model cmp_firmas_manuscritas {
-  id         Int       @id @default(autoincrement()) @db.UnsignedInt
-  id_persona Int       @db.UnsignedInt 
-  firma      String    @db.MediumText
-  active   Boolean   @default(true)
-  created_at DateTime? @db.Timestamp(0)
-  updated_at DateTime? @db.Timestamp(0)
-  deleted_at DateTime? @db.Timestamp(0)
-  persona cmp_persona @relation(fields: [id_persona], references: [id])
+enum hpz_hemovigilacia_status {
+  start
+  end
+  during
 }
