@@ -5,14 +5,14 @@ import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmplo
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
-import _ from 'lodash';
+import _, { parseInt } from 'lodash';
 import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { SignService } from './presentation/services/sign.service';
-import { getEmployeesPermissionsQuery, getLastFoliumFromYear } from "../helpers/permissionsQueries";
+import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoPerId } from "../helpers/permissionsQueries";
 import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
@@ -56,7 +56,7 @@ export const getExcelChecadas = async (req: any, res: Response) => {
     }
 }
 
-export const getPdfEstrategia = async (req: any, res: Response) => {
+export const getPdfEstrategia = async (req: any, res: Response) => { //func para generar estrategia cuando se captura desde PERMISOS
     try {
         //load html template (just for editing template with formatting helpers)
         /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
@@ -109,6 +109,48 @@ export const getPdfEstrategia = async (req: any, res: Response) => {
     }
 }
 
+export const printPdfEstrategia = async (req: any, res: Response) => { //func para generar estrategia desde el apartado del calendario
+    try {
+        //get params from front-end
+        const { id }: any = req.query;
+        const params: PropsFormatoEstrategia = await getStrategiesInfoPerId(parseInt(id));
+
+        //get params to substitute inside html template
+        const templateParams = htmlParams(params);
+
+        const browser = await puppeteer.launch({
+            executablePath: "/usr/bin/google-chrome",
+        });
+
+        const page = await browser.newPage();
+
+        const template = format(templateEstrategia, templateParams);
+
+        await page.setContent(template);
+        const pdfBuffer = await page.pdf({
+            format: 'Letter',
+            printBackground: true,
+            margin: {
+                top: 10,
+                left: 20,
+                right: 20
+            },
+            scale: 0.95
+        });
+
+        await browser.close();
+
+        res.contentType("application/pdf");
+        res.send(pdfBuffer);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            ok: false,
+            msg: err
+        });
+    }
+}
+
 export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, id_rh, id_admin, id_director }: PropsReqIMSS = req.query;
@@ -126,15 +168,15 @@ export const generareReportIms = async (req: any, res: Response) => {
         const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
         const id_admin_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_admin));
         const id_director_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_director));
-        
-        let firma1 : any = await sings.getLastSingByUserId(id_rh_json.id_persona);
-        let firma2 : any = await sings.getLastSingByUserId(id_admin_json.id_persona);
-        let firma3 : any = await sings.getLastSingByUserId(id_director_json.id_persona);
+
+        let firma1: any = await sings.getLastSingByUserId(id_rh_json.id_persona);
+        let firma2: any = await sings.getLastSingByUserId(id_admin_json.id_persona);
+        let firma3: any = await sings.getLastSingByUserId(id_director_json.id_persona);
 
         firma1 ? firma1 = firma1[0].firma : firma1 = '';
         firma2 ? firma2 = firma2[0].firma : firma2 = '';
         firma3 ? firma3 = firma3[0].firma : firma3 = '';
-        
+
         const employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
                 let { hora_entrada, hora_salida } = employee;

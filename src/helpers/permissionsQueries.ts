@@ -1,6 +1,8 @@
 import moment from "moment";
 import { CreatePermissionQueries, PropsEmployeePermissionsQueries, PropsStrategiesQueries } from "../interfaces/permissions";
 import { db } from "../utils/db";
+import { PropsFormatoEstrategia } from "../interfaces/reportsQueries";
+import _ from "lodash";
 
 export const getCatPermissionsQuery = () => {
     return new Promise(async (resolve, reject) => {
@@ -154,6 +156,77 @@ export const getStrategiesInfoQuery = ({ limit = '10', page = '0', ...props }: P
             });
 
             resolve({ data: strategies, count: totalStrategies });
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
+export const getStrategiesInfoPerId = (id: number): Promise<any> => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let record = await db.rch_permisos.findMany({
+                where: {
+                    id
+                },
+                select: {
+                    fecha_inicio: true,
+                    fecha_fin: true,
+                    folio: true,
+                    id_empleado: true,
+                    ini_horario_titular: true,
+                    fin_horario_titular: true,
+                    ini_horario_suplente: true,
+                    fin_horario_suplente: true,
+                    rch_empleados: {
+                        select: {
+                            matricula: true,
+                            hora_entrada: true,
+                            hora_salida: true,
+                            cmp_persona: {
+                                select: {
+                                    nombres: true, primer_apellido: true, segundo_apellido: true
+                                }
+                            },
+                            cat_categorias: {
+                                select: { nombre: true }
+                            },
+                            cat_departamentos: { select: { nombre: true } },
+                            cat_turnos: { select: { nombre: true } }
+                        }
+                    },
+                    rch_empleados_rch_permisos_id_suplenteTorch_empleados: {
+                        select: {
+                            matricula: true,
+                            hora_entrada: true,
+                            hora_salida: true,
+                            cmp_persona: {
+                                select: {
+                                    nombres: true, primer_apellido: true, segundo_apellido: true
+                                }
+                            },
+                            cat_categorias: {
+                                select: { nombre: true }
+                            },
+                            cat_departamentos: { select: { nombre: true } },
+                            cat_turnos: { select: { nombre: true } }
+                        }
+                    }
+                }
+            });
+            
+            resolve({
+                dateInit: record[0].fecha_inicio,
+                dateFin: moment.utc(record[0].fecha_inicio).format('L') !== moment.utc(record[0].fecha_fin).format('L') ? record[0].fecha_fin : null,
+                folium: record[0].folio,
+                titular: record[0].rch_empleados,
+                suplente: record[0].rch_empleados_rch_permisos_id_suplenteTorch_empleados,
+                titularHoraEntrada: record[0].ini_horario_titular != null ? moment.utc(record[0].ini_horario_titular).format('HH:mm') : null,
+                titularHoraSalida: record[0].fin_horario_titular != null ? moment.utc(record[0].fin_horario_titular).format('HH:mm') : null,
+                substituteHoraEntrada: record[0].ini_horario_suplente != null ? moment.utc(record[0].ini_horario_suplente).format('HH:mm') : null,
+                substituteHoraSalida: record[0].fin_horario_suplente != null ? moment.utc(record[0].fin_horario_suplente).format('HH:mm') : null,
+                type: 'ESTRATEGIA'
+            });
         } catch (error) {
             reject(error);
         }
