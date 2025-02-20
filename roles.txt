@@ -1,4 +1,4 @@
-INCIDENCIAS
+MÓDULO INCIDENCIAS
 	***ROL BASE QUE TODOS LOS INVOLUCRADOS TIENEN QUE TENER***
 	rol: rhumanos_incidencias
 	permission: rhumanos_incidences_ver
@@ -67,3 +67,15 @@ INCIDENCIAS
 		permission:
 		rhumanos_festivos_ver = festivos tab
 		rhumanos_festivos_editar = festivos acciones
+	
+MÓDULO FIRMAS
+	***ROL BASE QUE TODOS LOS INVOLUCRADOS TIENEN QUE TENER***
+	rol: rhumanos_firmas
+	permission: rhumanos_firmas_ver
+
+	***PARA AQUELLOS QUE FIRMAN (FIRMAN SOLO UNA VEZ Y NO PUEDEN VER LAS FIRMAS DE LOS DEMÁS)***
+	rol: rhumanos_firmas_agregar
+	permission: 
+	rhumanos_firmas_eliminar
+	rhumanos_firmas_editar
+	rhumanos_firmas_ver_unico
