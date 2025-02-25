@@ -72,19 +72,21 @@ export const translateDays = (workingDays: string[]) => {
                 return 'Sunday'
 
             default:
-                return '';
+                return 'Festivos';
         }
     });
 
     return translatedWorkingDays;
 }
 
-export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any) => {
+export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any, empleado: any, vacaciones: any) => {
     if (workingDays === null || workingDays === undefined) {
         return [];
     }
 
     let parsedDays: any[] = [];
+    let base420Especiales: string[] = []; //Array que guarda 1 dia antes y despues de festivos para que no salga falta
+    let festivosFormato: string[] = [];
     let copy_ini = fec_inicio; //crear nuevas instancias de las fechas para evitar bugs
     let copy_end = fec_final;
     let debuggedWorkingDays: {
@@ -97,23 +99,68 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
 
     const translatedDays = translateDays(workingDays);
 
+    festivos.forEach((item: any) => {
+        let itemAux = { ...item };
+        base420Especiales.push(moment.utc(itemAux.fecha).add(1, 'day').format('YYYY-MM-DD'));
+        base420Especiales.push(moment.utc(itemAux.fecha).subtract(1, 'day').format('YYYY-MM-DD'));
+        festivosFormato.push(moment.utc(itemAux.fecha).format('YYYY-MM-DD'));
+    });
+
     while (moment.utc(copy_ini).isSameOrBefore(copy_end)) {
-        parsedDays.push({
-            dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
-            day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
-            horaReg: '',
-            type: 'EVENTO',
-            event: '<span style="color: red;">FALTA</span>'
-        });
-        copy_ini = moment(copy_ini).add(1, 'day').toISOString();
+        if (empleado.cat_turnos.nombre === 'ESPECIALES' && empleado.cat_tipos_empleado.nombre === 'BASE 420') {
+            if (!base420Especiales.includes(moment(copy_ini).format('YYYY-MM-DD'))) {//SI LA FECHA NO SE ENCUENTRA UN DIA ANTES O DESPUES DE ALGUN DIA FESTIVO
+                parsedDays.push({
+                    dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                    day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
+                    horaReg: '',
+                    type: 'EVENTO',
+                    event: '<span style="color: red;">FALTA</span>'
+                });
+            }
+        } else {
+            if (vacaciones.length > 0) {//SI TIENE VACACIONES
+                if (!(moment.utc(copy_ini).isSameOrAfter(moment(vacaciones[0].fecha_inicio)) && moment.utc(copy_ini).isSameOrBefore(moment(vacaciones[0].fecha_fin)))) {//ELIMINA 'FALTA' EN AQUELLOS CASOS DONDE ESTAN DE VACACIONES Y SE ATRAVIESA UN FESTIVO
+                    parsedDays.push({
+                        dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                        day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
+                        horaReg: '',
+                        type: 'EVENTO',
+                        event: '<span style="color: red;">FALTA</span>'
+                    });
+                }
+            } else {
+                parsedDays.push({
+                    dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                    day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
+                    horaReg: '',
+                    type: 'EVENTO',
+                    event: '<span style="color: red;">FALTA</span>'
+                });
+            }
+        }
+        copy_ini = moment(copy_ini).add(1, 'day').format('YYYY-MM-DD');
     }
 
     festivos.forEach((item: any) => {
-        parsedDays.push({
-            dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
-            type: 'EVENTO FESTIVO',
-            event: '<span style="color: red;">FALTA</span>',
-        });
+        if (workingDays.includes('FESTIVOS')) {//PARA AQUELLOS QUE LABORAN FESTIVOS
+            if (vacaciones.length === 0) {
+                return
+            }
+
+            if (!(item.fecha >= vacaciones[0].fecha_inicio && item.fecha <= vacaciones[0].fecha_fin)) { //ELIMINA 'FALTA' EN AQUELLOS CASOS DONDE ESTAN DE VACACIONES Y SE ATRAVIESA UN FESTIVO
+                parsedDays.push({
+                    dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                    type: 'EVENTO FESTIVO',
+                    event: '<span style="color: red;">FALTA</span>',
+                });
+            }
+        } else {
+            parsedDays.push({
+                dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                type: 'EVENTO FESTIVO',
+                event: '<span style="color: red;">FALTA</span>',
+            });
+        }
     });
 
     //Devuelve solo los dias laborales del empleado y festivos si aplica
@@ -127,7 +174,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
 }
 
 export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[]) => {
-    if (parsedWorkingDays.length === 0) {//quitar este IF cuando los de RH se dignen a poner bien las guardias >:( y no devuelva null
+    if (parsedWorkingDays === null || parsedWorkingDays === undefined) {
         return [];
     }
 
@@ -150,7 +197,8 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
 
 const horariosMafufos = [
     { matricula: 7461, hora_entrada2: '07:00:00', hora_salida2: '21:30:00' },
-    { matricula: 7312, hora_entrada2: '07:30:00', hora_salida2: '22:00:00' }
+    { matricula: 7312, hora_entrada2: '07:30:00', hora_salida2: '22:00:00' },
+    { matricula: 1798, hora_entrada2: '07:00:00', hora_salida2: '15:00:00' }
 ];
 
 export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: any) => {
@@ -171,7 +219,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
         const horaEntradaLimite2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
         const horaEntradaPermitida2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
 
-        checadas.forEach((item) => {
+        checadas.forEach((item, index) => {
             let itemAux = { ...item };
             if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
                 if (checadasClasificadas.length > 0 && checadasClasificadas[checadasClasificadas.length - 1].type === 'ENTRADA') {
@@ -180,19 +228,37 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                         type: 'SALIDA'
                     });
                 } else {
-                    //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
-                    let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
-                    const isEntrada = checadas.find((item) => item.dateReg === newDate);
+                    if (index === 0) {
+                        //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
+                        let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
 
-                    if (isEntrada) {
-                        checadasClasificadas.push({
-                            ...item,
-                            type: 'ENTRADA'
+                        const isEntrada = checadas.find((item) => {
+                            return item.dateReg === newDate
                         });
+
+                        if (isEntrada) {
+                            checadasClasificadas.push({
+                                ...item,
+                                type: 'ENTRADA'
+                            });
+                        } else {
+                            const checadasEnUnDia = checadas.filter((item: any) => item.dateReg);
+                            if (checadasEnUnDia.length > 1) {
+                                checadasClasificadas.push({
+                                    ...item,
+                                    type: 'ENTRADA'
+                                });
+                            } else {
+                                checadasClasificadas.push({
+                                    ...item,
+                                    type: 'SALIDA'
+                                });
+                            }
+                        }
                     } else {
                         checadasClasificadas.push({
                             ...item,
-                            type: 'SALIDA'
+                            type: 'ENTRADA'
                         });
                     }
                 }
@@ -203,19 +269,37 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                         type: 'SALIDA'
                     });
                 } else {
-                    //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
-                    let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
-                    const isEntrada = checadas.find((item) => item.dateReg === newDate);
+                    if (index === 0) {
+                        //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
+                        let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
 
-                    if (isEntrada) {
-                        checadasClasificadas.push({
-                            ...item,
-                            type: 'ENTRADA'
+                        const isEntrada = checadas.find((item) => {
+                            return item.dateReg === newDate
                         });
+
+                        if (isEntrada) {
+                            checadasClasificadas.push({
+                                ...item,
+                                type: 'ENTRADA'
+                            });
+                        } else {
+                            const checadasEnUnDia = checadas.filter((item: any) => item.dateReg);
+                            if (checadasEnUnDia.length > 1) {
+                                checadasClasificadas.push({
+                                    ...item,
+                                    type: 'ENTRADA'
+                                });
+                            } else {
+                                checadasClasificadas.push({
+                                    ...item,
+                                    type: 'SALIDA'
+                                });
+                            }
+                        }
                     } else {
                         checadasClasificadas.push({
                             ...item,
-                            type: 'SALIDA'
+                            type: 'ENTRADA'
                         });
                     }
                 }
@@ -227,12 +311,42 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
             }
         });
     } else { //si no tiene otro horario
-        checadas.forEach((item) => {
+        checadas.forEach((item, index) => {
+            let itemAux = { ...item };
             if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
-                checadasClasificadas.push({
-                    ...item,
-                    type: 'ENTRADA'
-                });
+                if (index === 0) {
+                    //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
+                    let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
+
+                    const isEntrada = checadas.find((item) => {
+                        return item.dateReg === newDate
+                    });
+
+                    if (isEntrada) {
+                        checadasClasificadas.push({
+                            ...item,
+                            type: 'ENTRADA'
+                        });
+                    } else {
+                        const checadasEnUnDia = checadas.filter((item: any) => item.dateReg);
+                        if (checadasEnUnDia.length > 1) {
+                            checadasClasificadas.push({
+                                ...item,
+                                type: 'ENTRADA'
+                            });
+                        } else {
+                            checadasClasificadas.push({
+                                ...item,
+                                type: 'SALIDA'
+                            });
+                        }
+                    }
+                } else {
+                    checadasClasificadas.push({
+                        ...item,
+                        type: 'ENTRADA'
+                    });
+                }
             } else {
                 checadasClasificadas.push({
                     ...item,
@@ -291,7 +405,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
-    let horaEntradaMaxima = moment(hora_entrada, "HH:mm:ss").add(40, 'minutes').format('HH:mm:ss');;
+    let horaEntradaMaxima = moment(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');;
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');

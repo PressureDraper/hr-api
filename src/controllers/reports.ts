@@ -126,16 +126,16 @@ export const generareReportIms = async (req: any, res: Response) => {
         const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
         const id_admin_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_admin));
         const id_director_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_director));
-        
-        let firma1 : any = await sings.getLastSingByUserId(id_rh_json.id_persona);
-        let firma2 : any = await sings.getLastSingByUserId(id_admin_json.id_persona);
-        let firma3 : any = await sings.getLastSingByUserId(id_director_json.id_persona);
+
+        let firma1: any = await sings.getLastSingByUserId(id_rh_json.id_persona);
+        let firma2: any = await sings.getLastSingByUserId(id_admin_json.id_persona);
+        let firma3: any = await sings.getLastSingByUserId(id_director_json.id_persona);
 
         firma1 ? firma1 = firma1[0].firma : firma1 = '';
         firma2 ? firma2 = firma2[0].firma : firma2 = '';
         firma3 ? firma3 = firma3[0].firma : firma3 = '';
-        
-        const employees: any = await Promise.all(
+
+        let employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
                 let { hora_entrada, hora_salida } = employee;
                 const attendances = grouped_attendeances[employee.matricula] || [];
@@ -144,6 +144,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fec_inicio, fecha_fin: fec_final });
                 hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
                 hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
+
+                console.log(permisos);
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 // Agrupar los elementos por la fecha (sin la hora)
@@ -159,8 +161,9 @@ export const generareReportIms = async (req: any, res: Response) => {
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
-                const workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
-                const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos);
+                let workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
+
+                const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos, employee, vacaciones);
 
                 //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
                 const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada, parsedWorkingDays);
@@ -168,8 +171,17 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
                 const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
-                //6. finalmente ordenar el array ascendentemente por dateReg
-                const sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+                //6. Ordenar el array ascendentemente por dateReg
+                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+                //7. Eliminar checadas duplicadas de entrada y salida
+                for (let index = 0; index < sortedData.length; index++) {
+                    if (index !== 0) {
+                        if ((sortedData[index].type.includes('ENTRADA') || sortedData[index].type.includes('SALIDA')) && sortedData[index].type === sortedData[index - 1].type) {
+                            sortedData.splice(index, 1);
+                        }
+                    }
+                }
 
                 return {
                     ...employee,
@@ -180,6 +192,12 @@ export const generareReportIms = async (req: any, res: Response) => {
                 }
             })
         );
+
+        /* employees = employees.filter((employee: any) => {//CASO ESPECIAL PARA FILTRAR LA MATRICULA 1798 CON DOS BASES CUANDO LA MATRICULA INICIAL SEA MAYOR DE ESA
+            if (employee.matricula >= mat_inicio) {
+                return employee
+            }
+        }); */
 
         let mainContent = '';
 
