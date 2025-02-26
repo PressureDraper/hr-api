@@ -143,7 +143,8 @@ export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
                     guardias: true,
                     matricula: true,
                     cat_departamentos: true
-                }
+                },
+                orderBy: { matricula: 'asc' }
             });
 
             const filteredEmployees = infoEmployeeType.filter((item: any) => !employeesInExcel.includes(item.matricula));
@@ -388,7 +389,7 @@ export const getVacationIMSSReport = (id: number, fec_inicio: string, fec_final:
                     fecha_fin: true
                 }
             });
-            
+
             resolve(vacaciones);
         } catch (error) {
             reject(error);

@@ -145,8 +145,6 @@ export const generareReportIms = async (req: any, res: Response) => {
                 hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
                 hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
 
-                console.log(permisos);
-
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 // Agrupar los elementos por la fecha (sin la hora)
                 const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
