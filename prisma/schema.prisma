@@ -2997,6 +2997,7 @@ model hpz_paciente_nota_medica {
   clasificacion_medico                                       String?
   clasificacion_sistema                                      String?
   clasificacion_triage                                       String?                     @db.VarChar(35)
+  speciality                                                 String                      @default("")
   hpz_nota_alta_medica                                       hpz_nota_alta_medica[]
   hpz_notas_diagnosticos                                     hpz_notas_diagnosticos[]
   users_hpz_paciente_nota_medica_id_canceloTousers           users?                      @relation("hpz_paciente_nota_medica_id_canceloTousers", fields: [id_cancelo], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "hpz_paciente_nota_medica_id_cancelo_foreign")
