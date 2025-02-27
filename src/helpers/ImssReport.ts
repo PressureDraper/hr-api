@@ -114,7 +114,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
                     day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
                     horaReg: '',
                     type: 'EVENTO',
-                    event: '<span style="color: red;">FALTA</span>'
+                    event: '<span style="color: black;">FALTA</span>'
                 });
             }
         } else {
@@ -125,7 +125,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
                         day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
                         horaReg: '',
                         type: 'EVENTO',
-                        event: '<span style="color: red;">FALTA</span>'
+                        event: '<span style="color: black;">FALTA</span>'
                     });
                 }
             } else {
@@ -134,7 +134,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
                     day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
                     horaReg: '',
                     type: 'EVENTO',
-                    event: '<span style="color: red;">FALTA</span>'
+                    event: '<span style="color: black;">FALTA</span>'
                 });
             }
         }
