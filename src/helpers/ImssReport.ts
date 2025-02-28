@@ -151,14 +151,14 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
                 parsedDays.push({
                     dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
                     type: 'EVENTO FESTIVO',
-                    event: '<span style="color: red;">FALTA</span>',
+                    event: '<span style="color: black;">FALTA</span>',
                 });
             }
         } else {
             parsedDays.push({
                 dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
                 type: 'EVENTO FESTIVO',
-                event: '<span style="color: red;">FALTA</span>',
+                event: '<span style="color: black;">FALTA</span>',
             });
         }
     });
