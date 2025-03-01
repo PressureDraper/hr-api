@@ -289,6 +289,9 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'LACTANCIA': {
         type: 'AMBOS'
+    },
+    'BECA CON GOCE DE SUELDO': {
+        type: 'AMBOS'
     }
 }
 

@@ -177,7 +177,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //7. Eliminar checadas duplicadas de entrada y salida
                 for (let index = 0; index < sortedData.length; index++) {
                     if (index !== 0) {
-                        if ((sortedData[index].type.includes('ENTRADA') || sortedData[index].type.includes('SALIDA')) && sortedData[index].type === sortedData[index - 1].type) {
+                        if ((sortedData[index].type.includes('ENTRADA') || sortedData[index].type.includes('SALIDA')) && (sortedData[index].type === sortedData[index - 1].type) && (sortedData[index].dateReg == sortedData[index - 1].dateReg)) {
                             sortedData.splice(index, 1);
                         }
                     }
