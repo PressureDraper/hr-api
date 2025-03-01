@@ -366,6 +366,7 @@ export const getFirmaById = async (id: number) => {
         desc = descifrarAES(firma.firma, '12345678901234567890123456789012', '1234567890123456');
         return desc;
     } catch (err) {
+        console.log(err);
         return '';
     }
 };
@@ -373,6 +374,7 @@ export const getFirmaById = async (id: number) => {
 export const getVacationIMSSReport = (id: number, fec_inicio: string, fec_final: string) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log('VACACIONES: ',id, fec_inicio, fec_final);
             let vacaciones: any = await db.rch_empleado_vacaciones.findMany({
                 where: {
                     rch_empleados: {
@@ -392,6 +394,7 @@ export const getVacationIMSSReport = (id: number, fec_inicio: string, fec_final:
 
             resolve(vacaciones);
         } catch (error) {
+            console.log(error);
             reject(error);
         }
     })

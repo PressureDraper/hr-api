@@ -1,7 +1,7 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReporteIMSS, PropsReqIMSS } from "../interfaces/reportsQueries";
-import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getFirmaById, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
+import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReqIMSS } from "../interfaces/reportsQueries";
+import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
@@ -14,6 +14,8 @@ import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { SignService } from './presentation/services/sign.service';
 import { getEmployeesPermissionsQuery, getLastFoliumFromYear } from "../helpers/permissionsQueries";
 import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
+import dayjs from "dayjs";
+import utc from 'dayjs/plugin/utc'
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -142,8 +144,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const { nombre: aparment } = employee['cat_departamentos'] ?? {};
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fec_inicio, fec_final);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fec_inicio, fecha_fin: fec_final });
-                hora_entrada = moment(hora_entrada).utc().format('HH:mm:ss');
-                hora_salida = moment(hora_salida).utc().format('HH:mm:ss');
+                let parseHora_entrada = dayjs.utc(hora_entrada).format('HH:mm:ss');
+                let parseHora_salida = dayjs.utc(hora_salida).format('HH:mm:ss');
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 // Agrupar los elementos por la fecha (sin la hora)
@@ -155,7 +157,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 });
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
-                const endOutAttendances = isComingOrOut(hora_entrada, result, employee);
+                const endOutAttendances = isComingOrOut(parseHora_entrada, result, employee);
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
@@ -164,7 +166,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos, employee, vacaciones);
 
                 //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
-                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, hora_entrada, parsedWorkingDays);
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, parseHora_entrada, parsedWorkingDays);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
                 const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
@@ -183,8 +185,8 @@ export const generareReportIms = async (req: any, res: Response) => {
 
                 return {
                     ...employee,
-                    hora_entrada,
-                    hora_salida,
+                    parseHora_entrada,
+                    parseHora_salida,
                     final: sortedData,
                     boss: bossByAppartment[aparment] || ''
                 }
@@ -201,7 +203,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
-
+            
             item1.final.forEach((item2: any) => {
                 body += generateRow(item1, item2);
             });
@@ -215,7 +217,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 mat: `${item1.matricula}`,
                 nom: `${item1.cat_tipos_recurso.nombre}`,
                 turno: item1.cat_turnos.nombre,
-                hour: `${item1.hora_entrada} - ${item1.hora_salida}`,
+                hour: `${item1.parseHora_entrada} - ${item1.parseHora_salida}`,
                 guards: item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', '),
                 cat: item1.cat_tipos_empleado.nombre,
                 area: item1.cat_departamentos.nombre,
@@ -242,8 +244,8 @@ export const generareReportIms = async (req: any, res: Response) => {
         });
 
         const browser = await puppeteer.launch({
-            // executablePath: "/usr/bin/google-chrome",
-            // args: ['--no-sandbox', '--disable-setuid-sandbox']
+            executablePath: "/usr/bin/google-chrome",
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
         const page = await browser.newPage();
