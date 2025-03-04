@@ -171,23 +171,14 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
                 const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
-                //6. Ordenar el array ascendentemente por dateReg
-                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
-
-                //7. Eliminar checadas duplicadas de entrada y salida
-                for (let index = 0; index < sortedData.length; index++) {
-                    if (index !== 0) {
-                        if ((sortedData[index].type.includes('ENTRADA') || sortedData[index].type.includes('SALIDA')) && (sortedData[index].type === sortedData[index - 1].type) && (sortedData[index].dateReg == sortedData[index - 1].dateReg)) {
-                            sortedData.splice(index, 1);
-                        }
-                    }
-                }
+                /* //6. Ordenar el array ascendentemente por dateReg
+                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime()); */
 
                 return {
                     ...employee,
                     parseHora_entrada,
                     parseHora_salida,
-                    final: sortedData,
+                    final: debuggedDays,
                     boss: bossByAppartment[aparment] || ''
                 }
             })

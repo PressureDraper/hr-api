@@ -146,7 +146,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
 
     festivos.forEach((item: any) => {
         let fechaFormateada = dayjs.utc(item.fecha).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
-        
+
         if (workingDays.includes('FESTIVOS')) {//PARA AQUELLOS QUE LABORAN FESTIVOS
             if (vacaciones.length === 0) {
                 return
@@ -292,6 +292,21 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'BECA CON GOCE DE SUELDO': {
         type: 'AMBOS'
+    },
+    'FALTA': {
+        type: 'AMBOS'
+    },
+    'JUST POR OFICIO': {
+        type: 'AMBOS'
+    },
+    'LICENCIA MEDICA': {
+        type: 'AMBOS'
+    },
+    'FESTIVOS': {
+        type: 'AMBOS'
+    },
+    'COMISION OFICIAL': {
+        type: 'AMBOS'
     }
 }
 
@@ -302,11 +317,11 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     vacaciones.forEach((item: any) => {
         let itemAux = { ...item } //make copy of item to treat them separately and avoid memory problems. important!!!
 
-        while (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= dayjs.utc(itemAux.fecha_fin).format('YYYY-MM-DD')) {            
+        while (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= dayjs.utc(itemAux.fecha_fin).format('YYYY-MM-DD')) {
             let horaFormateada = dayjs.utc(itemAux.fecha_inicio).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
 
             if (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= fec_final) {
-                
+
                 if (parsedWorkingDays[1].includes(dayjs.utc(itemAux.fecha_inicio).format('dddd'))) {
                     attendancesAuxWithPermissions.push({
                         dateReg: horaFormateada,
@@ -409,5 +424,78 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
 
     classifiedAttendances.push(...attendancesAuxWithPermissions);
 
-    return classifiedAttendances;
+    //Eliminar checadas duplicadas de entrada y salida
+    for (let index = 0; index < classifiedAttendances.length; index++) {
+        if (index !== 0) {
+            if ((classifiedAttendances[index].type.includes('ENTRADA') || classifiedAttendances[index].type.includes('SALIDA')) && (classifiedAttendances[index].type === classifiedAttendances[index - 1].type) && (classifiedAttendances[index].dateReg == classifiedAttendances[index - 1].dateReg)) {
+                classifiedAttendances.splice(index, 1);
+            }
+        }
+    }
+
+    let sortedData = classifiedAttendances.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+    //Agregar OMISIONES DE ENTRADA Y SALIDA
+    const omisionesSalida: any[] = [];
+    const omisionesEntrada: any[] = [];
+    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL'];
+
+    //Proceso para identificar omisiones de salida
+    for (let index = 0; index < sortedData.length; index++) {
+        const currentItem = sortedData[index];
+        const nextItem = sortedData[index + 1];
+
+        if (index === sortedData.length - 1) {
+            omisionesSalida.push(sortedData[index]);
+            continue;
+        }
+
+        const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
+
+        if (currentItem.type === nextItem.type && shouldAddOmission) {
+            if (currentItem.type === 'ENTRADA') {
+                omisionesSalida.push(addOmission(currentItem));
+            } else {
+                omisionesSalida.push(currentItem);
+            }
+        } else if ((currentItem.type === 'ENTRADA' && nextItem.type === 'EVENTO') && shouldAddOmission) {
+            omisionesSalida.push(addOmission(currentItem));
+        } else {
+            omisionesSalida.push(currentItem);
+        }
+    }
+
+    //proceso para identificar omisiones de entrada
+    for (let index = 0; index < omisionesSalida.length; index++) {
+        const currentItem = omisionesSalida[index];
+
+        if (index === 0) {
+            omisionesEntrada.push(omisionesSalida[index]);
+            continue;
+        }
+
+        if ((currentItem.type === omisionesSalida[index - 1].type) && !permissions.some(item => omisionesSalida[index].event.includes(item))) {
+            if (currentItem.type === 'SALIDA') {
+                omisionesEntrada.push(addOmission(currentItem));
+            } else {
+                omisionesEntrada.push(currentItem);
+            }
+        } else {
+            omisionesEntrada.push(currentItem);
+        }
+    }
+
+    return omisionesEntrada;
 }
+
+const addOmission = (item: any) => {
+    if (item.type === 'ENTRADA' && !item.event.includes('OMISIÓN')) {
+        const event = item.event !== '' ? `${item.event}, OMISIÓN DE SALIDA` : 'OMISIÓN DE SALIDA';
+        return { ...item, event };
+    } else if (item.type === 'SALIDA' && !item.event.includes('OMISIÓN')) {
+        const event = item.event !== '' ? `${item.event}, OMISIÓN DE ENTRADA` : 'OMISIÓN DE ENTRADA';
+        return { ...item, event };
+    } else {
+        return item;
+    }
+};
