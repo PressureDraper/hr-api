@@ -236,6 +236,10 @@ export const getStrategiesInfoPerId = (id: number): Promise<any> => {
 export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissionsQueries) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log('PERMISOS: ', props.employee_id, props.fecha_ini, props.fecha_fin);
+            const newFechaIni = moment.utc(props.fecha_ini).subtract(3, 'months').format('YYYY-MM-DD'); //3 meses antes de margen
+            const newFechaFin = moment.utc(props.fecha_ini).add(3, 'months').format('YYYY-MM-DD'); //3 meses despues de margen
+
             const permissions = await db.rch_permisos.findMany({
                 where: {
                     AND: [
@@ -249,14 +253,14 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                             OR: [
                                 {
                                     fecha_inicio: {
-                                        lte: new Date(props.fecha_fin),
-                                        gte: new Date(props.fecha_ini)
+                                        lte: new Date(newFechaFin),
+                                        gte: new Date(newFechaIni)
                                     }
                                 },
                                 {
                                     fecha_fin: {
-                                        lte: new Date(props.fecha_fin),
-                                        gte: new Date(props.fecha_ini)
+                                        lte: new Date(newFechaFin),
+                                        gte: new Date(newFechaIni)
                                     }
                                 }
                             ]

@@ -1,11 +1,11 @@
 import { IOPermisosInterface } from "../interfaces/reportsQueries";
-import moment from "moment";
 import _ from "lodash";
 import { getBosByAppartment } from "./reportsQueries";
+import dayjs from "dayjs";
 
 //REPORTE INCIDECIAS IMSS
 export const generateRow = (item1: any, item2: any) => {
-    const dateItem = moment.utc(new Date(item2['dateReg'])).format('DD/MM/YYYY');
+    const dateItem = dayjs.utc(item2['dateReg']).format('DD/MM/YYYY');
     const event = item2.event || '';
 
     let guard = JSON.parse(item1.guardias) || [];
@@ -17,7 +17,7 @@ export const generateRow = (item1: any, item2: any) => {
             <td>${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}</td>
             <td>${item1.cat_tipos_empleado.nombre}</td>
             <td>${item1.cmp_persona.rfc}</td>
-            <td>${item1.hora_entrada} - ${item1.hora_salida}</td>
+            <td>${item1.parseHora_entrada} - ${item1.parseHora_salida}</td>
             <td style="font-size: 11px">${guard}</td>
             <td>${dateItem}</td>
             <td>${item2.type === 'ENTRADA' ? item2['horaReg'] : ''}</td>
@@ -72,19 +72,21 @@ export const translateDays = (workingDays: string[]) => {
                 return 'Sunday'
 
             default:
-                return '';
+                return 'Festivos';
         }
     });
 
     return translatedWorkingDays;
 }
 
-export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any) => {
+export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_final: string, festivos: any, empleado: any, vacaciones: any) => {
     if (workingDays === null || workingDays === undefined) {
         return [];
     }
 
     let parsedDays: any[] = [];
+    let base420Especiales: string[] = []; //Array que guarda 1 dia antes y despues de festivos para que no salga falta
+    let festivosFormato: string[] = [];
     let copy_ini = fec_inicio; //crear nuevas instancias de las fechas para evitar bugs
     let copy_end = fec_final;
     let debuggedWorkingDays: {
@@ -97,23 +99,73 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
 
     const translatedDays = translateDays(workingDays);
 
-    while (moment.utc(copy_ini).isSameOrBefore(copy_end)) {
-        parsedDays.push({
-            dateReg: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
-            day: moment(new Date(copy_ini), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0],
-            horaReg: '',
-            type: 'EVENTO',
-            event: '<span style="color: red;">FALTA</span>'
-        });
-        copy_ini = moment(copy_ini).add(1, 'day').toISOString();
+    festivos.forEach((item: any) => {
+        let itemAux = { ...item };
+        base420Especiales.push(dayjs.utc(itemAux.fecha).add(1, 'day').format('YYYY-MM-DD'));
+        base420Especiales.push(dayjs.utc(itemAux.fecha).subtract(1, 'day').format('YYYY-MM-DD'));
+        festivosFormato.push(dayjs.utc(itemAux.fecha).format('YYYY-MM-DD'));
+    });
+
+    while (dayjs.utc(copy_ini).isBefore(copy_end)) {
+        let fechaFormateada = dayjs(copy_ini).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+        let dia = dayjs(copy_ini).format('dddd');
+
+        if (empleado.cat_turnos.nombre === 'ESPECIALES' && empleado.cat_tipos_empleado.nombre === 'BASE 420') {
+            if (!base420Especiales.includes(dayjs(copy_ini).format('YYYY-MM-DD'))) {//SI LA FECHA NO SE ENCUENTRA UN DIA ANTES O DESPUES DE ALGUN DIA FESTIVO
+                parsedDays.push({
+                    dateReg: fechaFormateada,
+                    day: dia,
+                    horaReg: '',
+                    type: 'EVENTO',
+                    event: '<span style="color: black;">FALTA</span>'
+                });
+            }
+        } else {
+            if (vacaciones.length > 0) {//SI TIENE VACACIONES
+                if (!(copy_ini >= dayjs.utc(vacaciones[0].fecha_inicio).format('YYYY-MM-DD') && copy_ini <= dayjs.utc(vacaciones[0].fecha_fin).format('YYYY-MM-DD'))) {//ELIMINA 'FALTA' EN AQUELLOS CASOS DONDE ESTAN DE VACACIONES Y SE ATRAVIESA UN FESTIVO
+                    parsedDays.push({
+                        dateReg: fechaFormateada,
+                        day: dia,
+                        horaReg: '',
+                        type: 'EVENTO',
+                        event: '<span style="color: black;">FALTA</span>'
+                    });
+                }
+            } else {
+                parsedDays.push({
+                    dateReg: fechaFormateada,
+                    day: dia,
+                    horaReg: '',
+                    type: 'EVENTO',
+                    event: '<span style="color: black;">FALTA</span>'
+                });
+            }
+        }
+        copy_ini = dayjs(copy_ini).add(1, 'day').format('YYYY-MM-DD');
     }
 
     festivos.forEach((item: any) => {
-        parsedDays.push({
-            dateReg: moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
-            type: 'EVENTO FESTIVO',
-            event: '<span style="color: red;">FALTA</span>',
-        });
+        let fechaFormateada = dayjs.utc(item.fecha).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+
+        if (workingDays.includes('FESTIVOS')) {//PARA AQUELLOS QUE LABORAN FESTIVOS
+            if (vacaciones.length === 0) {
+                return
+            }
+
+            if (!(item.fecha >= vacaciones[0].fecha_inicio && item.fecha <= vacaciones[0].fecha_fin)) { //ELIMINA 'FALTA' EN AQUELLOS CASOS DONDE ESTAN DE VACACIONES Y SE ATRAVIESA UN FESTIVO
+                parsedDays.push({
+                    dateReg: fechaFormateada,
+                    type: 'EVENTO FESTIVO',
+                    event: '<span style="color: black;">FALTA</span>',
+                });
+            }
+        } else {
+            parsedDays.push({
+                dateReg: fechaFormateada,
+                type: 'EVENTO FESTIVO',
+                event: '<span style="color: black;">FALTA</span>',
+            });
+        }
     });
 
     //Devuelve solo los dias laborales del empleado y festivos si aplica
@@ -127,7 +179,7 @@ export const parseWorkingDays = (workingDays: string[], fec_inicio: string, fec_
 }
 
 export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[]) => {
-    if (parsedWorkingDays.length === 0) {//quitar este IF cuando los de RH se dignen a poner bien las guardias >:( y no devuelva null
+    if (parsedWorkingDays === null || parsedWorkingDays === undefined) {
         return [];
     }
 
@@ -135,7 +187,8 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
 
     if (!notParsedWorkingDays.includes('FESTIVOS')) { //si no labora festivos
         festivos.forEach((item: any) => {
-            purgeDays.push(moment(item.fecha, 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'));
+            let horaFormateada = dayjs.utc(item.fecha).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+            purgeDays.push(horaFormateada);
         });
     }
 
@@ -148,66 +201,45 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
     return attendances.concat(debuggedDays);
 }
 
-const horariosMafufos = [
+/* const horariosMafufos = [
     { matricula: 7461, hora_entrada2: '07:00:00', hora_salida2: '21:30:00' },
-    { matricula: 7312, hora_entrada2: '07:30:00', hora_salida2: '22:00:00' }
-];
+    { matricula: 7312, hora_entrada2: '07:30:00', hora_salida2: '22:00:00' },
+    { matricula: 1798, hora_entrada2: '07:00:00', hora_salida2: '15:00:00' }
+]; */
 
 export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: any) => {
-    let horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
+    let horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
     let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
 
     if (employee.cat_tipos_empleado.nombre.includes('BASE IMSS BIENESTAR')) {
-        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+        horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
     } else { //cualquier otro empleado que no sea base imss bienestar
-        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
+        horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
     }
 
     //verificar si el empleado tiene otro horario aparte del primario
-    const arrSegundoHorario = horariosMafufos.filter((item) => item.matricula === employee.matricula);
+    /* const arrSegundoHorario = horariosMafufos.filter((item) => item.matricula === employee.matricula); */
     let checadasClasificadas: any[] = [];
 
-    if (arrSegundoHorario.length > 0) { //si tiene otro horario
-        const horaEntradaLimite2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
-        const horaEntradaPermitida2 = moment(arrSegundoHorario[0].hora_entrada2, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+    checadas.forEach((item, index) => {
+        let itemAux = { ...item };
+        if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
+            if (index === 0) {
+                //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
+                let nextDay = dayjs(itemAux.dateReg).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
 
-        checadas.forEach((item) => {
-            let itemAux = { ...item };
-            if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
-                if (checadasClasificadas.length > 0 && checadasClasificadas[checadasClasificadas.length - 1].type === 'ENTRADA') {
+                const isEntrada = checadas.find((item) => {
+                    return item.dateReg === nextDay
+                });
+
+                if (isEntrada) {
                     checadasClasificadas.push({
                         ...item,
-                        type: 'SALIDA'
+                        type: 'ENTRADA'
                     });
                 } else {
-                    //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
-                    let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
-                    const isEntrada = checadas.find((item) => item.dateReg === newDate);
-
-                    if (isEntrada) {
-                        checadasClasificadas.push({
-                            ...item,
-                            type: 'ENTRADA'
-                        });
-                    } else {
-                        checadasClasificadas.push({
-                            ...item,
-                            type: 'SALIDA'
-                        });
-                    }
-                }
-            } else if (item.horaReg >= horaEntradaPermitida2 && item.horaReg <= horaEntradaLimite2) {
-                if (checadasClasificadas.length > 0 && checadasClasificadas[checadasClasificadas.length - 1].type === 'ENTRADA') {
-                    checadasClasificadas.push({
-                        ...item,
-                        type: 'SALIDA'
-                    });
-                } else {
-                    //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
-                    let newDate = moment(moment(itemAux.dateReg).utc()).add(1, 'day').format('ddd, DD MMM YYYY 00:00:00 [GMT]');
-                    const isEntrada = checadas.find((item) => item.dateReg === newDate);
-
-                    if (isEntrada) {
+                    const checadasEnUnDia = checadas.filter((item: any) => item.dateReg);
+                    if (checadasEnUnDia.length > 1) {
                         checadasClasificadas.push({
                             ...item,
                             type: 'ENTRADA'
@@ -220,27 +252,18 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                     }
                 }
             } else {
-                checadasClasificadas.push({
-                    ...item,
-                    type: 'SALIDA'
-                });
-            }
-        });
-    } else { //si no tiene otro horario
-        checadas.forEach((item) => {
-            if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
                 checadasClasificadas.push({
                     ...item,
                     type: 'ENTRADA'
                 });
-            } else {
-                checadasClasificadas.push({
-                    ...item,
-                    type: 'SALIDA'
-                });
             }
-        });
-    }
+        } else {
+            checadasClasificadas.push({
+                ...item,
+                type: 'SALIDA'
+            });
+        }
+    });
 
     return checadasClasificadas;
 };
@@ -263,6 +286,27 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'SUSPENSION': {
         type: 'AMBOS'
+    },
+    'LACTANCIA': {
+        type: 'AMBOS'
+    },
+    'BECA CON GOCE DE SUELDO': {
+        type: 'AMBOS'
+    },
+    'FALTA': {
+        type: 'AMBOS'
+    },
+    'JUST POR OFICIO': {
+        type: 'AMBOS'
+    },
+    'LICENCIA MEDICA': {
+        type: 'AMBOS'
+    },
+    'FESTIVOS': {
+        type: 'AMBOS'
+    },
+    'COMISION OFICIAL': {
+        type: 'AMBOS'
     }
 }
 
@@ -272,18 +316,23 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //VACATIONS
     vacaciones.forEach((item: any) => {
         let itemAux = { ...item } //make copy of item to treat them separately and avoid memory problems. important!!!
-        while (moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(itemAux.fecha_fin))) {
-            if (moment.utc(itemAux.fecha_inicio).isSameOrAfter(moment.utc(fec_inicio)) && moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(fec_final))) {
-                if (parsedWorkingDays[1].includes(moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0])) {
+
+        while (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= dayjs.utc(itemAux.fecha_fin).format('YYYY-MM-DD')) {
+            let horaFormateada = dayjs.utc(itemAux.fecha_inicio).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+
+            if (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= fec_final) {
+
+                if (parsedWorkingDays[1].includes(dayjs.utc(itemAux.fecha_inicio).format('dddd'))) {
                     attendancesAuxWithPermissions.push({
-                        dateReg: moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                        dateReg: horaFormateada,
                         horaReg: '',
                         type: 'EVENTO',
                         event: `VACACIONES ROL ${itemAux.rol}`
                     });
                 }
             }
-            itemAux.fecha_inicio = moment(itemAux.fecha_inicio).add(1, 'day').toISOString();
+
+            itemAux.fecha_inicio = dayjs(itemAux.fecha_inicio).add(1, 'day').toISOString();
         }
     });
 
@@ -291,14 +340,14 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
-    let horaEntradaMaxima = moment(hora_entrada, "HH:mm:ss").add(40, 'minutes').format('HH:mm:ss');;
+    let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');;
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
-        horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
-        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+        horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
+        horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
     } else { //cualquier otro empleado que no sea base imss bienestar
-        horaEntradaLimite = moment(hora_entrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
-        horaEntradaPermitida = moment(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
+        horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
+        horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
     }
 
     let classifiedAttendances = attendances.map((item: any) => {
@@ -321,18 +370,22 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //VALIDAR QUE LOS PERMISOS APAREZCAN EN ENTRADA, SALIDA O EN DIA COMPLETO
     permisos.forEach((item: any) => {
         let itemAux = { ...item }
-        while (moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(itemAux.fecha_fin))) {
-            if (moment.utc(itemAux.fecha_inicio).isSameOrAfter(moment.utc(fec_inicio)) && moment.utc(itemAux.fecha_inicio).isSameOrBefore(moment.utc(fec_final))) {
-                if (parsedWorkingDays[1].includes(moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('LLLL').split(',')[0])) {
+        while (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= dayjs.utc(itemAux.fecha_fin).format('YYYY-MM-DD')) {
+            let horaFormateada = dayjs.utc(itemAux.fecha_inicio).format('ddd, DD MMM YYYY HH:mm:ss [GMT]');
+
+            if (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= fec_final) {
+
+                if (parsedWorkingDays[1].includes(dayjs.utc(itemAux.fecha_inicio).format('dddd'))) {
                     attendancesAuxWithPermissions.push({
-                        dateReg: moment(new Date(itemAux.fecha_inicio), 'DD/MM/YYYY').utc().format('ddd, DD MMM YYYY 00:00:00 [GMT]'),
+                        dateReg: horaFormateada,
                         horaReg: '',
                         type: 'EVENTO',
                         event: `${item.cat_permisos.nombre}`
                     });
                 }
             }
-            itemAux.fecha_inicio = moment(itemAux.fecha_inicio).add(1, 'day').toISOString();
+
+            itemAux.fecha_inicio = dayjs(itemAux.fecha_inicio).add(1, 'day').toISOString();
         }
     });
 
@@ -371,5 +424,78 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
 
     classifiedAttendances.push(...attendancesAuxWithPermissions);
 
-    return classifiedAttendances;
+    //Eliminar checadas duplicadas de entrada y salida
+    for (let index = 0; index < classifiedAttendances.length; index++) {
+        if (index !== 0) {
+            if ((classifiedAttendances[index].type.includes('ENTRADA') || classifiedAttendances[index].type.includes('SALIDA')) && (classifiedAttendances[index].type === classifiedAttendances[index - 1].type) && (classifiedAttendances[index].dateReg == classifiedAttendances[index - 1].dateReg)) {
+                classifiedAttendances.splice(index, 1);
+            }
+        }
+    }
+
+    let sortedData = classifiedAttendances.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+    //Agregar OMISIONES DE ENTRADA Y SALIDA
+    const omisionesSalida: any[] = [];
+    const omisionesEntrada: any[] = [];
+    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL'];
+
+    //Proceso para identificar omisiones de salida
+    for (let index = 0; index < sortedData.length; index++) {
+        const currentItem = sortedData[index];
+        const nextItem = sortedData[index + 1];
+
+        if (index === sortedData.length - 1) {
+            omisionesSalida.push(sortedData[index]);
+            continue;
+        }
+
+        const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
+
+        if (currentItem.type === nextItem.type && shouldAddOmission) {
+            if (currentItem.type === 'ENTRADA') {
+                omisionesSalida.push(addOmission(currentItem));
+            } else {
+                omisionesSalida.push(currentItem);
+            }
+        } else if ((currentItem.type === 'ENTRADA' && nextItem.type === 'EVENTO') && shouldAddOmission) {
+            omisionesSalida.push(addOmission(currentItem));
+        } else {
+            omisionesSalida.push(currentItem);
+        }
+    }
+
+    //proceso para identificar omisiones de entrada
+    for (let index = 0; index < omisionesSalida.length; index++) {
+        const currentItem = omisionesSalida[index];
+
+        if (index === 0) {
+            omisionesEntrada.push(omisionesSalida[index]);
+            continue;
+        }
+
+        if ((currentItem.type === omisionesSalida[index - 1].type) && !permissions.some(item => omisionesSalida[index].event.includes(item))) {
+            if (currentItem.type === 'SALIDA') {
+                omisionesEntrada.push(addOmission(currentItem));
+            } else {
+                omisionesEntrada.push(currentItem);
+            }
+        } else {
+            omisionesEntrada.push(currentItem);
+        }
+    }
+
+    return omisionesEntrada;
 }
+
+const addOmission = (item: any) => {
+    if (item.type === 'ENTRADA' && !item.event.includes('OMISIÓN')) {
+        const event = item.event !== '' ? `${item.event}, OMISIÓN DE SALIDA` : 'OMISIÓN DE SALIDA';
+        return { ...item, event };
+    } else if (item.type === 'SALIDA' && !item.event.includes('OMISIÓN')) {
+        const event = item.event !== '' ? `${item.event}, OMISIÓN DE ENTRADA` : 'OMISIÓN DE ENTRADA';
+        return { ...item, event };
+    } else {
+        return item;
+    }
+};
