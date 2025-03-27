@@ -310,7 +310,7 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     }
 }
 
-export const classifyEventType = (attendances: any, vacaciones: any, permisos: any, employee: any, fec_inicio: string, fec_final: string, hora_entrada: string, parsedWorkingDays: any) => {
+export const classifyEventType = (attendances: any, vacaciones: any, permisos: any, employee: any, fec_inicio: string, fec_final: string, hora_entrada: string, hora_salida: string, parsedWorkingDays: any) => {
     let attendancesAuxWithPermissions: any[] = []; //array de incidencias a anexar a las checadas
 
     //VACATIONS
@@ -339,28 +339,36 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //RETARDOS
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
+    let horaSalidaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
-    let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');;
+    let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');
+    let horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").format('HH:mm:ss');
     } else { //cualquier otro empleado que no sea base imss bienestar
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
+        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
     }
 
-    let classifiedAttendances = attendances.map((item: any) => {
+    let classifiedAttendances: any = [];
+
+    attendances.forEach((item: any) => {
         if (item.type === 'ENTRADA') {
             if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
-                return { ...item, event: '' }
+                classifiedAttendances.push({ ...item, event: '' });
             } else if (item.horaReg >= horaEntradaLimite && item.horaReg < horaEntradaMaxima) {
-                return { ...item, event: 'RETARDO MENOR' }
+                classifiedAttendances.push({ ...item, event: 'RETARDO MENOR' });
             } else {
-                return { ...item, event: 'OMISIÓN ENTRADA' }
+                classifiedAttendances.push({ ...item, event: 'OMISIÓN ENTRADA' });
             }
-        } else {
-            return { ...item, event: '' }
+        } else if (item.type === 'SALIDA') {
+            if (item.horaReg >= horaSalidaPermitida && item.horaReg < horaSalidaMaxima) {
+                classifiedAttendances.push({ ...item, event: '' });
+            }
         }
     });
 
