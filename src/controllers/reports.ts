@@ -5,7 +5,7 @@ import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmplo
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
-import _, { parseInt } from 'lodash';
+import _, { forEach, parseInt } from 'lodash';
 import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
@@ -156,9 +156,10 @@ export const printPdfEstrategia = async (req: any, res: Response) => { //func pa
 export const generareReportIms = async (req: any, res: Response) => {
     try {
         const { mat_final, mat_inicio, fec_final, fec_inicio, id_rh, id_admin, id_director }: PropsReqIMSS = req.query;
-        const fecha_ini = fec_inicio;
-        const fecha_fin = fec_final;
-        const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fec_inicio, fec_final);
+        const fecha_ini = dayjs.utc(fec_inicio).subtract(1, 'day').format('YYYY-MM-DD');
+        const fecha_fin = dayjs.utc(fec_final).add(1, 'day').format('YYYY-MM-DD');
+
+        const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fecha_ini, fecha_fin);
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
@@ -184,8 +185,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 let { hora_entrada, hora_salida } = employee;
                 const attendances = grouped_attendeances[employee.matricula] || [];
                 const { nombre: aparment } = employee['cat_departamentos'] ?? {};
-                const vacaciones: any = await getVacationIMSSReport(employee.id, fec_inicio, fec_final);
-                const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fec_inicio, fecha_fin: fec_final });
+                const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
+                const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
                 let parseHora_entrada = dayjs.utc(hora_entrada).format('HH:mm:ss');
                 let parseHora_salida = dayjs.utc(hora_salida).format('HH:mm:ss');
 
@@ -205,38 +206,64 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
                 let workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
 
-                const parsedWorkingDays = parseWorkingDays(workingDays, fec_inicio, fec_final, festivos, employee, vacaciones);
+                const parsedWorkingDays = parseWorkingDays(workingDays, fecha_ini, fecha_fin, festivos, employee, vacaciones);
 
                 //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
-                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fec_inicio, fec_final, parseHora_entrada, parsedWorkingDays);
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fecha_ini, fecha_fin, parseHora_entrada, parseHora_salida, parsedWorkingDays);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
                 const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
 
-                /* //6. Ordenar el array ascendentemente por dateReg
-                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime()); */
+                //6. Ordenar el array ascendentemente por dateReg
+                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+                //7. Eliminar primer dia por el rango de fechas -1 y +1 para la evaluación de las checadas y dejar los dias +1 para aquellos donde hay eventos de OMISION DE ENTRADA PARA JORNADA ACUMULADA
+                let finalData: any[] = [];
+                sortedData.forEach((item: any) => {
+                    if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(item.dateReg).format('YYYY-MM-DD') <= fec_final) {
+                        finalData.push(item);
+                    }
+
+                    if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') > fec_final && item.event.includes('OMISIÓN DE ENTRADA')) {
+                        finalData.push(item);
+                    }
+                });
+
+                //8. Eliminar eventos de FALTA donde el siguiente día tenga como evento OMISION DE ENTRADA para JORNADA ACUMULADA
+                finalData.forEach((item: any, index: number) => {
+                    if (index === finalData.length - 1) {
+                        return;
+                    } else {
+                        if (item.event.includes('FALTA') && finalData[index + 1].event.includes('OMISIÓN DE ENTRADA')) {
+                            finalData.splice(index, 1);
+                        }
+                    }
+                });
+
+                //9. Para permiso de lactancia, agregar falta a aquellos registros donde no hay hora de checada
+                finalData = finalData.map((item: any) => {
+                    if (item.event === 'LACTANCIA' && item.horaReg === '') {
+                        return { ...item, event: item.event + ', FALTA' }
+                    } else {
+                        return item;
+                    }
+                });
 
                 return {
                     ...employee,
                     parseHora_entrada,
                     parseHora_salida,
-                    final: debuggedDays,
+                    final: finalData,
                     boss: bossByAppartment[aparment] || ''
                 }
             })
         );
 
-        /* employees = employees.filter((employee: any) => {//CASO ESPECIAL PARA FILTRAR LA MATRICULA 1798 CON DOS BASES CUANDO LA MATRICULA INICIAL SEA MAYOR DE ESA
-            if (employee.matricula >= mat_inicio) {
-                return employee
-            }
-        }); */
-
         let mainContent = '';
 
         employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
-            
+
             item1.final.forEach((item2: any) => {
                 body += generateRow(item1, item2);
             });
