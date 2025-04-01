@@ -106,6 +106,11 @@ export const createPermissionPerEmployee = async (req: any, res: Response) => {
                 ok: false,
                 msg: 'Capture el folio de estrategia'
             })
+        } else if (data.permission_id === null) { //por algun motivo a veces se salta la validacion de front-end y manda ids nulos
+            res.status(400).json({
+                ok: false,
+                msg: 'Por favor capture el permiso a registrar'
+            })
         } else {
             const record: any = await createPermissionPerEmployeeQuery({ ...data });
 
