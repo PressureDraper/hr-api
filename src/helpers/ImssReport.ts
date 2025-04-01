@@ -342,7 +342,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     let horaSalidaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
     let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');
-    let horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
+    let horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(1, 'hour').add(59, 'minutes').format('HH:mm:ss');
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
