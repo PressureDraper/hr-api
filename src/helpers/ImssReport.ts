@@ -339,19 +339,17 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //RETARDOS
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
-    let horaSalidaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
     let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');
     let horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(1, 'hour').add(59, 'minutes').format('HH:mm:ss');
+    let horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
-        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").format('HH:mm:ss');
     } else { //cualquier otro empleado que no sea base imss bienestar
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
-        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
     }
 
     let classifiedAttendances: any = [];
@@ -448,20 +446,28 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     const omisionesEntrada: any[] = [];
     const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL'];
 
+    console.log(attendances);
+
+
     //Proceso para identificar omisiones de salida
     for (let index = 0; index < sortedData.length; index++) {
         const currentItem = sortedData[index];
         const nextItem = sortedData[index + 1];
 
+        const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
+
         if (index === sortedData.length - 1) {
-            omisionesSalida.push(sortedData[index]);
+            if (sortedData[index].type === 'ENTRADA' && shouldAddOmission) {
+                omisionesSalida.push(addOmission(sortedData[index]))
+            } else {
+                omisionesSalida.push(sortedData[index]);
+            }
+
             continue;
         }
 
-        const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
-
         if (currentItem.type === nextItem.type && shouldAddOmission) {
-            if (currentItem.type === 'ENTRADA') {
+            if (currentItem.type === 'ENTRADA') { //Ultimo item del arreglo no puede ser entrada, es Omisión Salida
                 omisionesSalida.push(addOmission(currentItem));
             } else {
                 omisionesSalida.push(currentItem);
