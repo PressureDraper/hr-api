@@ -307,6 +307,9 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'COMISION OFICIAL': {
         type: 'AMBOS'
+    },
+    'PERMANENCIA CONSULTA MÉDICA': {
+        type: 'AMBOS'
     }
 }
 
@@ -339,10 +342,30 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //RETARDOS
     let horaEntradaLimite = '';
     let horaEntradaPermitida = '';
+    let horaSalidaMaxima = '';
+    let horaSalidaPermitida = '';
     let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
     let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');
-    let horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(1, 'hour').add(59, 'minutes').format('HH:mm:ss');
-    let horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
+
+    //Definir rango variable de horas máximas de salida
+    if (hora_salida === '23:00:00') {
+        horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(59, 'minutes').format('HH:mm:ss');
+    } else if (hora_salida === '22:30:00') {
+        horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(1, 'hour').add(29, 'minutes').format('HH:mm:ss');
+    } else if (hora_salida === '22:00:00') {
+        horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(1, 'hour').add(59, 'minutes').format('HH:mm:ss');
+    } else if (hora_salida === '21:30:00') {
+        horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(2, 'hour').add(29, 'minutes').format('HH:mm:ss');
+    } else {
+        horaSalidaMaxima = dayjs(hora_salida, "HH:mm:ss").add(2, 'hour').add(59, 'minutes').format('HH:mm:ss');
+    }
+
+    //Definir rango variable de hora de salida permitida
+    if (hora_salida === '01:00:00') {
+        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(1, 'hour').format('HH:mm:ss');
+    } else {
+        horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
+    }
 
     if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
@@ -444,10 +467,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //Agregar OMISIONES DE ENTRADA Y SALIDA
     const omisionesSalida: any[] = [];
     const omisionesEntrada: any[] = [];
-    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL'];
-
-    console.log(attendances);
-
+    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA'];
 
     //Proceso para identificar omisiones de salida
     for (let index = 0; index < sortedData.length; index++) {
@@ -457,7 +477,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === sortedData.length - 1) {
-            if (sortedData[index].type === 'ENTRADA' && shouldAddOmission) {
+            if (sortedData[index].type === 'ENTRADA' && shouldAddOmission) { //Ultimo item del arreglo no puede ser entrada, es Omisión Salida
                 omisionesSalida.push(addOmission(sortedData[index]))
             } else {
                 omisionesSalida.push(sortedData[index]);
@@ -467,7 +487,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
 
         if (currentItem.type === nextItem.type && shouldAddOmission) {
-            if (currentItem.type === 'ENTRADA') { //Ultimo item del arreglo no puede ser entrada, es Omisión Salida
+            if (currentItem.type === 'ENTRADA') {
                 omisionesSalida.push(addOmission(currentItem));
             } else {
                 omisionesSalida.push(currentItem);
@@ -475,7 +495,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         } else if ((currentItem.type === 'ENTRADA' && nextItem.type === 'EVENTO') && shouldAddOmission) {
             omisionesSalida.push(addOmission(currentItem));
         } else {
-            omisionesSalida.push(currentItem);
+            omisionesSalida.push(checadaEmpleadoRegularIrregular(sortedData, currentItem, employee, shouldAddOmission));
         }
     }
 
@@ -483,23 +503,42 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     for (let index = 0; index < omisionesSalida.length; index++) {
         const currentItem = omisionesSalida[index];
 
+        const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
+
         if (index === 0) {
             omisionesEntrada.push(omisionesSalida[index]);
             continue;
         }
 
-        if ((currentItem.type === omisionesSalida[index - 1].type) && !permissions.some(item => omisionesSalida[index].event.includes(item))) {
+        if ((currentItem.type === omisionesSalida[index - 1].type) && shouldAddOmission) {
             if (currentItem.type === 'SALIDA') {
                 omisionesEntrada.push(addOmission(currentItem));
             } else {
                 omisionesEntrada.push(currentItem);
             }
         } else {
-            omisionesEntrada.push(currentItem);
+            omisionesEntrada.push(checadaEmpleadoRegularIrregular(sortedData, currentItem, employee, shouldAddOmission));
         }
     }
 
     return omisionesEntrada;
+}
+
+const checadaEmpleadoRegularIrregular = (sortedData: any, currentItem: any, employee: any, shouldAddOmission: any) => { // Regular -> Checa ES en un día, Irregular -> Checa E en un día y S en otro
+    //CONDICIONAL PARA EMPLEADOS DONDE CHECAN ENTRADA Y SALIDA EN UN MISMO DIA
+    if (employee.cat_turnos.nombre === 'MATUTINO' && shouldAddOmission) {
+        const checadasDelDia = sortedData.filter((item: any) => item.dateReg === currentItem.dateReg);
+        // UN DIA COMPLETO TIENE QUE TENER 2 CHECADAS, SI TIENE 1 ES OMISIÓN
+
+        if (checadasDelDia.length === 1) {
+            return addOmission(currentItem);
+        } else {
+            return currentItem;
+        }
+    } else {
+        return currentItem;
+    }
+
 }
 
 const addOmission = (item: any) => {
