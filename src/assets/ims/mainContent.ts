@@ -7,7 +7,6 @@ export const imsReportMainContent = `
         <img src="https://vectorlogoseek.com/wp-content/uploads/2019/08/gobierno-de-mexico-vector-logo.png"
             alt="IMS" class="img-fluid" style="width: 200px;" />
 
-
         <div style="text-align: center; margin-left: 15px;">
             <span style="text-decoration: underline;">SERVICIOS DE SALUD</span>
             <br>
@@ -16,12 +15,14 @@ export const imsReportMainContent = `
 
     </div>
 
-    <div id="legend" class="d-flex align-items-center" style="font-size: 10px;">
+    <div id="legend" class="d-flex align-items-center" style="font-size: 10px; position: relative;">
         DIRECCIÓN GENERAL
         <br>
         UNIDAD DE ADMINISTRACIÓN Y FINANZAS
         <br>
         COORDINACIÓN DE RECURSOS HUMANOS
+
+        <img style="position: absolute; margin-left: {moveLeft}px; margin-bottom: {moveUpDown}px; transform: rotate({rotateX}deg);" width='auto' height='200px' src="data:image/png;base64, {sello}" alt="Red dot" />
     </div>
 </header>
 
@@ -46,32 +47,32 @@ export const imsReportMainContent = `
     <div class="table d-flex justify-content-between container-sm pb-3">
         <table>
             <thead>
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>NOMBRE:</td>
                     <td style="border-bottom: 1px solid black;">{name}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>RFC:</td>
                     <td style="border-bottom: 1px solid black;">{rfc}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>CURP:</td>
                     <td style="border-bottom: 1px solid black;">{curp}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>MATRICULA:</td>
                     <td style="border-bottom: 1px solid black;">{mat}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>CENTRO DE TABRAJO:</td>
                     <td style="border-bottom: 1px solid black;">CENTRO DE ALTA ESPECIALIDAD DR. RAFAEL LUCIO</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>CLUES:</td>
                     <td style="border-bottom: 1px solid black;">VZIMB002330</td>
                 </tr>
@@ -81,26 +82,26 @@ export const imsReportMainContent = `
 
         <table>
             <tbody>
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>NOMINA:</td>
                     <td style="border-bottom: 1px solid black;">{nom}</td>
                 </tr>
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>TURNO:</td>
                     <td style="border-bottom: 1px solid black;">{turno}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>HORARIO:</td>
                     <td style="border-bottom: 1px solid black;">{hour}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>GUARDIAS:</td>
                     <td style="border-bottom: 1px solid black;">{guards}</td>
                 </tr>
 
-                <tr style="border-bottom: none !important;">
+                <tr style="border-bottom: none !important; background-color: rgba(255, 255, 255, 0);">
                     <td>CATEGORIA:</td>
                     <td style="border-bottom: 1px solid black;">{cat}</td>
                 </tr>

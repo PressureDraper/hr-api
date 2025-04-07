@@ -16,6 +16,7 @@ import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoP
 import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
+import { sello_cae } from "../helpers/images";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -263,6 +264,9 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
+            let randomRotate = Math.floor(Math.random() * 21) - 10;
+            let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
+            let randomUpDown = Math.floor(Math.random() * (300 - 250 + 1)) - 300;
 
             item1.final.forEach((item2: any) => {
                 body += generateRow(item1, item2);
@@ -271,6 +275,10 @@ export const generareReportIms = async (req: any, res: Response) => {
             body += '</tbody>';
 
             let content = format(imsReportMainContent, {
+                sello: sello_cae,
+                rotateX: randomRotate,
+                moveLeft: randomLeft,
+                moveUpDown: randomUpDown,
                 name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
                 rfc: item1.cmp_persona.rfc,
                 curp: item1.cmp_persona.curp,
