@@ -139,7 +139,9 @@ export const createPermissionPerEmployee = async (req: any, res: Response) => {
 export const deletePermission = async (req: any, res: Response) => {
     try {
         const id: number = parseInt(req.params.id);
-        const state = await deletePermissionQuery(id);
+        const { id_blame } = req.body;
+        
+        const state = await deletePermissionQuery(id, id_blame);
 
         state ?
             res.status(200).json({

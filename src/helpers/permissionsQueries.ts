@@ -520,7 +520,7 @@ export const getStrategyFoliumQuery = (fecha_ini: string): Promise<number> => {
     })
 }
 
-export const deletePermissionQuery = (id: number) => {
+export const deletePermissionQuery = (id: number, id_blame: number) => {
     return new Promise(async (resolve, reject) => {
         try {
             const record = await db.rch_permisos.findUnique({
@@ -535,6 +535,7 @@ export const deletePermissionQuery = (id: number) => {
                         id
                     },
                     data: {
+                        id_blame: id_blame,
                         deleted_at: moment.utc().subtract(6, 'hour').toISOString()
                     }
                 }),
