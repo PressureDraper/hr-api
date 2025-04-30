@@ -106,6 +106,30 @@ export const getEmployeeQuery = ({ limit = '10', page = '0', nameFilter = '', en
     })
 }
 
+export const getEmployeeShiftQuery = (id: number) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let shift: any = await db.rch_empleados_historial_horarios.findMany({
+                where: {
+                    id_empleado: id
+                },
+                select: {
+                    fecha_inicio: true,
+                    hora_entrada: true,
+                    hora_salida: true
+                },
+                orderBy: {
+                    fecha_inicio: 'asc'
+                }
+            });
+
+            resolve(shift);
+        } catch (error) {
+            reject(error);
+        }
+    })
+}
+
 export const getKardexQuery = (id: number) => {
     return new Promise(async (resolve, reject) => {
         try {

@@ -109,6 +109,15 @@ export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
                             deleted_at: null,
                             activo: true
                         },
+                        {
+                            id_tipoempleado: 19, //CONTRATO EVENTUAL IMSS BIENESTAR
+                            matricula: {
+                                lte: parseInt(params.mat_final),
+                                gte: parseInt(params.mat_inicio)
+                            },
+                            deleted_at: null,
+                            activo: true
+                        },
                         /* { //EMPLEADO QUE TIENE 2 BASES???? PERO ESTÁ REGISTRADO CON BASE NORMAL
                             matricula: 1798,
                             deleted_at: null,
@@ -129,6 +138,7 @@ export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
                     },
                     cat_tipos_empleado: {
                         select: {
+                            id: true,
                             nombre: true
                         }
                     },
