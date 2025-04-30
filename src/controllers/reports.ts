@@ -17,6 +17,7 @@ import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import { sello_cae } from "../helpers/images";
+import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -188,8 +189,12 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const { nombre: aparment } = employee['cat_departamentos'] ?? {};
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
+                /* const historial_horario: any = await getEmployeeShiftQuery(employee.id); */
                 let parseHora_entrada = dayjs.utc(hora_entrada).format('HH:mm:ss');
                 let parseHora_salida = dayjs.utc(hora_salida).format('HH:mm:ss');
+
+                /* console.log(historial_horario); */
+                
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 // Agrupar los elementos por la fecha (sin la hora)

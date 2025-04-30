@@ -210,8 +210,8 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
 export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: any) => {
     let horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
     let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
-
-    if (employee.cat_tipos_empleado.nombre.includes('BASE IMSS BIENESTAR')) {
+    
+    if (employee.cat_tipos_empleado.id === 17 || employee.cat_tipos_empleado.id === 19) { //Base IMSS Bienestar
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
     } else { //cualquier otro empleado que no sea base imss bienestar
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
@@ -310,6 +310,9 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'PERMANENCIA CONSULTA MÉDICA': {
         type: 'AMBOS'
+    },
+    'JUST CAM': {
+        type: 'AMBOS'
     }
 }
 
@@ -344,7 +347,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     let horaEntradaPermitida = '';
     let horaSalidaMaxima = '';
     let horaSalidaPermitida = '';
-    let { nombre: tipo_empleado } = employee.cat_tipos_empleado;
+    let { id: id_tipo_empleado } = employee.cat_tipos_empleado;
     let horaEntradaMaxima = dayjs(hora_entrada, "HH:mm:ss").add(41, 'minutes').format('HH:mm:ss');
 
     //Definir rango variable de horas máximas de salida
@@ -367,7 +370,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         horaSalidaPermitida = dayjs(hora_salida, "HH:mm:ss").subtract(2, 'hours').format('HH:mm:ss');
     }
 
-    if (tipo_empleado.includes('BASE IMSS BIENESTAR')) {
+    if (id_tipo_empleado === 17 || id_tipo_empleado === 19) { //Base IMSS Bienestar
         horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
         horaEntradaPermitida = dayjs(hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
     } else { //cualquier otro empleado que no sea base imss bienestar
@@ -467,13 +470,14 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //Agregar OMISIONES DE ENTRADA Y SALIDA
     const omisionesSalida: any[] = [];
     const omisionesEntrada: any[] = [];
-    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA'];
+    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA', 'JUST CAM', 'JUST POR OFICIO'];
 
     //Proceso para identificar omisiones de salida
     for (let index = 0; index < sortedData.length; index++) {
         const currentItem = sortedData[index];
         const nextItem = sortedData[index + 1];
 
+        //PERMISOS QUE SI ESTÁN CAPTURADOS SE ANULAN (JUSTIFICAN) LAS OMISIONES
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === sortedData.length - 1) {
@@ -503,6 +507,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     for (let index = 0; index < omisionesSalida.length; index++) {
         const currentItem = omisionesSalida[index];
 
+        //PERMISOS QUE SI ESTÁN CAPTURADOS SE ANULAN (JUSTIFICAN) LAS OMISIONES
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === 0) {
