@@ -116,11 +116,13 @@ export const getEmployeeShiftQuery = (id: number) => {
                 select: {
                     fecha_inicio: true,
                     hora_entrada: true,
-                    hora_salida: true
+                    hora_salida: true,
+                    guardias: true
                 },
-                orderBy: {
-                    fecha_inicio: 'asc'
-                }
+                orderBy: [
+                    { fecha_inicio: 'asc' },
+                    { created_at: 'asc' }
+                ]
             });
 
             resolve(shift);

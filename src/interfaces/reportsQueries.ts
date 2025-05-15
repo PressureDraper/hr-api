@@ -191,3 +191,15 @@ interface Permiso {
 export interface IOPermisosInterface {
     [key: string]: Permiso;
 }
+
+export interface PropsHistorialHorario {
+    fecha_inicio: string;
+    hora_entrada: string;
+    hora_salida: string;
+    guardias: string;
+}
+
+export interface PropsHorarioPerChecada {
+    horario: string;
+    guardias: string[];
+}
