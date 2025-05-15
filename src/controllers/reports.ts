@@ -5,8 +5,8 @@ import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmplo
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
-import _, { forEach, parseInt } from 'lodash';
-import { debugWorkingDays, getAllApartments, parseWorkingDays, isComingOrOut, classifyEventType, generateRow } from '../helpers/ImssReport';
+import _, { parseInt } from 'lodash';
+import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import { sello_cae } from "../helpers/images";
 import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
+import { parse } from "dotenv";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -166,8 +167,6 @@ export const generareReportIms = async (req: any, res: Response) => {
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
         const quin = calculateQuint(fec_inicio, fec_final);
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
-        const deparments = employeesType.map((item: any) => item['cat_departamentos']['nombre']);
-        const bossByAppartment = await getAllApartments(deparments);
 
         const sings = new SignService();
         const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
@@ -186,15 +185,13 @@ export const generareReportIms = async (req: any, res: Response) => {
             employeesType.map(async (employee: any) => {
                 let { hora_entrada, hora_salida } = employee;
                 const attendances = grouped_attendeances[employee.matricula] || [];
-                const { nombre: aparment } = employee['cat_departamentos'] ?? {};
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
-                /* const historial_horario: any = await getEmployeeShiftQuery(employee.id); */
-                let parseHora_entrada = dayjs.utc(hora_entrada).format('HH:mm:ss');
-                let parseHora_salida = dayjs.utc(hora_salida).format('HH:mm:ss');
+                const historial_horario: any = await getEmployeeShiftQuery(employee.id);
 
-                /* console.log(historial_horario); */
-                
+                const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
+                hora_entrada = horario_actual.hora_entrada;
+                hora_salida = horario_actual.hora_salida;
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 // Agrupar los elementos por la fecha (sin la hora)
@@ -205,20 +202,18 @@ export const generareReportIms = async (req: any, res: Response) => {
                     return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
                 });
 
-                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' AL OBJETO
-                const endOutAttendances = isComingOrOut(parseHora_entrada, result, employee);
+                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' Y 'SCHEDULE' AL OBJETO
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial);
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
-                let workingDays: string[] = JSON.parse(decodeURIComponent(employee.guardias));
-
-                const parsedWorkingDays = parseWorkingDays(workingDays, fecha_ini, fecha_fin, festivos, employee, vacaciones);
+                const parsedWorkingDays = parseWorkingDays(fecha_ini, fecha_fin, festivos, employee, vacaciones, historial);
 
                 //4. CLASIFICAR LA CHECADA DEPENDIENDO DEL EVENTO AGREGANDO LA PROPIEDAD 'EVENT'
-                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fecha_ini, fecha_fin, parseHora_entrada, parseHora_salida, parsedWorkingDays);
+                const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fecha_ini, fecha_fin, historial);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
-                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, JSON.parse(decodeURIComponent(employee.guardias)));
+                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, horario_actual.guardias);
 
                 //6. Ordenar el array ascendentemente por dateReg
                 let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
@@ -257,10 +252,10 @@ export const generareReportIms = async (req: any, res: Response) => {
 
                 return {
                     ...employee,
-                    parseHora_entrada,
-                    parseHora_salida,
+                    parseHora_entrada: hora_entrada,
+                    parseHora_salida: hora_salida,
                     final: finalData,
-                    boss: bossByAppartment[aparment] || ''
+                    historial
                 }
             })
         );
@@ -272,9 +267,19 @@ export const generareReportIms = async (req: any, res: Response) => {
             let randomRotate = Math.floor(Math.random() * 21) - 10;
             let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
             let randomUpDown = Math.floor(Math.random() * (300 - 250 + 1)) - 300;
+            let headerHorario = '';
+            let headerGuardias = '';            
 
-            item1.final.forEach((item2: any) => {
-                body += generateRow(item1, item2);
+            if (item1.historial.length > 1) {
+                headerHorario = 'VARIADO'
+                headerGuardias = 'VARIADO'
+            } else {
+                headerHorario = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`
+                headerGuardias = item1.guardias === 'null' ? '-' : item1.historial.length > 0 ? JSON.parse(item1.historial[0].guardias).join(', ') : item1.guardias
+            }
+
+            item1.final.forEach((item2: any, index: number) => {
+                body += generateRow(item1, item2, index);
             });
 
             body += '</tbody>';
@@ -290,8 +295,8 @@ export const generareReportIms = async (req: any, res: Response) => {
                 mat: `${item1.matricula}`,
                 nom: `${item1.cat_tipos_recurso.nombre}`,
                 turno: item1.cat_turnos.nombre,
-                hour: `${item1.parseHora_entrada} - ${item1.parseHora_salida}`,
-                guards: item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', '),
+                hour: headerHorario,
+                guards: headerGuardias,
                 cat: item1.cat_tipos_empleado.nombre,
                 area: item1.cat_departamentos.nombre,
                 table_body: body,
