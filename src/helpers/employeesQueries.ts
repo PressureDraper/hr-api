@@ -152,6 +152,8 @@ export const getKardexQuery = (id: number) => {
                             nombres: true,
                             primer_apellido: true,
                             segundo_apellido: true,
+                            rfc: true,
+                            curp: true
                         }
                     },
                     cat_tipos_empleado: {
