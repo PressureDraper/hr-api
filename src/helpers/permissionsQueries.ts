@@ -273,6 +273,8 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     observaciones: true,
                     fecha_inicio: true,
                     fecha_fin: true,
+                    ini_horario_titular:true,
+                    fin_horario_titular:true,
                     folio: true,
                     created_at: true,
                     rch_empleados: { //titular

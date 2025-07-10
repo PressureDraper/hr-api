@@ -77,6 +77,8 @@ export interface Cmp_Persona {
     nombres: string;
     primer_apellido: string;
     segundo_apellido: string;
+    rfc: string;
+    curp: string;
 }
 
 export interface Cat_Departamentos {
@@ -202,4 +204,14 @@ export interface PropsHistorialHorario {
 export interface PropsHorarioPerChecada {
     horario: string;
     guardias: string[];
+}
+
+export interface PropsChecadasCentralizadas extends PropsAttendances {
+    label?: string;
+    ini_horario_titular?: string;
+    fin_horario_titular?: string;
+}
+
+export interface PropsChecadasEstrategias {
+    data: PropsChecadasCentralizadas[];
 }
