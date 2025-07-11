@@ -111,6 +111,8 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         //load html template (just for editing template with formatting helpers)
         /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
 
+        
+        
         //get params from front-end
         const stringParams: any = req.query;
         let params: PropsFormatoEstrategia = JSON.parse(decodeURIComponent(stringParams.encodedURI));
@@ -118,7 +120,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         //get last folium captured from table to update pdf report
         const permissionYear = moment.utc(params.dateInit.split('-')[0]).toISOString();
         const permissionNextYear = (parseInt(permissionYear) + 1).toString();
-        let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' });
+        let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' }, params.titular.cat_tipos_empleado.nombre);
         params.folium = (foliumList[0].folio).toString(); //update folium
 
         const browser = await puppeteer.launch({

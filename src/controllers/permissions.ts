@@ -80,8 +80,8 @@ export const getEconomicosPerYear = async (req: any, res: Response) => {
 
 export const getStrategyFoliumPerYearQuery = async (req: any, res: Response) => {
     try {
-        const data: { fecha_ini: string } = req.query;
-        const nextFolium: number = await getStrategyFoliumQuery(data.fecha_ini);
+        const data: { fecha_ini: string, tipo_empleado: string } = req.query;        
+        const nextFolium: number = await getStrategyFoliumQuery(data.fecha_ini, data.tipo_empleado);
 
         res.status(200).json({
             ok: true,

@@ -214,7 +214,7 @@ export const getStrategiesInfoPerId = (id: number): Promise<any> => {
                     }
                 }
             });
-            
+
             resolve({
                 dateInit: record[0].fecha_inicio,
                 dateFin: moment.utc(record[0].fecha_inicio).format('L') !== moment.utc(record[0].fecha_fin).format('L') ? record[0].fecha_fin : null,
@@ -273,8 +273,10 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
                     observaciones: true,
                     fecha_inicio: true,
                     fecha_fin: true,
-                    ini_horario_titular:true,
-                    fin_horario_titular:true,
+                    ini_horario_titular: true,
+                    fin_horario_titular: true,
+                    ini_horario_suplente: true,
+                    fin_horario_suplente: true,
                     folio: true,
                     created_at: true,
                     rch_empleados: { //titular
@@ -346,22 +348,50 @@ export const getEconomicosPerYearQuery = (id: string) => {
     })
 }
 
-export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear: string, orderBy: any): Promise<number> => {
+export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear: string, orderBy: any, tipo_empleado: string) => {
     return new Promise(async (resolve, reject) => {
         try {
+            let foliumList = [];
 
-            let foliumList: any = await db.rch_permisos.findMany({
-                where: {
-                    cat_permisos: { nombre: 'ESTRATEGIA' },
-                    fecha_inicio: {
-                        gte: moment.utc(permissionYear).toISOString(),
-                        lt: moment.utc(permissionNextYear).toISOString()
+            if (tipo_empleado === 'BASE IMSS BIENESTAR') {
+                foliumList = await db.rch_permisos.findMany({
+                    where: {
+                        cat_permisos: { nombre: 'ESTRATEGIA' },
+                        fecha_inicio: {
+                            gte: moment.utc(permissionYear).toISOString(),
+                            lt: moment.utc(permissionNextYear).toISOString()
+                        },
+                        deleted_at: null,
+                        rch_empleados: {
+                            cat_tipos_empleado: {
+                                nombre: 'BASE IMSS BIENESTAR'
+                            }
+                        }
                     },
-                    deleted_at: null
-                },
-                select: { folio: true },
-                orderBy: orderBy
-            });
+                    select: { folio: true },
+                    orderBy: orderBy
+                });
+            } else {
+                foliumList = await db.rch_permisos.findMany({
+                    where: {
+                        cat_permisos: { nombre: 'ESTRATEGIA' },
+                        fecha_inicio: {
+                            gte: moment.utc(permissionYear).toISOString(),
+                            lt: moment.utc(permissionNextYear).toISOString()
+                        },
+                        deleted_at: null,
+                        NOT: {
+                            rch_empleados: {
+                                cat_tipos_empleado: {
+                                    nombre: 'BASE IMSS BIENESTAR'
+                                }
+                            }
+                        }
+                    },
+                    select: { folio: true },
+                    orderBy: orderBy
+                });
+            }
 
             resolve(foliumList);
         } catch (error) {
@@ -372,7 +402,7 @@ export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear
 
 export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQueries) => {
     return new Promise(async (resolve, reject) => {
-        try {
+        try {            
             const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
             const nextYear = (parseInt(currentYear) + 1).toString();
             let repetedBetween: boolean = false;
@@ -437,7 +467,14 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
             });
 
             if (repeated && props.folium) {//if permission is registered and is strategy. This sentence is for covering cases where a strategy is created in current year but captured in any other year.
-                let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { folio: 'asc' });
+                let empTitular = await db.rch_empleados.findFirst({
+                    where: {
+                        id: props.employee_id
+                    },
+                    select: { cat_tipos_empleado: { select: { nombre: true } } }
+                });
+
+                let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { folio: 'asc' }, empTitular!.cat_tipos_empleado.nombre);
                 let nextFolium: number = 1;
                 let isFound: any = {};
 
@@ -481,32 +518,66 @@ export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQ
     })
 }
 
-export const getStrategyFoliumQuery = (fecha_ini: string): Promise<number> => {
+export const getStrategyFoliumQuery = (fecha_ini: string, tipo_empleado: string): Promise<number> => {
     return new Promise(async (resolve, reject) => {
         try {
             const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
             const permissionYear = fecha_ini.split('-')[0];
             const nextYear = (parseInt(fecha_ini === '' ? currentYear : permissionYear) + 1).toString();
             let nextFolium: number = 1;
+            let record = [];
 
-            let record = await db.rch_permisos.findMany({
-                where: {
-                    cat_permisos: {
-                        nombre: { contains: 'ESTRATEGIA' }
+            if (tipo_empleado === 'BASE IMSS BIENESTAR') {
+                record = await db.rch_permisos.findMany({
+                    where: {
+                        cat_permisos: {
+                            nombre: { contains: 'ESTRATEGIA' }
+                        },
+                        fecha_inicio: {
+                            gte: moment.utc(fecha_ini === '' ? currentYear : permissionYear).toISOString(),
+                            lt: moment.utc(nextYear).toISOString()
+                        },
+                        rch_empleados: {
+                            cat_tipos_empleado: {
+                                nombre: 'BASE IMSS BIENESTAR'
+                            }
+                        },
+                        deleted_at: null
                     },
-                    fecha_inicio: {
-                        gte: moment.utc(fecha_ini === '' ? currentYear : permissionYear).toISOString(),
-                        lt: moment.utc(nextYear).toISOString()
+                    select: {
+                        folio: true
                     },
-                    deleted_at: null
-                },
-                select: {
-                    folio: true
-                },
-                orderBy: {
-                    folio: 'asc'
-                }
-            });
+                    orderBy: {
+                        folio: 'asc'
+                    }
+                });
+            } else {
+                record = await db.rch_permisos.findMany({
+                    where: {
+                        cat_permisos: {
+                            nombre: { contains: 'ESTRATEGIA' }
+                        },
+                        fecha_inicio: {
+                            gte: moment.utc(fecha_ini === '' ? currentYear : permissionYear).toISOString(),
+                            lt: moment.utc(nextYear).toISOString()
+                        },
+                        deleted_at: null,
+                        NOT: {
+                            rch_empleados: {
+                                cat_tipos_empleado: {
+                                    nombre: 'BASE IMSS BIENESTAR'
+                                }
+                            }
+                        }
+                    },
+                    select: {
+                        folio: true
+                    },
+                    orderBy: {
+                        folio: 'asc'
+                    }
+                });
+            }
 
             let isFound: any = {};
 
