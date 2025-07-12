@@ -110,8 +110,6 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
     try {
         //load html template (just for editing template with formatting helpers)
         /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
-
-        
         
         //get params from front-end
         const stringParams: any = req.query;
@@ -134,7 +132,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
 
         //get params to substitute inside html template
         if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
-            templateParams = htmlParamsIMSS(params);
+            templateParams = await htmlParamsIMSS(params);
             template = format(templateEstrategiaIMSS, templateParams);
         } else {
             templateParams = htmlParams(params);
