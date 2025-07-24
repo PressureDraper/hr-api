@@ -282,9 +282,9 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
         let schedule = '';
         let guards: string[] = [];
 
-        //ajustar los horarios respecto a los cortes si existen        
+        //ajustar los horarios respecto a los cortes si existen    
         if (historial.length === 0) { //si no tiene cambios de horario
-            horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
+            horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
 
             schedule = dayjs.utc(employee.hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(employee.hora_salida).format('HH:mm:ss');
 
@@ -295,7 +295,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
             for (let index = 0; index < historial.length; index++) {
                 if (index === historial.length - 1) {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString()) {
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(2, 'hours').format('HH:mm:ss');
+                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
 
                         schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
 
@@ -306,7 +306,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                 } else {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString() && fechaChecada < dayjs(historial[index + 1].fecha_inicio).toISOString()) {
                         /* console.log(item, fechaChecada, dayjs(historial[index].fecha_inicio).toISOString(), historial); */
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(2, 'hours').format('HH:mm:ss');
+                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
 
                         schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
 
@@ -418,6 +418,12 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'JUST CAM': {
         type: 'AMBOS'
+    },
+    'PASE DE ENTRADA POR HORAS FESTIVAS': {
+        type: 'ENTRADA'
+    },
+    'PASE DE SALIDA POR HORAS FESTIVAS': {
+        type: 'SALIDA'
     }
 }
 
@@ -541,13 +547,18 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
     });
 
+    //proceso para evitar entradas duplicadas en registros con permisos sin checadas
     classifiedAttendances.forEach((item1: any) => {
         //Obtener de los permisos aquellos que aparecen en dias con checadas
         attendancesAuxWithPermissions.forEach((item2: any, index: number) => {
-            if (item1.dateReg === item2.dateReg) {
-                attendancesAuxWithPermissions.splice(index, 1); //Quitamos el permiso que corresponde al dia para no repetir la entrada en el push(...)
-                sharedDays.push(item2);
+            if (item1.dateReg !== item2.dateReg) return;
+
+            if (item2.event.includes('VACACIONES')) {
+                item1.event === '' ? item1.event += item2.event : item1.event += ', ' + item2.event
             }
+
+            attendancesAuxWithPermissions.splice(index, 1); //Quitamos el permiso que corresponde al dia para no repetir la entrada en el push(...)
+            sharedDays.push(item2);
         });
     });
 
@@ -556,9 +567,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         const matchingItem = sharedDays.find(item2 => item2.dateReg === item1.dateReg);
 
         // Si se encuentra un elemento coincidente, agregar el valor de 'event' dependiendo del permiso a entrada, salida o ambos
-        if (!matchingItem) {
-            return
-        }
+        if (!matchingItem) return;
 
         const permisoType = IOPermisos[matchingItem.event]?.type;
 
@@ -590,14 +599,14 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     //Agregar OMISIONES DE ENTRADA Y SALIDA
     const omisionesSalida: any[] = [];
     const omisionesEntrada: any[] = [];
-    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA', 'JUST CAM', 'JUST POR OFICIO'];
-
+    const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA', 'JUST CAM', 'JUST POR OFICIO', 'PASE DE ENTRADA POR HORAS FESTIVAS', 'PASE DE SALIDA POR HORAS FESTIVAS'];
+    
     //Proceso para identificar omisiones de salida
     for (let index = 0; index < sortedData.length; index++) {
         const currentItem = sortedData[index];
         const nextItem = sortedData[index + 1];
 
-        //PERMISOS QUE SI ESTÁN CAPTURADOS SE ANULAN (JUSTIFICAN) LAS OMISIONES
+        //PERMISOS QUE SI ESTÁN CAPTURADOS ANULAN (JUSTIFICAN) LAS OMISIONES
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === sortedData.length - 1) {
@@ -627,7 +636,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     for (let index = 0; index < omisionesSalida.length; index++) {
         const currentItem = omisionesSalida[index];
 
-        //PERMISOS QUE SI ESTÁN CAPTURADOS SE ANULAN (JUSTIFICAN) LAS OMISIONES
+        //PERMISOS QUE SI ESTÁN CAPTURADOS ANULAN (JUSTIFICAN) LAS OMISIONES
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === 0) {
@@ -708,7 +717,7 @@ export const getEmployeeDataPerDateRange = (historial_horario: PropsHistorialHor
                 fecha_inicio: dayjs.utc(fecha_ini).toISOString(),
                 hora_entrada: dayjs.utc(hora_entrada).toISOString(),
                 hora_salida: dayjs.utc(hora_salida).toISOString(),
-                guardias: uniqueHorarios[uniqueHorarios.length - 1].guardias
+                guardias: employee.guardias
             }],
             horario_actual: {
                 hora_entrada: parseHora_entrada,

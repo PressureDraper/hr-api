@@ -207,7 +207,7 @@ export const formatAttendancesReport = (attendances: PropsAttendances[], employe
 
         return {
             "mat": data.mat,
-            "name": employee.cmp_persona.nombres + ' ' + employee.cmp_persona.primer_apellido + ' ' + employee.cmp_persona.segundo_apellido,
+            "name": employee.cmp_persona.primer_apellido + ' ' + employee.cmp_persona.segundo_apellido + ' ' + employee.cmp_persona.nombres,
             "type": employee.cat_tipos_empleado.nombre,
             "turn": employee.cat_turnos.nombre,
             "rfc": employee.cmp_persona.rfc,
