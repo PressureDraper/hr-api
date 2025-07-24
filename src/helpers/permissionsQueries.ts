@@ -183,12 +183,16 @@ export const getStrategiesInfoPerId = (id: number): Promise<any> => {
                             matricula: true,
                             hora_entrada: true,
                             hora_salida: true,
+                            guardias: true,
                             cmp_persona: {
                                 select: {
-                                    nombres: true, primer_apellido: true, segundo_apellido: true
+                                    nombres: true, primer_apellido: true, segundo_apellido: true, rfc: true, curp: true
                                 }
                             },
                             cat_categorias: {
+                                select: { nombre: true }
+                            },
+                            cat_tipos_empleado: {
                                 select: { nombre: true }
                             },
                             cat_departamentos: { select: { nombre: true } },
@@ -200,12 +204,16 @@ export const getStrategiesInfoPerId = (id: number): Promise<any> => {
                             matricula: true,
                             hora_entrada: true,
                             hora_salida: true,
+                            guardias: true,
                             cmp_persona: {
                                 select: {
-                                    nombres: true, primer_apellido: true, segundo_apellido: true
+                                    nombres: true, primer_apellido: true, segundo_apellido: true, rfc: true, curp: true
                                 }
                             },
                             cat_categorias: {
+                                select: { nombre: true }
+                            },
+                            cat_tipos_empleado: {
                                 select: { nombre: true }
                             },
                             cat_departamentos: { select: { nombre: true } },
@@ -402,7 +410,7 @@ export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear
 
 export const createPermissionPerEmployeeQuery = ({ ...props }: CreatePermissionQueries) => {
     return new Promise(async (resolve, reject) => {
-        try {            
+        try {
             const currentYear = moment.utc().subtract(6, 'hour').format('YYYY'); //timestamp utc-6
             const nextYear = (parseInt(currentYear) + 1).toString();
             let repetedBetween: boolean = false;

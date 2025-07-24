@@ -110,7 +110,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
     try {
         //load html template (just for editing template with formatting helpers)
         /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
-        
+
         //get params from front-end
         const stringParams: any = req.query;
         let params: PropsFormatoEstrategia = JSON.parse(decodeURIComponent(stringParams.encodedURI));
@@ -120,12 +120,6 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         const permissionNextYear = (parseInt(permissionYear) + 1).toString();
         let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' }, params.titular.cat_tipos_empleado.nombre);
         params.folium = (foliumList[0].folio).toString(); //update folium
-
-        const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
-        });
-
-        const page = await browser.newPage();
 
         let templateParams: any = {};
         let template: string = '';
@@ -141,6 +135,12 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
 
         //get html template loading params
         /* const template = format(fs.readFileSync(dir, 'utf8'), templateParams); */ //(just for editing template with formatting helpers)
+
+        const browser = await puppeteer.launch({
+            executablePath: "/usr/bin/google-chrome",
+        });
+
+        const page = await browser.newPage();
 
         await page.setContent(template);
         const pdfBuffer = await page.pdf({
@@ -172,17 +172,23 @@ export const printPdfEstrategia = async (req: any, res: Response) => { //func pa
         //get params from front-end
         const { id }: any = req.query;
         const params: PropsFormatoEstrategia = await getStrategiesInfoPerId(parseInt(id));
+        let templateParams: any = {};
+        let template: string = '';
 
         //get params to substitute inside html template
-        const templateParams = htmlParams(params);
+        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+            templateParams = await htmlParamsIMSS(params);
+            template = format(templateEstrategiaIMSS, templateParams);
+        } else {
+            templateParams = htmlParams(params);
+            template = format(templateEstrategia, templateParams);
+        }
 
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
-
-        const template = format(templateEstrategia, templateParams);
 
         await page.setContent(template);
         const pdfBuffer = await page.pdf({
@@ -282,10 +288,10 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
                 hora_entrada = horario_actual.hora_entrada;
                 hora_salida = horario_actual.hora_salida;
-                
+
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
                 const result = getUnrepeatedAttendances(attendances);
-                
+
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
                 const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente);
 
