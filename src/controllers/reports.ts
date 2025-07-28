@@ -253,10 +253,13 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //PENDIENTE: verificar falla en el reporte cuando le cambian el horario al suplente
                 if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
                     const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== employee.matricula);
+                    
 
                     if (estrategias.length > 0) {
                         checadasSuplente = await Promise.all(
                             estrategias.map(async (estrategia: any) => {
+                                let nombre: string = estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.segundo_apellido;
+
                                 const data = await getAttendancesReport(
                                     estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
                                     estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
@@ -270,7 +273,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                                 const strategyAttendancesWithLabel = strategyAttendances.map((attendance) => {
                                     return {
                                         ...attendance,
-                                        label: `TxT ${estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula}`,
+                                        label: `TxT ${estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula} ${nombre}`,
                                         ini_horario_titular: estrategia.ini_horario_titular,
                                         fin_horario_titular: estrategia.fin_horario_titular
                                     }

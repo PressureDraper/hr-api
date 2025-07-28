@@ -303,6 +303,9 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
         checadasOrdenadas = checadas.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
     }
 
+    console.log(checadasSuplente);
+    
+
     //Procesar checadas del empleado
     checadasOrdenadas.forEach((item, index) => {
         let itemAux = { ...item };
