@@ -1,4 +1,4 @@
-import { IOPermisosInterface, PropsHistorialHorario, PropsHorarioPerChecada } from "../interfaces/reportsQueries";
+import { IOPermisosInterface, PropsAttendances, PropsChecadasCentralizadas, PropsChecadasEstrategias, PropsHistorialHorario, PropsHorarioPerChecada } from "../interfaces/reportsQueries";
 import _, { uniq } from "lodash";
 import dayjs from "dayjs";
 import { parse } from "path";
@@ -25,6 +25,25 @@ export const generateRow = (item1: any, item2: any, index: number) => {
         </tr>
     `;
 };
+
+export const getUnrepeatedAttendances = (attendances: any[]) => {
+    // Agrupar los elementos por la fecha (sin la hora)
+    const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
+
+    // Obtener la primer checada de cada hora dentro de cada grupo de fecha
+    const result = _.flatMap(groupedByDate, (items) => {
+        return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
+    });
+
+    return result
+}
+
+export const getAttendancesPerPermissionDateRange = (attendances: any[], fec_ini: string, fec_fin: string) => {
+    // Filtrar checadas para quedarnos con las que se encuentren capturadas en el rango de la estrategia
+    const strategyAttendances = attendances.filter((item) => dayjs.utc(item.dateReg).toISOString() >= dayjs.utc(fec_ini).toISOString() && dayjs.utc(item.dateReg).toISOString() <= dayjs.utc(fec_fin).toISOString());
+
+    return strategyAttendances;
+}
 
 export const translateDays = (workingDays: string[]) => {
     const translatedWorkingDays: string[] = workingDays.map((day: string) => {
@@ -75,12 +94,12 @@ const getHorarioPerChecada = (historial: PropsHistorialHorario[], empleado: any,
 
                     return {
                         horario: dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss'),
-                        guardias: JSON.parse(decodeURIComponent(historial[index].guardias))
+                        guardias: historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(empleado.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias))
                     }
                 } else {
                     return {
                         horario: dayjs.utc(historial[historial.length - 1].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[historial.length - 1].hora_salida).format('HH:mm:ss'),
-                        guardias: JSON.parse(decodeURIComponent(historial[index].guardias))
+                        guardias: historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(empleado.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias))
                     }
                 }
             } else {
@@ -88,7 +107,7 @@ const getHorarioPerChecada = (historial: PropsHistorialHorario[], empleado: any,
 
                     return {
                         horario: dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss'),
-                        guardias: JSON.parse(decodeURIComponent(historial[index].guardias))
+                        guardias: historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(empleado.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias))
                     }
                 }
             }
@@ -207,7 +226,9 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
     });
 
     historial.forEach((item: PropsHistorialHorario) => {
-        const translatedDays = translateDays(JSON.parse(decodeURIComponent(item.guardias)));
+        const guardias = item.guardias === 'null' ? JSON.parse(decodeURIComponent(empleado.guardias)) : JSON.parse(decodeURIComponent(item.guardias));
+
+        const translatedDays = translateDays(guardias);
 
         if (item.guardias.includes('FESTIVOS')) {
             let attendances: any = parsedDays.filter((item) => (translatedDays.includes(item.day) || item.type === 'EVENTO FESTIVO'));
@@ -268,15 +289,25 @@ export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: 
     }
 }
 
-export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: any, historial: PropsHistorialHorario[]) => {
+export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentralizadas[], employee: any, historial: PropsHistorialHorario[], checadasSuplente: PropsChecadasEstrategias[]) => {
     let horaEntradaLimite: string = '';
     let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
-
-    //verificar si el empleado tiene otro horario aparte del primario
-    /* const arrSegundoHorario = horariosMafufos.filter((item) => item.matricula === employee.matricula); */
     let checadasClasificadas: any[] = [];
+    let checadasOrdenadas = checadas;
 
-    checadas.forEach((item, index) => {
+    if (checadasSuplente.length > 0) {
+        //Si hay checadas de suplente, las agregamos al array de checadas
+        checadasSuplente.forEach((_item, index) => {
+            checadas = checadas.concat(checadasSuplente[index].data);
+        });
+        checadasOrdenadas = checadas.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+    }
+
+    console.log(checadasSuplente);
+    
+
+    //Procesar checadas del empleado
+    checadasOrdenadas.forEach((item, index) => {
         let itemAux = { ...item };
         let fechaChecada = dayjs(itemAux.dateReg).toISOString();
         let schedule = '';
@@ -284,9 +315,14 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
 
         //ajustar los horarios respecto a los cortes si existen    
         if (historial.length === 0) { //si no tiene cambios de horario
-            horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
-
-            schedule = dayjs.utc(employee.hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(employee.hora_salida).format('HH:mm:ss');
+            //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
+            if (!item.ini_horario_titular) {
+                horaEntradaLimite = dayjs.utc(hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
+                schedule = dayjs.utc(employee.hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(employee.hora_salida).format('HH:mm:ss');
+            } else { //si le cambiaron el horario, se respeta el horario de la estrategia
+                horaEntradaLimite = dayjs.utc(item.ini_horario_titular).add(3, 'hours').format('HH:mm:ss');
+                schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
+            }
 
             guards = JSON.parse(decodeURIComponent(employee.guardias));
 
@@ -295,24 +331,33 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
             for (let index = 0; index < historial.length; index++) {
                 if (index === historial.length - 1) {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString()) {
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
+                        //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
+                        if (!item.ini_horario_titular) {
+                            horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
+                            schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
+                            horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, historial[index].hora_entrada);
+                        } else { //si le cambiaron el horario, se respeta el horario de la estrategia
+                            horaEntradaLimite = dayjs.utc(item.ini_horario_titular).add(3, 'hours').format('HH:mm:ss');
+                            schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
+                            horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, item.ini_horario_titular);
+                        }
 
-                        schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
-
-                        guards = JSON.parse(decodeURIComponent(historial[index].guardias));
-
-                        horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, historial[index].hora_entrada);
+                        guards = historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(employee.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias));
                     }
                 } else {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString() && fechaChecada < dayjs(historial[index + 1].fecha_inicio).toISOString()) {
-                        /* console.log(item, fechaChecada, dayjs(historial[index].fecha_inicio).toISOString(), historial); */
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
+                        //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
+                        if (!item.ini_horario_titular) {
+                            horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
+                            schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
+                            horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, historial[index].hora_entrada);
+                        } else {  //si le cambiaron el horario, se respeta el horario de la estrategia
+                            horaEntradaLimite = dayjs.utc(item.ini_horario_titular).add(3, 'hours').format('HH:mm:ss');
+                            schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
+                            horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, item.ini_horario_titular);
+                        }
 
-                        schedule = dayjs.utc(historial[index].hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(historial[index].hora_salida).format('HH:mm:ss');
-
-                        guards = JSON.parse(decodeURIComponent(historial[index].guardias));
-
-                        horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, historial[index].hora_entrada);
+                        guards = historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(employee.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias));
                     }
                 }
             }
@@ -332,23 +377,32 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                         ...item,
                         type: 'ENTRADA',
                         schedule,
-                        guardias: guards
+                        guardias: guards,
+                        label: item.label ? item.label : '',
+                        ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
+                        fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                     });
                 } else {
-                    const checadasEnUnDia = checadas.filter((item: any) => item.dateReg);
+                    const checadasEnUnDia = checadas.filter((item) => item.dateReg);
                     if (checadasEnUnDia.length > 1) {
                         checadasClasificadas.push({
                             ...item,
                             type: 'ENTRADA',
                             schedule,
-                            guardias: guards
+                            guardias: guards,
+                            label: item.label ? item.label : '',
+                            ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
+                            fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                         });
                     } else {
                         checadasClasificadas.push({
                             ...item,
                             type: 'SALIDA',
                             schedule,
-                            guardias: guards
+                            guardias: guards,
+                            label: item.label ? item.label : '',
+                            ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
+                            fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                         });
                     }
                 }
@@ -357,7 +411,10 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                     ...item,
                     type: 'ENTRADA',
                     schedule,
-                    guardias: guards
+                    guardias: guards,
+                    label: item.label ? item.label : '',
+                    ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
+                    fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                 });
             }
         } else {
@@ -365,7 +422,10 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
                 ...item,
                 type: 'SALIDA',
                 schedule,
-                guardias: guards
+                guardias: guards,
+                label: item.label ? item.label : '',
+                ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
+                fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
             });
         }
     });
@@ -373,7 +433,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: any[], employee: a
     return checadasClasificadas;
 };
 
-const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde aparecen checadas. Los permisos donde no aparecen checadas son añadidos en otro proceso
+const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde aparecen checadas. Los permisos donde no aparecen checadas son añadidos en otro proceso. Si un permiso no aparece aqui, no aparecerá en el reporte.
     'PASE DE SALIDA': {
         type: 'SALIDA'
     },
@@ -424,6 +484,12 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'PASE DE SALIDA POR HORAS FESTIVAS': {
         type: 'SALIDA'
+    },
+    'PATERNIDAD': {
+        type: 'AMBOS'
+    },
+    'LICENCIA MEDICA POR ACCIDENTE DE TRABAJO': {
+        type: 'AMBOS'
     }
 }
 
@@ -503,21 +569,26 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
 
         if (item.type === 'ENTRADA') {
             if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
-                classifiedAttendances.push({ ...item, event: '' });
+                classifiedAttendances.push({ ...item, event: item.label ? ''.concat(item.label) : '' });
             } else if (item.horaReg >= horaEntradaLimite && item.horaReg < horaEntradaMaxima) {
-                classifiedAttendances.push({ ...item, event: 'RETARDO MENOR' });
+                classifiedAttendances.push({ ...item, event: item.label ? 'RETARDO MENOR, '.concat(item.label) : 'RETARDO MENOR' });
             } else {
-                classifiedAttendances.push({ ...item, event: 'OMISIÓN ENTRADA' });
+                classifiedAttendances.push({ ...item, event: item.label ? 'OMISIÓN ENTRADA, '.concat(item.label) : 'OMISIÓN ENTRADA' });
             }
         } else if (item.type === 'SALIDA') {
             if (item.horaReg >= horaSalidaPermitida && item.horaReg < horaSalidaMaxima) {
-                classifiedAttendances.push({ ...item, event: '' });
+                classifiedAttendances.push({ ...item, event: item.label ? ''.concat(item.label) : '' });
             }
         }
     });
 
     //PERMISOS
     let sharedDays: any[] = [];
+
+    //Quitar permisos de estrategias para que no sean mapeados en el reporte para IMSS BIENESTAR
+    if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+        permisos = permisos.filter((item: any) => item.cat_permisos.nombre !== 'ESTRATEGIA');
+    }
 
     //VALIDAR QUE LOS PERMISOS APAREZCAN EN ENTRADA, SALIDA O EN DIA COMPLETO
     permisos.forEach((item: any) => {
@@ -547,7 +618,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
     });
 
-    //proceso para evitar entradas duplicadas en registros con permisos sin checadas
+    
     classifiedAttendances.forEach((item1: any) => {
         //Obtener de los permisos aquellos que aparecen en dias con checadas
         attendancesAuxWithPermissions.forEach((item2: any, index: number) => {
@@ -563,24 +634,26 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     });
 
     classifiedAttendances.forEach((item1: any) => {
-        // Buscar si la fecha de item1 coincide con alguna en array2
-        const matchingItem = sharedDays.find(item2 => item2.dateReg === item1.dateReg);
+        // Buscar si la fecha de item1 coincide con permisos capturados en esa fecha
+        const matchingItem = sharedDays.filter(item2 => item2.dateReg === item1.dateReg);
 
         // Si se encuentra un elemento coincidente, agregar el valor de 'event' dependiendo del permiso a entrada, salida o ambos
         if (!matchingItem) return;
 
-        const permisoType = IOPermisos[matchingItem.event]?.type;
+        matchingItem.forEach((permiso: any) => {
+            const permisoType = IOPermisos[permiso.event]?.type;
 
-        if (permisoType === item1.type) {
-            if (item1.event === 'RETARDO MENOR' && matchingItem.event === 'AUTORIZACIÓN DE ENTRADA') {
-                item1.event = matchingItem.event;
-            } else {
-                //si item1.event es '', 
-                item1.event += item1.event ? `, ${matchingItem.event}` : matchingItem.event;
+            if (permisoType === item1.type) {
+                if (item1.event === 'RETARDO MENOR' && permiso.event === 'AUTORIZACIÓN DE ENTRADA') {
+                    item1.event += permiso.event;
+                } else {
+                    //si item1.event es '', 
+                    item1.event += item1.event ? `, ${permiso.event}` : permiso.event;
+                }
+            } else if (permisoType === 'AMBOS') {
+                item1.event += item1.event ? `, ${permiso.event}` : permiso.event;
             }
-        } else if (permisoType === 'AMBOS') {
-            item1.event += item1.event ? `, ${matchingItem.event}` : matchingItem.event;
-        }
+        });
     });
 
     classifiedAttendances.push(...attendancesAuxWithPermissions);
@@ -769,12 +842,13 @@ export const getEmployeeDataPerDateRange = (historial_horario: PropsHistorialHor
 
             }
 
+
             return {
                 historial: filteredHistorial,
                 horario_actual: {
                     hora_entrada: dayjs.utc(filteredHistorial[0].hora_entrada).format('HH:mm:ss'),
                     hora_salida: dayjs.utc(filteredHistorial[0].hora_salida).format('HH:mm:ss'),
-                    guardias: JSON.parse(decodeURIComponent(filteredHistorial[0].guardias))
+                    guardias: filteredHistorial[0].guardias === 'null' ? JSON.parse(decodeURIComponent(employee.guardias)) : JSON.parse(decodeURIComponent(filteredHistorial[0].guardias))
                 }
             }
         }

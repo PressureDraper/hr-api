@@ -1,24 +1,26 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReqIMSS } from "../interfaces/reportsQueries";
+import { PropsAttendancesInterface, PropsChecadasEstrategias, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReqIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import _, { parseInt } from 'lodash';
-import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange } from '../helpers/ImssReport';
+import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange } from '../helpers/ImssReport';
 import { imsReportMainContent } from "../assets/ims/mainContent";
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
 import { SignService } from './presentation/services/sign.service';
 import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoPerId } from "../helpers/permissionsQueries";
-import { htmlParams, templateEstrategia } from "../helpers/strategyReport";
+import { htmlParams, htmlParamsIMSS, templateEstrategia, templateEstrategiaIMSS } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
 import { sello_cae } from "../helpers/images";
 import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
 import { parse } from "dotenv";
+import fs from 'fs';
+import path from "path";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -61,6 +63,49 @@ export const getExcelChecadas = async (req: any, res: Response) => {
     }
 }
 
+export const testPDF = async (req: any, res: Response) => {
+    try {
+        //load html template (just for editing template with formatting helpers)
+        /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
+
+        //get params to substitute inside html template
+        const browser = await puppeteer.launch({
+            executablePath: "/usr/bin/google-chrome",
+        });
+
+        const page = await browser.newPage();
+
+        // Construir la ruta absoluta del archivo HTML
+        const filePath = path.join(__dirname, '..', 'assets', 'templateEstrategiaIMSS.html');
+        const htmlString = fs.readFileSync(filePath, 'utf8');
+
+        const template = format(htmlString);
+
+        await page.setContent(template);
+        const pdfBuffer = await page.pdf({
+            format: 'Letter',
+            printBackground: true,
+            margin: {
+                top: 20,
+                left: 20,
+                right: 20
+            },
+            scale: 0.95
+        });
+
+        await browser.close();
+
+        res.contentType("application/pdf");
+        res.send(pdfBuffer);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            ok: false,
+            msg: err
+        });
+    }
+}
+
 export const getPdfEstrategia = async (req: any, res: Response) => { //func para generar estrategia cuando se captura desde PERMISOS
     try {
         //load html template (just for editing template with formatting helpers)
@@ -73,21 +118,29 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         //get last folium captured from table to update pdf report
         const permissionYear = moment.utc(params.dateInit.split('-')[0]).toISOString();
         const permissionNextYear = (parseInt(permissionYear) + 1).toString();
-        let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' });
+        let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' }, params.titular.cat_tipos_empleado.nombre);
         params.folium = (foliumList[0].folio).toString(); //update folium
 
+        let templateParams: any = {};
+        let template: string = '';
+
         //get params to substitute inside html template
-        const templateParams = htmlParams(params);
+        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+            templateParams = await htmlParamsIMSS(params);
+            template = format(templateEstrategiaIMSS, templateParams);
+        } else {
+            templateParams = htmlParams(params);
+            template = format(templateEstrategia, templateParams);
+        }
+
+        //get html template loading params
+        /* const template = format(fs.readFileSync(dir, 'utf8'), templateParams); */ //(just for editing template with formatting helpers)
 
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
-
-        //get html template loading params
-        /* const template = format(fs.readFileSync(dir, 'utf8'), templateParams); */ //(just for editing template with formatting helpers)
-        const template = format(templateEstrategia, templateParams);
 
         await page.setContent(template);
         const pdfBuffer = await page.pdf({
@@ -119,17 +172,23 @@ export const printPdfEstrategia = async (req: any, res: Response) => { //func pa
         //get params from front-end
         const { id }: any = req.query;
         const params: PropsFormatoEstrategia = await getStrategiesInfoPerId(parseInt(id));
+        let templateParams: any = {};
+        let template: string = '';
 
         //get params to substitute inside html template
-        const templateParams = htmlParams(params);
+        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+            templateParams = await htmlParamsIMSS(params);
+            template = format(templateEstrategiaIMSS, templateParams);
+        } else {
+            templateParams = htmlParams(params);
+            template = format(templateEstrategia, templateParams);
+        }
 
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
         });
 
         const page = await browser.newPage();
-
-        const template = format(templateEstrategia, templateParams);
 
         await page.setContent(template);
         const pdfBuffer = await page.pdf({
@@ -188,22 +247,56 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
+                let checadasSuplente: PropsChecadasEstrategias[] = [];
 
+                //obtener checadas de suplentes en estrategias para empleados IMSS BIENESTAR
+                //PENDIENTE: verificar falla en el reporte cuando le cambian el horario al suplente
+                if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+                    const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== employee.matricula);
+                    
+
+                    if (estrategias.length > 0) {
+                        checadasSuplente = await Promise.all(
+                            estrategias.map(async (estrategia: any) => {
+                                let nombre: string = estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.segundo_apellido;
+
+                                const data = await getAttendancesReport(
+                                    estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
+                                    estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
+                                    fecha_ini,
+                                    fecha_fin
+                                );
+
+                                const substituteAttendances = getUnrepeatedAttendances(data.attendances);
+                                const strategyAttendances = getAttendancesPerPermissionDateRange(substituteAttendances, estrategia.fecha_inicio, estrategia.fecha_fin);
+
+                                const strategyAttendancesWithLabel = strategyAttendances.map((attendance) => {
+                                    return {
+                                        ...attendance,
+                                        label: `TxT ${estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula} ${nombre}`,
+                                        ini_horario_titular: estrategia.ini_horario_titular,
+                                        fin_horario_titular: estrategia.fin_horario_titular
+                                    }
+                                })
+
+                                return {
+                                    data: strategyAttendancesWithLabel,
+                                };
+                            })
+                        );
+                    }
+                }
+
+                //procesar el historial de los horarios de cada empleado
                 const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
                 hora_entrada = horario_actual.hora_entrada;
                 hora_salida = horario_actual.hora_salida;
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
-                // Agrupar los elementos por la fecha (sin la hora)
-                const groupedByDate = _.groupBy(attendances, (item) => new Date(item.dateReg).toDateString());
+                const result = getUnrepeatedAttendances(attendances);
 
-                // Obtener la primer checada de cada hora dentro de cada grupo de fecha
-                const result = _.flatMap(groupedByDate, (items) => {
-                    return _.uniqBy(items, (item) => item.horaReg.split(':')[0]); // Filtrar por hora única
-                });
-
-                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE' Y 'SCHEDULE' AL OBJETO
-                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial);
+                //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente);
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
@@ -268,14 +361,16 @@ export const generareReportIms = async (req: any, res: Response) => {
             let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
             let randomUpDown = Math.floor(Math.random() * (300 - 250 + 1)) - 300;
             let headerHorario = '';
-            let headerGuardias = '';            
+            let headerGuardias = '';
+            let horarioActual = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`;
+            let isHorarioVariado = item1.final.filter((item: any) => item.schedule !== horarioActual);
 
-            if (item1.historial.length > 1) {
+            if (isHorarioVariado.length > 1) {
                 headerHorario = 'VARIADO'
                 headerGuardias = 'VARIADO'
             } else {
                 headerHorario = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`
-                headerGuardias = item1.guardias === 'null' ? '-' : item1.historial.length > 0 ? JSON.parse(item1.historial[0].guardias).join(', ') : item1.guardias
+                headerGuardias = item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', ')
             }
 
             item1.final.forEach((item2: any, index: number) => {
