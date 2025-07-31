@@ -80,8 +80,8 @@ export const getEconomicosPerYear = async (req: any, res: Response) => {
 
 export const getStrategyFoliumPerYearQuery = async (req: any, res: Response) => {
     try {
-        const data: { fecha_ini: string } = req.query;
-        const nextFolium: number = await getStrategyFoliumQuery(data.fecha_ini);
+        const data: { fecha_ini: string, tipo_empleado: string } = req.query;        
+        const nextFolium: number = await getStrategyFoliumQuery(data.fecha_ini, data.tipo_empleado);
 
         res.status(200).json({
             ok: true,
@@ -106,7 +106,7 @@ export const createPermissionPerEmployee = async (req: any, res: Response) => {
                 ok: false,
                 msg: 'Capture el folio de estrategia'
             })
-        } else if (data.permission_id === null) { //por algun motivo a veces se salta la validacion de front-end y manda ids nulos
+        } else if (data.permission_id === null || data.permission_id === undefined) { //por algun motivo a veces se salta la validacion de front-end y manda ids nulos
             res.status(400).json({
                 ok: false,
                 msg: 'Por favor capture el permiso a registrar'
