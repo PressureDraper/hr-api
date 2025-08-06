@@ -315,11 +315,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
 
         //ajustar los horarios respecto a los cortes si existen    
         if (historial.length === 0) { //si no tiene cambios de horario
-<<<<<<< HEAD
-            horaEntradaLimite = dayjs(hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
-
-            schedule = dayjs.utc(employee.hora_entrada).format('HH:mm:ss') + ' - ' + dayjs.utc(employee.hora_salida).format('HH:mm:ss');
-=======
             //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
             if (!item.ini_horario_titular) {
                 horaEntradaLimite = dayjs.utc(hora_entrada, "HH:mm:ss").add(2, 'hours').format('HH:mm:ss');
@@ -328,7 +323,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                 horaEntradaLimite = dayjs.utc(item.ini_horario_titular).add(2, 'hours').format('HH:mm:ss');
                 schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
             }
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
 
             guards = JSON.parse(decodeURIComponent(employee.guardias));
 
@@ -337,9 +331,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
             for (let index = 0; index < historial.length; index++) {
                 if (index === historial.length - 1) {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString()) {
-<<<<<<< HEAD
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
-=======
                         //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
                         if (!item.ini_horario_titular) {
                             horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(2, 'hours').format('HH:mm:ss');
@@ -350,16 +341,11 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                             schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
                             horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, item.ini_horario_titular);
                         }
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
 
                         guards = historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(employee.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias));
                     }
                 } else {
                     if (fechaChecada >= dayjs(historial[index].fecha_inicio).toISOString() && fechaChecada < dayjs(historial[index + 1].fecha_inicio).toISOString()) {
-<<<<<<< HEAD
-                        /* console.log(item, fechaChecada, dayjs(historial[index].fecha_inicio).toISOString(), historial); */
-                        horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(3, 'hours').format('HH:mm:ss');
-=======
                         //si para estrategias al titular no le cambiaron el horario, se respeta su horario original
                         if (!item.ini_horario_titular) {
                             horaEntradaLimite = dayjs.utc(historial[index].hora_entrada).add(2, 'hours').format('HH:mm:ss');
@@ -370,7 +356,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                             schedule = dayjs.utc(item.ini_horario_titular).format('HH:mm:ss') + ' - ' + dayjs.utc(item.fin_horario_titular).format('HH:mm:ss');
                             horaEntradaPermitida = horaEntradaPerTipoEmpleado(employee.cat_tipos_empleado.id, item.ini_horario_titular);
                         }
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
 
                         guards = historial[index].guardias === 'null' ? JSON.parse(decodeURIComponent(employee.guardias)) : JSON.parse(decodeURIComponent(historial[index].guardias));
                     }
@@ -499,15 +484,12 @@ const IOPermisos: IOPermisosInterface = {//Obj de permisos para mapear en donde 
     },
     'PASE DE SALIDA POR HORAS FESTIVAS': {
         type: 'SALIDA'
-<<<<<<< HEAD
-=======
     },
     'PATERNIDAD': {
         type: 'AMBOS'
     },
     'LICENCIA MEDICA POR ACCIDENTE DE TRABAJO': {
         type: 'AMBOS'
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
     }
 }
 
@@ -636,12 +618,8 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
     });
 
-<<<<<<< HEAD
-    //proceso para evitar entradas duplicadas en registros con permisos sin checadas
-=======
     
 
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
     classifiedAttendances.forEach((item1: any) => {
         //Obtener de los permisos aquellos que aparecen en dias con checadas
         attendancesAuxWithPermissions.forEach((item2: any, index: number) => {
@@ -660,15 +638,10 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         // Buscar si la fecha de item1 coincide con permisos capturados en esa fecha
         const matchingItem = sharedDays.filter(item2 => item2.dateReg === item1.dateReg);
 
-<<<<<<< HEAD
-        // Si se encuentra un elemento coincidente, agregar el valor de 'event' dependiendo del permiso a entrada, salida o ambos
-        if (!matchingItem) return;
-=======
         // Si se encuentran elementos coincidentes, agrega el valor de 'event' dependiendo del permiso a entrada, salida o ambos
         if (!matchingItem) {
             return
         }
->>>>>>> b9f105f (MA251089: modificando reporte para recopilar checadas de estrategias de suplentes / añadiendo plantilla de estrategia IMSS)
 
         matchingItem.forEach((permiso: any) => {
             const permisoType = IOPermisos[permiso.event]?.type;
