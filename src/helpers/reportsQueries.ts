@@ -148,6 +148,9 @@ export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
                     cat_tipos_recurso: {
                         select: { nombre: true }
                     },
+                    cat_categorias: {
+                        select: { codigo: true, nombre: true }
+                    },
                     hora_entrada: true,
                     hora_salida: true,
                     guardias: true,
@@ -303,7 +306,7 @@ export const getFirmaById = async (id: number) => {
 export const getVacationIMSSReport = (id: number, fec_inicio: string, fec_final: string) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('VACACIONES: ',id, fec_inicio, fec_final);
+            console.log('VACACIONES: ', id, fec_inicio, fec_final);
             let vacaciones: any = await db.rch_empleado_vacaciones.findMany({
                 where: {
                     rch_empleados: {
