@@ -425,8 +425,8 @@ export const generareReportIms = async (req: any, res: Response) => {
             scale: 0.95,
             displayHeaderFooter: true,
             footerTemplate: `
-            <footer style="width: 95vw;">
-                <div style="width: 95vw; margin-left: 30px">
+            <footer style="width: 95vw; height: 50px;">
+                <div style="width: 95vw; margin-left: 30px; margin-top: -100px;">
                     <div style="margin: auto; display: flex;">
                         <div style="display: flex; justify-content: center; width: 30vw;">
                             <span style="font-weight: bold; font-size: 11px">CERTIFICÓ</span>
@@ -455,7 +455,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                         </div>
                     </div>
                 </div>
-                <div style="width: 95vw; display: flex; justify-content: center;">
+                <div style="width: 95vw; display: flex; justify-content: center; margin-top: 25px;">
                     <div style="position: relative;">
                         <img style="position: absolute; left: 200px; top: -130px;" width='auto' height='140px' src="data:image/png;base64, ${sello_cae}" alt="seal" />
                     </div>
