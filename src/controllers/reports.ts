@@ -6,8 +6,7 @@ import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import _, { parseInt } from 'lodash';
-import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange } from '../helpers/ImssReport';
-import { imsReportMainContent } from "../assets/ims/mainContent";
+import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange, calcIncidencias } from '../helpers/ImssReport';
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
@@ -16,11 +15,11 @@ import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoP
 import { htmlParams, htmlParamsIMSS, templateEstrategia, templateEstrategiaIMSS } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
-import { sello_cae } from "../helpers/images";
+import { footerDownLine, logo_imss, logo_mujer_2025, logo_sheinbaum, sello_cae } from "../helpers/images";
 import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
-import { parse } from "dotenv";
 import fs from 'fs';
 import path from "path";
+import { newImssReportMainContent } from "../assets/ims/newMainContent";
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -65,9 +64,6 @@ export const getExcelChecadas = async (req: any, res: Response) => {
 
 export const testPDF = async (req: any, res: Response) => {
     try {
-        //load html template (just for editing template with formatting helpers)
-        /* const dir = path.join(__dirname, '../../src/assets/templateEstrategia.html'); */
-
         //get params to substitute inside html template
         const browser = await puppeteer.launch({
             executablePath: "/usr/bin/google-chrome",
@@ -76,7 +72,7 @@ export const testPDF = async (req: any, res: Response) => {
         const page = await browser.newPage();
 
         // Construir la ruta absoluta del archivo HTML
-        const filePath = path.join(__dirname, '..', 'assets', 'templateEstrategiaIMSS.html');
+        const filePath = path.join(__dirname, '..', 'assets', 'ims', 'templateFooterIMSSReport.html');
         const htmlString = fs.readFileSync(filePath, 'utf8');
 
         const template = format(htmlString);
@@ -86,7 +82,7 @@ export const testPDF = async (req: any, res: Response) => {
             format: 'Letter',
             printBackground: true,
             margin: {
-                top: 20,
+                top: 10,
                 left: 20,
                 right: 20
             },
@@ -220,7 +216,6 @@ export const generareReportIms = async (req: any, res: Response) => {
         const { mat_final, mat_inicio, fec_final, fec_inicio, id_rh, id_admin, id_director }: PropsReqIMSS = req.query;
         const fecha_ini = dayjs.utc(fec_inicio).subtract(1, 'day').format('YYYY-MM-DD');
         const fecha_fin = dayjs.utc(fec_final).add(1, 'day').format('YYYY-MM-DD');
-
         const attendancesReport: PropsAttendancesInterface = await getAttendancesReport(mat_inicio, mat_final, fecha_ini, fecha_fin);
         const employeesType: any = await getIMSSN420Employees({ mat_final, mat_inicio, fec_final, fec_inicio });
         const grouped_attendeances = _.groupBy(attendancesReport.attendances, 'mat');
@@ -228,15 +223,12 @@ export const generareReportIms = async (req: any, res: Response) => {
         const festivos = await getRangeHolidaysQuery({ fecha_ini, fecha_fin });
 
         const sings = new SignService();
-        const id_rh_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_rh));
         const id_admin_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_admin));
         const id_director_json: PropsPersonSign = JSON.parse(decodeURIComponent(id_director));
 
-        let firma1: any = await sings.getLastSingByUserId(id_rh_json.id_persona);
         let firma2: any = await sings.getLastSingByUserId(id_admin_json.id_persona);
         let firma3: any = await sings.getLastSingByUserId(id_director_json.id_persona);
 
-        firma1 ? firma1 = firma1[0].firma : firma1 = '';
         firma2 ? firma2 = firma2[0].firma : firma2 = '';
         firma3 ? firma3 = firma3[0].firma : firma3 = '';
 
@@ -253,7 +245,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 //PENDIENTE: verificar falla en el reporte cuando le cambian el horario al suplente
                 if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
                     const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== employee.matricula);
-                    
+
 
                     if (estrategias.length > 0) {
                         checadasSuplente = await Promise.all(
@@ -357,20 +349,14 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
-            let randomRotate = Math.floor(Math.random() * 21) - 10;
-            let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
-            let randomUpDown = Math.floor(Math.random() * (300 - 250 + 1)) - 300;
             let headerHorario = '';
-            let headerGuardias = '';
             let horarioActual = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`;
             let isHorarioVariado = item1.final.filter((item: any) => item.schedule !== horarioActual);
 
             if (isHorarioVariado.length > 1) {
                 headerHorario = 'VARIADO'
-                headerGuardias = 'VARIADO'
             } else {
                 headerHorario = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`
-                headerGuardias = item1.guardias === 'null' ? '-' : JSON.parse(item1.guardias).join(', ')
             }
 
             item1.final.forEach((item2: any, index: number) => {
@@ -379,25 +365,27 @@ export const generareReportIms = async (req: any, res: Response) => {
 
             body += '</tbody>';
 
-            let content = format(imsReportMainContent, {
+            const { diasDescuento, diasOmision, diasSuspension } = calcIncidencias(item1);
+
+            let content = format(newImssReportMainContent, {
+                imga: logo_imss,
+                imgb: logo_sheinbaum,
+                imgc: logo_mujer_2025,
                 sello: sello_cae,
-                rotateX: randomRotate,
-                moveLeft: randomLeft,
-                moveUpDown: randomUpDown,
                 name: `${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}`,
                 rfc: item1.cmp_persona.rfc,
                 curp: item1.cmp_persona.curp,
                 mat: `${item1.matricula}`,
-                nom: `${item1.cat_tipos_recurso.nombre}`,
                 turno: item1.cat_turnos.nombre,
+                code: item1.cat_categorias.codigo,
+                catFederal: item1.cat_categorias.nombre,
                 hour: headerHorario,
-                guards: headerGuardias,
-                cat: item1.cat_tipos_empleado.nombre,
+                diasDescuento: diasDescuento,
+                diasOmision: diasOmision,
+                diasSuspension: diasSuspension,
                 area: item1.cat_departamentos.nombre,
                 table_body: body,
                 quince: quin,
-                firma1: firma1,
-                jefe_rh: id_rh_json.nombre,
                 firma2: firma2,
                 admin_cae: id_admin_json.nombre,
                 firma3: firma3,
@@ -407,13 +395,9 @@ export const generareReportIms = async (req: any, res: Response) => {
             mainContent += content;
         });
 
-        /* const dir = path.join(__dirname, '../../src/assets/ims/auc.html');
-
-        const template = fs.readFileSync(dir, 'utf8'); */
 
         let final_content = format(imsWrapperReportContent, {
-            all_content: mainContent,
-            /* html_footer: template */
+            all_content: mainContent
         });
 
         const browser = await puppeteer.launch({
@@ -425,16 +409,72 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         await page.setContent(final_content);
 
+        /* let randomRotate = Math.floor(Math.random() * 21) - 10;
+        let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
+        let randomUpDown = Math.floor(Math.random() * (300 - 250 + 1)) - 300; */
+
         const pdfBuffer = await page.pdf({
             format: 'Letter',
-            landscape: true,
             printBackground: true,
-            scale: 0.70,
             margin: {
                 top: 10,
-                right: 0,
-                left: 0
-            }
+                left: 20,
+                right: 20,
+                bottom: '210px'
+            },
+            scale: 0.95,
+            displayHeaderFooter: true,
+            footerTemplate: `
+            <footer style="width: 95vw; height: 50px;">
+                <div style="width: 95vw; margin-left: 30px; margin-top: -100px;">
+                    <div style="margin: auto; display: flex;">
+                        <div style="display: flex; justify-content: center; width: 30vw;">
+                            <span style="font-weight: bold; font-size: 11px">CERTIFICÓ</span>
+                        </div>
+                        <div style="display: flex; justify-content: center; width: 32vw;">
+                            <span style="font-weight: bold; font-size: 11px">TITULAR DE LA UNIDAD</span>
+                        </div>
+                    </div>
+                    <div style="margin: auto; display: flex; margin-top: 30px; margin-bottom: 0px;">
+                        <div style="position: relative; display: flex; justify-content: center; width: 23vh;">
+                            <span style="font-size: 11px; position: absolute; right: 20; top: -15px;">
+                            ${id_admin_json.nombre}</span>
+                            <div style="border-top: 1px solid black; width: 200px; display: flex; justify-content: center;">
+                                <span style="font-size: 12px; display: flex; margin: auto;">ADMINISTRADOR CAE</span>
+                            </div>
+                            <img src="${firma2}" width="200px" height="100px"
+                                style="position: absolute; top: -300%; left: 10.5%;" />
+                        </div>
+                        <div style="position: relative; display: flex; justify-content: center; width: 25vh;">
+                            <span style="font-size: 11px; position: absolute; right: 20; top: -15px;">${id_director_json.nombre}</span>
+                            <div style="border-top: 1px solid black; width: 200px; display: flex; justify-content: center;">
+                                <span style="font-size: 12px; display: flex; margin: auto;">DIRECTOR CAE</span>
+                            </div>
+                            <img src="${firma3}" width="200px" height="100px"
+                                style="position: absolute; top: -300%; left: 10.5%;" />
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 95vw; display: flex; justify-content: center; margin-top: 25px;">
+                    <div style="position: relative;">
+                        <img style="position: absolute; left: 200px; top: -130px;" width='auto' height='140px' src="data:image/png;base64, ${sello_cae}" alt="seal" />
+                    </div>
+                </div>
+                <div style="width: 95vw; display: flex; margin-left: 30px">
+                    <div style="width: 25vw; position: relative;">
+                        <img style="position: absolute; bottom: 0;" width="auto" height="60px" src="data:image/png;base64, ${logo_mujer_2025}" />
+                    </div>
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; justify-content: center; width: 70vw;">
+                        <span style="font-weight: bold; font-size: 11px; margin: auto; margin-bottom: 5px;">Deberá llevar sello del Hospital y/o
+                            Jurisdicción</span>
+                        <div style="height: 20px; width: 100%; background-color: #6e263c; margin-bottom: 0px; display: flex; justify-content: center;">
+                            <img width="auto" height="5px" src="data:image/png;base64, ${footerDownLine}" />
+                        </div>
+                        <span style="font-size: 11px; margin: auto; margin-top: -10px;">Coordinación Estatal Veracruz - Xalapa de Enríquez, Ver</span>
+                    </div>
+                </div>
+            </footer>
+            `
         });
 
         await browser.close();

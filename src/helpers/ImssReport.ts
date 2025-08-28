@@ -8,16 +8,9 @@ export const generateRow = (item1: any, item2: any, index: number) => {
     const dateItem = dayjs.utc(item2['dateReg']).format('DD/MM/YYYY');
     const event = item2.event || '';
 
-    let guards = item2.guardias.join(', ');
-
     return `
         <tr>
             <td>${item1.matricula}</td>
-            <td>${item1.cmp_persona.nombres} ${item1.cmp_persona.primer_apellido} ${item1.cmp_persona.segundo_apellido}</td>
-            <td>${item1.cat_tipos_empleado.nombre}</td>
-            <td>${item1.cmp_persona.rfc}</td>
-            <td>${item1.final[index].schedule}</td>
-            <td style="font-size: 11px">${guards}</td>
             <td>${dateItem}</td>
             <td>${item2.type === 'ENTRADA' ? item2['horaReg'] : ''}</td>
             <td>${item2.type === 'SALIDA' ? item2['horaReg'] : ''}</td>
@@ -159,7 +152,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
                     day: dia,
                     horaReg: '',
                     type: 'EVENTO',
-                    event: '<span style="color: black;">FALTA</span>',
+                    event: '<span style="color: black; font-size: 11px;">FALTA</span>',
                     schedule: horario,
                     guardias
                 });
@@ -172,7 +165,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
                         day: dia,
                         horaReg: '',
                         type: 'EVENTO',
-                        event: '<span style="color: black;">FALTA</span>',
+                        event: '<span style="color: black; font-size: 11px;">FALTA</span>',
                         schedule: horario,
                         guardias
                     });
@@ -184,7 +177,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
                         day: dia,
                         horaReg: '',
                         type: 'EVENTO',
-                        event: '<span style="color: black;">FALTA</span>',
+                        event: '<span style="color: black; font-size: 11px;">FALTA</span>',
                         schedule: horario,
                         guardias
                     });
@@ -209,7 +202,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
                 parsedDays.push({
                     dateReg: fechaFormateada,
                     type: 'EVENTO FESTIVO',
-                    event: '<span style="color: black;">FALTA</span>',
+                    event: '<span style="color: black; font-size: 11px;">FALTA</span>',
                     schedule: horario,
                     guardias
                 });
@@ -218,7 +211,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
             parsedDays.push({
                 dateReg: fechaFormateada,
                 type: 'EVENTO FESTIVO',
-                event: '<span style="color: black;">FALTA</span>',
+                event: '<span style="color: black; font-size: 11px;">FALTA</span>',
                 schedule: horario,
                 guardias
             });
@@ -302,9 +295,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
         });
         checadasOrdenadas = checadas.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
     }
-
-    console.log(checadasSuplente);
-    
 
     //Procesar checadas del empleado
     checadasOrdenadas.forEach((item, index) => {
@@ -852,5 +842,27 @@ export const getEmployeeDataPerDateRange = (historial_horario: PropsHistorialHor
                 }
             }
         }
+    }
+}
+
+export const calcIncidencias = (empleado: any) => {
+
+    const descuentos = empleado.final
+        .filter((item: any) => item.event.includes('FALTA'))
+        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
+
+    const omisones = empleado.final
+        .filter((item: any) => item.event.includes('OMISIÓN') || item.event.includes('OMISION'))
+        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
+
+    const suspension = empleado.final
+        .filter((item: any) => item.event.includes('SUSPENSION'))
+        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
+
+
+    return {
+        diasDescuento: descuentos,
+        diasOmision: omisones,
+        diasSuspension: suspension
     }
 }
