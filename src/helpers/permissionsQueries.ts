@@ -340,7 +340,8 @@ export const getEconomicosPerYearQuery = (id: string) => {
                     fecha_inicio: {
                         gte: moment.utc(currentYear).toISOString(),
                         lt: moment.utc(nextYear).toISOString()
-                    }
+                    },
+                    deleted_at: null
                 },
                 select: {
                     id: true,
