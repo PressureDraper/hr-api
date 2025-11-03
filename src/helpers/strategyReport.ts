@@ -313,7 +313,7 @@ export const templateEstrategiaIMSS =
                     <img width="90%" height="65px" style="margin-top: 5px;" src="data:image/png;base64, {imga}" />
                 </div>
                 <div class="col-sm-6 d-flex justify-content-end">
-                    <img width="70px" height="70px" src="data:image/png;base64, {imgb}" />
+                    <img width="70px" height="75px" src="data:image/png;base64, {imgb}" />
                 </div>
             </div>
             <div class="row">
@@ -460,9 +460,9 @@ export const templateEstrategiaIMSS =
                     <span class="signBox description">NOMBRE Y FIRMA DEL ENCARGADO DE RR. HH.</span>
                 </div>
             </div>
-            <div class="row d-flex justify-content-start mx-left" style="width: 95vw;">
+            <div class="row d-flex justify-content-start mx-left" style="width: 95vw; position: relative;">
                 <div class="col-sm-3 d-flex justify-content-start">
-                    <img width="auto" height="70px" src="data:image/png;base64, {imgc}" />
+                    <img style="position: absolute; bottom: 10px;" width="auto" height="60px" src="data:image/png;base64, {imgc}" />
                 </div>
                 <div class="col-sm-9 d-flex flex-column justify-content-center" style="margin-top: 15px">
                     <span class="description mx-auto" style="font-weight: bold;">Deberá llevar sello del Hospital y/o Jurisdicción</span>
