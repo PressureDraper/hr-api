@@ -268,12 +268,6 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
     return attendances.concat(debuggedDays);
 }
 
-/* const horariosMafufos = [
-    { matricula: 7461, hora_entrada2: '07:00:00', hora_salida2: '21:30:00' },
-    { matricula: 7312, hora_entrada2: '07:30:00', hora_salida2: '22:00:00' },
-    { matricula: 1798, hora_entrada2: '07:00:00', hora_salida2: '15:00:00' }
-]; */
-
 export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: string) => {
     if (tipo_empleado === 17 || tipo_empleado === 19) { //Base IMSS Bienestar y contrato eventual imss bienestar
         return dayjs.utc(hora_entrada).subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
@@ -282,7 +276,7 @@ export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: 
     }
 }
 
-export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentralizadas[], employee: any, historial: PropsHistorialHorario[], checadasSuplente: PropsChecadasEstrategias[]) => {
+export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentralizadas[], employee: any, historial: PropsHistorialHorario[], checadasSuplente: PropsChecadasEstrategias[], estrategiasHorariosTitular: any[]) => {
     let horaEntradaLimite: string = '';
     let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
     let checadasClasificadas: any[] = [];
@@ -302,6 +296,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
         let fechaChecada = dayjs(itemAux.dateReg).toISOString();
         let schedule = '';
         let guards: string[] = [];
+        let labelEstrategia = '';
 
         //ajustar los horarios respecto a los cortes si existen    
         if (historial.length === 0) { //si no tiene cambios de horario
@@ -353,6 +348,17 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
             }
         }
 
+        //mapeo de las checadas de estrategias como suplente con horario diferente al del empleado en cuestión
+        for (let index = 0; index < estrategiasHorariosTitular.length; index++) {
+            if (dayjs.utc(estrategiasHorariosTitular[index].fecha).format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD') || (estrategiasHorariosTitular[index].guardias.length <= 3 && dayjs.utc(estrategiasHorariosTitular[index].fecha).add(1, 'day').format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD')) ) {
+                horaEntradaLimite = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
+                schedule = estrategiasHorariosTitular[index].hora_entrada + ' - ' + estrategiasHorariosTitular[index].hora_salida;
+                horaEntradaPermitida = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss");
+                guards = estrategiasHorariosTitular[index].guardias;
+                labelEstrategia = estrategiasHorariosTitular[index].label;
+            }
+        }
+
         if (item.horaReg >= horaEntradaPermitida && item.horaReg <= horaEntradaLimite) {
             if (index === 0) {
                 //VALIDAR SI LA PRIMER CHECADA TOMADA POR LA 15NA ES SALIDA
@@ -368,7 +374,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                         type: 'ENTRADA',
                         schedule,
                         guardias: guards,
-                        label: item.label ? item.label : '',
+                        label: item.label ? item.label : labelEstrategia,
                         ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
                         fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                     });
@@ -380,7 +386,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                             type: 'ENTRADA',
                             schedule,
                             guardias: guards,
-                            label: item.label ? item.label : '',
+                            label: item.label ? item.label : labelEstrategia,
                             ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
                             fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                         });
@@ -390,7 +396,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                             type: 'SALIDA',
                             schedule,
                             guardias: guards,
-                            label: item.label ? item.label : '',
+                            label: item.label ? item.label : labelEstrategia,
                             ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
                             fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                         });
@@ -402,7 +408,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                     type: 'ENTRADA',
                     schedule,
                     guardias: guards,
-                    label: item.label ? item.label : '',
+                    label: item.label ? item.label : labelEstrategia,
                     ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
                     fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
                 });
@@ -413,7 +419,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
                 type: 'SALIDA',
                 schedule,
                 guardias: guards,
-                label: item.label ? item.label : '',
+                label: item.label ? item.label : labelEstrategia,
                 ini_horario_titular: item.ini_horario_titular ? item.ini_horario_titular : '',
                 fin_horario_titular: item.fin_horario_titular ? item.fin_horario_titular : ''
             });
@@ -608,7 +614,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         }
     });
 
-    
+
     classifiedAttendances.forEach((item1: any) => {
         //Obtener de los permisos aquellos que aparecen en dias con checadas
         attendancesAuxWithPermissions.forEach((item2: any, index: number) => {
@@ -663,7 +669,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     const omisionesSalida: any[] = [];
     const omisionesEntrada: any[] = [];
     const permissions = ['AUTORIZACIÓN DE ENTRADA', 'AUTORIZACIÓN DE SALIDA', 'LICENCIA MEDICA', 'SUSPENSION', 'COMISION OFICIAL', 'PERMANENCIA CONSULTA MÉDICA', 'JUST CAM', 'JUST POR OFICIO', 'PASE DE ENTRADA POR HORAS FESTIVAS', 'PASE DE SALIDA POR HORAS FESTIVAS'];
-    
+
     //Proceso para identificar omisiones de salida
     for (let index = 0; index < sortedData.length; index++) {
         const currentItem = sortedData[index];
