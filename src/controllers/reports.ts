@@ -240,8 +240,9 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
                 let checadasSuplente: PropsChecadasEstrategias[] = [];
+                let estrategiasHorariosTitular: any[] = [];
 
-                //obtener checadas de suplentes en estrategias para empleados IMSS BIENESTAR
+                //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
                 //PENDIENTE: verificar falla en el reporte cuando le cambian el horario al suplente
                 if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
                     const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== employee.matricula);
@@ -279,6 +280,30 @@ export const generareReportIms = async (req: any, res: Response) => {
                     }
                 }
 
+                //obtener checadas del tiular con horario del suplente para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
+                if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+                    const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula === employee.matricula && dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') >= fecha_ini && dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') <= fecha_fin);
+
+                    if (estrategias.length > 0) {
+                        estrategiasHorariosTitular = await Promise.all(
+                            estrategias.map(async (estrategia: any) => {
+                                const historialTitular: any = await getEmployeeShiftQuery(estrategia.rch_empleados.id);
+                                const { historial: histTitular, horario_actual: actualTitular } = getEmployeeDataPerDateRange(historialTitular, fecha_ini, fecha_fin, estrategia.rch_empleados.hora_entrada, estrategia.rch_empleados.hora_salida, estrategia.rch_empleados);
+                                const nombre = estrategia.rch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados.cmp_persona.segundo_apellido;
+
+                                return {
+                                    maticula: estrategia.rch_empleados.matricula,
+                                    hora_entrada: actualTitular.hora_entrada,
+                                    hora_salida: actualTitular.hora_salida,
+                                    guardias: actualTitular.guardias,
+                                    fecha: estrategia.fecha_inicio,
+                                    label: `TxT ${estrategia.rch_empleados.matricula} ${nombre}`,
+                                };
+                            })
+                        );
+                    }
+                }
+
                 //procesar el historial de los horarios de cada empleado
                 const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
                 hora_entrada = horario_actual.hora_entrada;
@@ -288,7 +313,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const result = getUnrepeatedAttendances(attendances);
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
-                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente);
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente, estrategiasHorariosTitular);
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
