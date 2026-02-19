@@ -7,3 +7,6 @@ build/*
 aux.html
 src/.DS_Store
 .DS_Store
+infra/environments/preproduccion/.env_api
+infra/environments/produccion/.env_api
+infra/cert/

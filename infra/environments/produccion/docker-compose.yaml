@@ -1,0 +1,10 @@
+services:
+  rh:
+    image: registry.ssaver.gob.mx:5000/rh-api:latest
+    container_name: rh-api
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 8525:3000

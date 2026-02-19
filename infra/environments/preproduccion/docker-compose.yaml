@@ -1,0 +1,26 @@
+services:
+  app:
+    image: registry.ssaver.gob.mx:5000/rh-api:latest-test
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    cap_add:
+      - SYS_ADMIN
+    secrets:
+      - source: ssaver_crt
+        target: /cert/ssaver.gob.mx.crt
+      - source: ssaver_key
+        target: /cert/ssaver.gob.mx.key
+    deploy:
+      replicas: 1
+    networks:
+      - cae-services
+
+networks:
+  cae-services:
+    external: true
+
+secrets:
+  ssaver_key:
+    external: true
+  ssaver_crt:
+    external: true
