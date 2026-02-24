@@ -432,7 +432,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         const page = await browser.newPage();
 
-        await page.setContent(final_content);
+        await page.setContent(final_content, { waitUntil: "load", timeout: 120000 });
 
         /* let randomRotate = Math.floor(Math.random() * 21) - 10;
         let randomLeft = Math.floor(Math.random() * (220 - 180 + 1)) + 180;
@@ -441,11 +441,12 @@ export const generareReportIms = async (req: any, res: Response) => {
         const pdfBuffer = await page.pdf({
             format: 'Letter',
             printBackground: true,
+            timeout: 120000,
             margin: {
                 top: 10,
                 left: 20,
                 right: 20,
-                bottom: '210px'
+                bottom: '202px'
             },
             scale: 0.95,
             displayHeaderFooter: true,
@@ -482,7 +483,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 </div>
                 <div style="width: 95vw; display: flex; justify-content: center; margin-top: 25px;">
                     <div style="position: relative;">
-                        <img style="position: absolute; left: 200px; top: -130px;" width='auto' height='140px' src="data:image/png;base64, ${sello_cae}" alt="seal" />
+                        <img style="position: absolute; left: 200px; top: -122px;" width='auto' height='135px' src="data:image/png;base64, ${sello_cae}" alt="seal" />
                     </div>
                 </div>
                 <div style="width: 95vw; display: flex; margin-left: 30px">
