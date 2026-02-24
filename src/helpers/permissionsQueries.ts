@@ -245,8 +245,8 @@ export const getEmployeesPermissionsQuery = ({ ...props }: PropsEmployeePermissi
     return new Promise(async (resolve, reject) => {
         try {
             console.log('PERMISOS: ', props.employee_id, props.fecha_ini, props.fecha_fin);
-            const newFechaIni = moment.utc(props.fecha_ini).subtract(3, 'months').format('YYYY-MM-DD'); //3 meses antes de margen
-            const newFechaFin = moment.utc(props.fecha_ini).add(3, 'months').format('YYYY-MM-DD'); //3 meses despues de margen
+            const newFechaIni = moment.utc(props.fecha_ini).subtract(6, 'months').format('YYYY-MM-DD'); //3 meses antes de margen
+            const newFechaFin = moment.utc(props.fecha_ini).add(6, 'months').format('YYYY-MM-DD'); //3 meses despues de margen
 
             const permissions = await db.rch_permisos.findMany({
                 where: {
