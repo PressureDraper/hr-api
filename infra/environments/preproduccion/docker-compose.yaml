@@ -1,6 +1,6 @@
 services:
   app:
-    image: registry.ssaver.gob.mx:5000/rh-api:latest-test
+    image: registrygitlab.ssaver.gob.mx/rh/api-rh/app:latest-test
     volumes:
       - /etc/localtime:/etc/localtime:ro
     cap_add:

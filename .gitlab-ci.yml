@@ -1,0 +1,28 @@
+include:
+    project: 'gitlab/gitlab-ci-templates'
+    ref: main
+    file: '/docker-build.yaml'
+
+variables:
+    DEPLOY_USER_PRE: sica16
+    DEPLOY_HOST_PRE: 10.30.0.16
+
+build-app:
+    extends: .build-common
+    variables:
+        IMAGE_NAME: $CI_REGISTRY_IMAGE/app
+        DOCKERFILE: 'infra/Dockerfile'
+        ENV_PRE: $DOT_ENV_PRE 
+        ENV_PROD: $DOT_ENV_PROD
+        ENV_FILE_TO_BUILD: '.env_api'
+    artifacts:
+        reports:
+            dotenv: image.env
+
+deploy-app-pre:
+    extends: .deploy-pre
+    needs:
+        - job: build-app
+          artifacts: true
+    variables:
+        SERVICE_NAME: 'api-rh_app'
