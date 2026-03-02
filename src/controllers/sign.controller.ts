@@ -2,6 +2,7 @@ import { Response, Request } from 'express';
 import { SignService } from './presentation/services/sign.service';
 import { PaginationDto } from '../domain/dtos/shared/pagination.dto';
 import { CreateSingDto } from '../domain/dtos/sign/create-sign.dto';
+import { cambiarFirmaAzulANegro } from '../helpers/changeSignColor';
 export class SingController {
 
     constructor(
@@ -69,6 +70,12 @@ export class SingController {
             if (!id) return res.status(400).json({ error: 'Id is required' });
             const sign = await this.signService.findOne(+id);
             if (!sign) return res.status(404).json({ error: 'Sign not found' });
+
+            //hotfix para cambiar el color de la firma a negro, ya que se capturaron en azul y al imprimir sale con puntos blancos
+            const newFirma = await cambiarFirmaAzulANegro(sign.firma);
+            
+            sign.firma = newFirma;
+            
             return res.status(200).json(sign);
         } catch (err) {
             console.log(err);
