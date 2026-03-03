@@ -4,15 +4,28 @@ import { PaginationDto } from '../shared/pagination.dto';
 import { CreateSingDto } from "./create-sign.dto";
 
 export class SingEntity {
-    async get(paginationDto :PaginationDto) {
-        const {page, limit} = paginationDto;
+    async get(paginationDto: PaginationDto, name: string) {
+        const { page, limit } = paginationDto;
         const offset = (page - 1) * limit;
-        
+        const last_name: string[] = name.split(' ');
+
         const data = await db.cmp_firmas_manuscritas.findMany({
             skip: offset,
             take: limit,
             where: {
-                active: true
+                active: true,
+                ...(name !== '' && {
+                    persona: {
+                        OR: [
+                            { nombres: { contains: name } },
+                            {
+                                primer_apellido: { contains: last_name[0] },
+                                segundo_apellido: { contains: last_name.length > 1 ? last_name[1] : '' }
+                            },
+                            { segundo_apellido: { contains: name } },
+                        ]
+                    }
+                })
             },
             include: {
                 persona: {
@@ -20,7 +33,7 @@ export class SingEntity {
                         primer_apellido: true,
                         segundo_apellido: true,
                         nombres: true,
-                        rch_empleados:{
+                        rch_empleados: {
                             select: {
                                 id: true,
                                 matricula: true,
@@ -35,6 +48,30 @@ export class SingEntity {
         });
 
         return data;
+    }
+
+    async count(name: string) {
+        const last_name: string[] = name.split(' ');
+        
+        const total = await db.cmp_firmas_manuscritas.count({
+            where: {
+                active: true,
+                ...(name !== '' && {
+                    persona: {
+                        OR: [
+                            { nombres: { contains: name } },
+                            {
+                                primer_apellido: { contains: last_name[0] },
+                                segundo_apellido: { contains: last_name.length > 1 ? last_name[1] : '' }
+                            },
+                            { segundo_apellido: { contains: name } },
+                        ]
+                    }
+                })
+            }
+        });
+
+        return total;
     }
 
     async create(id_persona: number, img: string) {
@@ -71,7 +108,7 @@ export class SingEntity {
             }
         });
 
-        if(!data) return null
+        if (!data) return null
 
         return data;
     }
@@ -91,7 +128,7 @@ export class SingEntity {
         const data = await db.cmp_firmas_manuscritas.updateMany({
             where: {
                 id_persona: id
-            }, 
+            },
             data: {
                 active: false,
                 deleted_at: moment.utc().subtract(6, 'hour').toISOString()
