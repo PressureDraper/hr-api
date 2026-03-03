@@ -22,9 +22,14 @@ export class SignService {
         }));
     }
 
-    async get(pagination: PaginationDto) {
-        const queryData = await this.singDatasource.get(pagination);
+    async get(pagination: PaginationDto, name: string) {
+        const queryData = await this.singDatasource.get(pagination, name);
         return await this.decodedSings(queryData as any);
+    }
+
+    async count(name: string) {
+        const count = await this.singDatasource.count(name);
+        return count;
     }
 
     async create(createSingDto: CreateSingDto) {

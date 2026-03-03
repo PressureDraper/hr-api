@@ -12,16 +12,18 @@ export class SingController {
 
     getSign = async (req: Request, res: Response) => {
         try {
-            const { page = 1, limit = 1 } = req.query;
+            const { page = 1, limit = 1, name = '' } = req.query;
             const [error, paginationDto] = PaginationDto.create(+page, +limit);
 
             if (error) return res.status(400).json({ error });
 
-            const sign = await this.signService.get(paginationDto!);
+            const sign = await this.signService.get(paginationDto!, name as string);
+            const total = await this.signService.count(name as string);
 
             return res.status(200).json([{
                 msg: 'OK',
-                data: sign
+                data: sign,
+                count: total
             }]);
         } catch (error) {
             console.log(error)
