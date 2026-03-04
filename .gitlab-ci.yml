@@ -30,4 +30,3 @@ deploy-app-pre:
 merge-to-develop:
     extends: .merge-base
 
-
