@@ -26,3 +26,6 @@ deploy-app-pre:
           artifacts: true
     variables:
         SERVICE_NAME: 'api-rh_app'
+
+merge-to-develop:
+    extends: .merge-base
