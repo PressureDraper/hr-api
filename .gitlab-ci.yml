@@ -12,8 +12,8 @@ build-app:
     variables:
         IMAGE_NAME: $CI_REGISTRY_IMAGE/app
         DOCKERFILE: 'infra/Dockerfile'
-        ENV_PRE: $DOT_ENV_PRE 
-        ENV_PROD: $DOT_ENV_PROD
+        ENV_PRE:  DOT_ENV_RH_PRE 
+        ENV_PROD:  DOT_ENV_RH_PROD
         ENV_FILE_TO_BUILD: '.env_api'
     artifacts:
         reports:
@@ -26,3 +26,8 @@ deploy-app-pre:
           artifacts: true
     variables:
         SERVICE_NAME: 'api-rh_app'
+
+merge-to-develop:
+    extends: .merge-base
+
+
