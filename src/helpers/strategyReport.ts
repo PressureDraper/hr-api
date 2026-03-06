@@ -42,16 +42,13 @@ export const htmlParamsIMSS = async (params: PropsFormatoEstrategia) => {
     const sings = new SignService();
     let firma_director: any = await sings.getLastSingByUserId(1680);
     let firma_encargado_rh: any = await sings.getLastSingByUserId(4521);
-
-    let firma_director_negro = await cambiarFirmaAzulANegro(firma_director[0].firma);
-    let firma_encargado_rh_negro = await cambiarFirmaAzulANegro(firma_encargado_rh[0].firma);
-
+    
     return {
         imga: logo_imss,
         imgb: logo_sheinbaum,
         imgc: logo_mujer_2025,
-        firma_director: firma_director_negro,
-        firma_encargado_rh: firma_encargado_rh_negro,
+        firma_director: firma_director.firma,
+        firma_encargado_rh: firma_encargado_rh.firma,
         folium: params.folium,
         currentDate: moment.utc().subtract(6, 'hour').format('L').toUpperCase(),
         tname: params.titular.cmp_persona.nombres + ' ' + params.titular.cmp_persona.primer_apellido + ' ' + params.titular.cmp_persona.segundo_apellido,

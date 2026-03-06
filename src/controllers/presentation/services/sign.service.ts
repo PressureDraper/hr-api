@@ -4,6 +4,7 @@ import { PaginationDto } from "../../../domain/dtos/shared/pagination.dto";
 import { CreateSingDto } from "../../../domain/dtos/sign/create-sign.dto";
 import { SingEntity } from "../../../domain/dtos/sign/sing.entity";
 import sharp from "sharp";
+import { cambiarFirmaAzulANegro } from "../../../helpers/changeSignColor";
 
 export class SignService {
     constructor(
@@ -21,9 +22,14 @@ export class SignService {
         }));
     }
 
-    async get(pagination: PaginationDto) {
-        const queryData = await this.singDatasource.get(pagination);
+    async get(pagination: PaginationDto, name: string) {
+        const queryData = await this.singDatasource.get(pagination, name);
         return await this.decodedSings(queryData as any);
+    }
+
+    async count(name: string) {
+        const count = await this.singDatasource.count(name);
+        return count;
     }
 
     async create(createSingDto: CreateSingDto) {
@@ -61,6 +67,13 @@ export class SignService {
     async getLastSingByUserId(id: number) {
         const firm = await this.singDatasource.getLastByUserId(id);
         if(!firm) return null;
-        return await this.decodedSings([firm]);
+        let decodedSign = await this.decodedSings([firm]);
+        let signObject = decodedSign[0];
+        
+        //hotfix para cambiar el color de la firma a negro, ya que se capturaron en azul y al imprimir sale con puntos blancos
+        const newFirma = await cambiarFirmaAzulANegro(signObject.firma);
+        signObject.firma = newFirma;
+        
+        return signObject;
     }
 }
