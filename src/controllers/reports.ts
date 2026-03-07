@@ -229,8 +229,8 @@ export const generareReportIms = async (req: any, res: Response) => {
         let firma2: any = await sings.getLastSingByUserId(id_admin_json.id_persona);
         let firma3: any = await sings.getLastSingByUserId(id_director_json.id_persona);
 
-        firma2 ? firma2 = firma2[0].firma : firma2 = '';
-        firma3 ? firma3 = firma3[0].firma : firma3 = '';
+        firma2 ? firma2 = firma2.firma : firma2 = '';
+        firma3 ? firma3 = firma3.firma : firma3 = '';
 
         let employees: any = await Promise.all(
             employeesType.map(async (employee: any) => {
