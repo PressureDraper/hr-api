@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "clean": "rimraf build/assets",
     "copy-files": "copyfiles -u 1 src/assets/* build/",
     "pdf": "npm run clean && npm run copy-files &&",
@@ -25,6 +25,7 @@
     "@types/uuid": "^10.0.0",
     "copyfiles": "^2.4.1",
     "jest": "^30.3.0",
+    "jest-puppeteer": "^11.0.0",
     "prisma": "^5.12.1",
     "rimraf": "^6.0.1",
     "supertest": "^7.2.2",
