@@ -6,18 +6,6 @@
 import type { Config } from 'jest';
 
 const config: Config = {
-  // Automatically clear mock calls, instances, contexts and results before every test
-  clearMocks: true,
-
-  // Indicates whether the coverage information should be collected while executing the test
-  collectCoverage: true,
-
-  // The directory where Jest should output its coverage files
-  coverageDirectory: "coverage",
-
-
-  // Indicates which provider should be used to instrument code for coverage
-  coverageProvider: "v8",
   projects: [
     {
       displayName: "unit",
@@ -31,6 +19,12 @@ const config: Config = {
       testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
       testEnvironment: 'node',
       globalSetup: '<rootDir>/src/__tests__/integration/setup.ts',
+    },
+    {
+      displayName: "e2e",
+      preset: 'ts-jest',
+      testMatch: ['<rootDir>/src/__tests__/e2e/**/*.test.ts'],
+      testEnvironment: 'node',
     }
   ]
 };
