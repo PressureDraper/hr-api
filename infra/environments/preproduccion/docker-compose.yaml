@@ -6,9 +6,9 @@ services:
     cap_add:
       - SYS_ADMIN
     secrets:
-      - source: ssaver_crt
+      - source: 2025ssaver_crt_complete
         target: /cert/ssaver.gob.mx.crt
-      - source: ssaver_key
+      - source: 2025ssaver_key
         target: /cert/ssaver.gob.mx.key
     deploy:
       replicas: 1
@@ -20,7 +20,7 @@ networks:
     external: true
 
 secrets:
-  ssaver_key:
+  2025ssaver_key:
     external: true
-  ssaver_crt:
+  2025ssaver_crt_complete:
     external: true
