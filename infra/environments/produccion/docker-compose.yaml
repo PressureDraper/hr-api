@@ -1,10 +1,26 @@
 services:
-  rh:
-    image: registry.ssaver.gob.mx:5000/rh-api:latest
-    container_name: rh-api
-    cap_add:
-      - SYS_ADMIN
+  app:
+    image: registrygitlab.ssaver.gob.mx/rh/api-rh/app:latest
     volumes:
       - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 8525:3000
+    cap_add:
+      - SYS_ADMIN
+    secrets:
+      - source: 2025ssaver_crt_complete
+        target: /cert/ssaver.gob.mx.crt
+      - source: 2025ssaver_key
+        target: /cert/ssaver.gob.mx.key
+    deploy:
+      replicas: 1
+    networks:
+      - cae-services-prod
+
+networks:
+  cae-services-prod:
+    external: true
+
+secrets:
+  2025ssaver_key:
+    external: true
+  2025ssaver_crt_complete:
+    external: true
