@@ -25,7 +25,7 @@ deploy-app-pre:
         - job: build-app
           artifacts: true
     variables:
-        SERVICE_NAME: 'api-rh_app'
+        SERVICE_NAME: 'api-rhpre_app'
 
 merge-to-develop:
     extends: .merge-base
