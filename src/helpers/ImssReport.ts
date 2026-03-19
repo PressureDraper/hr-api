@@ -2,6 +2,8 @@ import { IOPermisosInterface, PropsAttendances, PropsChecadasCentralizadas, Prop
 import _, { uniq } from "lodash";
 import dayjs from "dayjs";
 import { parse } from "path";
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 //REPORTE INCIDECIAS IMSS
 export const generateRow = (item1: any, item2: any, index: number) => {
@@ -350,7 +352,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
 
         //mapeo de las checadas de estrategias como suplente con horario diferente al del empleado en cuestión
         for (let index = 0; index < estrategiasHorariosTitular.length; index++) {
-            if (dayjs.utc(estrategiasHorariosTitular[index].fecha).format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD') || (estrategiasHorariosTitular[index].guardias.length <= 3 && dayjs.utc(estrategiasHorariosTitular[index].fecha).add(1, 'day').format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD')) ) {
+            if (dayjs.utc(estrategiasHorariosTitular[index].fecha).format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD') || (estrategiasHorariosTitular[index].guardias.length <= 3 && dayjs.utc(estrategiasHorariosTitular[index].fecha).add(1, 'day').format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD'))) {
                 horaEntradaLimite = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
                 schedule = estrategiasHorariosTitular[index].hora_entrada + ' - ' + estrategiasHorariosTitular[index].hora_salida;
                 horaEntradaPermitida = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss");
@@ -675,7 +677,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         const currentItem = sortedData[index];
         const nextItem = sortedData[index + 1];
 
-        //PERMISOS QUE SI ESTÁN CAPTURADOS ANULAN (JUSTIFICAN) LAS OMISIONES
+        //PERMISOS QUE SI ESTÁN CAPTURADOS ANULAN (JUSTIFICAN) LAS OMISIONES / SI NO HAY PERMISO CAPTURADO SE AÑADE OMISIÓN
         const shouldAddOmission = !permissions.some(item => currentItem.event.includes(item));
 
         if (index === sortedData.length - 1) {
@@ -852,19 +854,11 @@ export const getEmployeeDataPerDateRange = (historial_horario: PropsHistorialHor
 }
 
 export const calcIncidencias = (empleado: any) => {
+    const descuentos = empleado.final.filter((item: any) => item.event.includes('FALTA')).map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
 
-    const descuentos = empleado.final
-        .filter((item: any) => item.event.includes('FALTA'))
-        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
+    const omisones = empleado.final.filter((item: any) => item.event.includes('OMISIÓN') || item.event.includes('OMISION')).map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
 
-    const omisones = empleado.final
-        .filter((item: any) => item.event.includes('OMISIÓN') || item.event.includes('OMISION'))
-        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
-
-    const suspension = empleado.final
-        .filter((item: any) => item.event.includes('SUSPENSION'))
-        .map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
-
+    const suspension = empleado.final.filter((item: any) => item.event.includes('SUSPENSION')).map((obj: any) => dayjs.utc(obj.dateReg).format('DD/MM/YYYY')).join(', ');
 
     return {
         diasDescuento: descuentos,

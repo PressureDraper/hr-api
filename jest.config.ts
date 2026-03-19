@@ -19,7 +19,7 @@ const config: Config = {
             displayName: "integration",
             testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
             testEnvironment: 'node',
-            globalSetup: '<rootDir>/src/__tests__/integration/setup.ts',
+            setupFiles: ['<rootDir>/src/__tests__/integration/setup.ts'],
             transform: {
                 '^.+\\.ts$': ['@swc/jest'],
             },

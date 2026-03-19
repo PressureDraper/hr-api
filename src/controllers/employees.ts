@@ -23,13 +23,18 @@ export const getEmployeePerIdsData = async (req: any, res: Response) => {
 export const getEmployee = async (req: any, res: Response) => {
     try {
         const params: SicaEmployeeQueries = req.query;
-        const listEmployee = await getEmployeeQuery({ ...params });
 
-        res.status(200).json({
-            ok: true,
-            msg: 'Ok',
-            data: listEmployee
-        });
+        if (params.enrollmentFilter === undefined && params.nameFilter === undefined) {
+            res.status(400).json({ ok: false, msg: 'bad request' });
+        } else {
+            const listEmployee = await getEmployeeQuery({ ...params });
+
+            res.status(200).json({
+                ok: true,
+                msg: 'Ok',
+                data: listEmployee
+            });
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -42,14 +47,18 @@ export const getEmployee = async (req: any, res: Response) => {
 export const getKardex = async (req: any, res: Response) => {
     try {
         const id: number = parseInt(req.query.id);
-        
-        const data = await getKardexQuery(id);
 
-        res.status(200).json({
-            ok: true,
-            msg: 'Ok',
-            data: data
-        });
+        if (!id) {
+            res.status(400).json({ ok: false, msg: 'bad request' });
+        } else {
+            const data = await getKardexQuery(id);
+
+            res.status(200).json({
+                ok: true,
+                msg: 'Ok',
+                data: data
+            });
+        }
     } catch (error) {
         console.log(error);
         res.status(500).json({
@@ -85,7 +94,7 @@ export const createShiftHistory = async (req: any, res: Response) => {
     }
 }
 
-export const getEmployeeType = async (req: any, res: Response) => {
+export const getEmployeeType = async (_req: any, res: Response) => {
     try {
         const employeeTypeCatalog = await getEmployeeTypeCatalogQuery();
         res.status(200).json({

@@ -1,4 +1,4 @@
-import colors from 'colors';
+import 'colors';
 import express, { Express } from 'express';
 import { createServer } from 'https';
 import http from 'http';
@@ -16,7 +16,7 @@ import routerSign from '../routes/sign';
 import fileUpload from 'express-fileupload';
 
 class Server {
-    private app: Express;
+    public app: Express;
     private server: any;
     public port: number;
 
@@ -28,6 +28,8 @@ class Server {
                 cert: fs.readFileSync('/cert/ssaver.gob.mx.crt'),
                 key: fs.readFileSync('/cert/ssaver.gob.mx.key')
             }, this.app) : http.createServer( this.app );
+
+        this.middlewares();
     }
 
     middlewares() {
@@ -49,7 +51,6 @@ class Server {
     }
 
     execute() {
-        this.middlewares();
         this.server.listen( this.port, () => {
             process.env.ENVIRONMENT == 'productivo'
                 ? console.log( `Server Settings ready in https://rhumanos.ssaver.gob.mx:${ this.port }`.america )

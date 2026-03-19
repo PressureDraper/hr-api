@@ -1,8 +1,8 @@
 import { getUnrepeatedAttendances } from "../../../helpers/ImssReport";
 
-describe("Attendances", () => {
+describe('Asistencias', () => {
 
-    test('Should eliminate duplicates by horaReg over the same minute', () => {
+    test('Debe eliminar duplicados por horaReg en el mismo minuto', () => {
         const mockData1 = [
             {
                 biometric: 7,
@@ -42,7 +42,7 @@ describe("Attendances", () => {
         ]);
     });
 
-    test('Should return same data when there are different dates', () => {
+    test('Debe retornar los mismos datos cuando hay fechas diferentes', () => {
         const mockData2 = [
             {
                 biometric: 7,
@@ -69,7 +69,7 @@ describe("Attendances", () => {
         expect(result).toEqual(mockData2);
     });
 
-    test('Should return only first object when all have the same minute in horaReg', () => {
+    test('Debe retornar solo el primer objeto cuando todos tienen el mismo minuto en horaReg', () => {
         const mockData3 = [
             {
                 biometric: 7,
@@ -109,7 +109,7 @@ describe("Attendances", () => {
         ]);
     });
 
-    test('Should return empty array when input is empty', () => {
+    test('Debe retornar un array vacío cuando no hay datos', () => {
         const mockData4: any[] = [];
 
         const result = getUnrepeatedAttendances(mockData4);

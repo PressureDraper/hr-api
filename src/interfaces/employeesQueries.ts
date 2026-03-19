@@ -15,7 +15,7 @@ export interface ShiftsInterface {
 }
 
 export interface GuardsInterface {
-    map(arg0: (data: string) => void): unknown;
+    map?(arg0: (data: string) => void): unknown;
     title: string;
 }
 
