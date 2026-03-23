@@ -11,6 +11,6 @@ router.post('/', createHoliday);
 
 router.put('/:id', updateHoliday);
 
-router.delete('/:id', deleteHoliday)
+router.delete('/:id', deleteHoliday);
 
 export default router;

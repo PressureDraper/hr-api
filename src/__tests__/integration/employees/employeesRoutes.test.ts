@@ -3,7 +3,7 @@ import app from '../../../app';
 import { ShiftsHistoryQueries } from '../../../interfaces/employeesQueries';
 import { db } from '../../../utils/db';
 
-describe('GET /api/rh/employee/', () => {
+describe('GET /api/rh/employee', () => {
     let response: any;
 
     beforeAll(async () => {
