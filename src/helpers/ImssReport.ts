@@ -1,7 +1,9 @@
-import { IOPermisosInterface, PropsAttendances, PropsChecadasCentralizadas, PropsChecadasEstrategias, PropsHistorialHorario, PropsHorarioPerChecada } from "../interfaces/reportsQueries";
+import { IOPermisosInterface, PropsAttendances, PropsChecadasCentralizadas, PropsChecadasEstrategias, PropsEstrategiasSuplente, PropsHistorialHorario, PropsHorarioPerChecada } from "../interfaces/reportsQueries";
 import _, { uniq } from "lodash";
 import dayjs from "dayjs";
 import { parse } from "path";
+import { getEmployeeShiftQuery } from "./employeesQueries";
+import { getAttendancesReport } from "./reportsQueries";
 
 //REPORTE INCIDECIAS IMSS
 export const generateRow = (item1: any, item2: any, index: number) => {
@@ -280,7 +282,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
     let horaEntradaLimite: string = '';
     let horaEntradaPermitida: string = ''; //variable en función del tipo de empleado
     let checadasClasificadas: any[] = [];
-    let checadasOrdenadas = checadas;
+    let checadasOrdenadas = checadas;    
 
     if (checadasSuplente.length > 0) {
         //Si hay checadas de suplente, las agregamos al array de checadas
@@ -350,7 +352,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
 
         //mapeo de las checadas de estrategias como suplente con horario diferente al del empleado en cuestión
         for (let index = 0; index < estrategiasHorariosTitular.length; index++) {
-            if (dayjs.utc(estrategiasHorariosTitular[index].fecha).format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD') || (estrategiasHorariosTitular[index].guardias.length <= 3 && dayjs.utc(estrategiasHorariosTitular[index].fecha).add(1, 'day').format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD')) ) {
+            if (dayjs.utc(estrategiasHorariosTitular[index].fecha).format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD') /* || (estrategiasHorariosTitular[index].guardias.length <= 3 && dayjs.utc(estrategiasHorariosTitular[index].fecha).add(1, 'day').format('YYYY-MM-DD') === dayjs.utc(item.dateReg).format('YYYY-MM-DD')) */) {
                 horaEntradaLimite = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").add(3, 'hours').format('HH:mm:ss');
                 schedule = estrategiasHorariosTitular[index].hora_entrada + ' - ' + estrategiasHorariosTitular[index].hora_salida;
                 horaEntradaPermitida = dayjs.utc(estrategiasHorariosTitular[index].hora_entrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss");
@@ -572,9 +574,10 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
                 classifiedAttendances.push({ ...item, event: item.label ? 'OMISIÓN ENTRADA, '.concat(item.label) : 'OMISIÓN ENTRADA' });
             }
         } else if (item.type === 'SALIDA') {
-            if (item.horaReg >= horaSalidaPermitida && item.horaReg < horaSalidaMaxima) {
+            classifiedAttendances.push({ ...item, event: item.label ? ''.concat(item.label) : '' });
+            /* if (item.horaReg >= horaSalidaPermitida && item.horaReg < horaSalidaMaxima) {
                 classifiedAttendances.push({ ...item, event: item.label ? ''.concat(item.label) : '' });
-            }
+            } */
         }
     });
 
@@ -871,4 +874,97 @@ export const calcIncidencias = (empleado: any) => {
         diasOmision: omisones,
         diasSuspension: suspension
     }
+}
+
+export const procesarEstrategiasTitular = async (tipoEmpleado: string, matriculaEmpleado: number, permisos: any, fechaIniCalendario: string, fechaFinCalendario: string) => {
+    if (tipoEmpleado !== 'BASE IMSS BIENESTAR') return [];
+
+    const estrategias = permisos.filter((permiso: any) =>
+        permiso.cat_permisos.nombre === 'ESTRATEGIA' &&
+        permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== matriculaEmpleado &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') >= fechaIniCalendario &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') <= fechaFinCalendario
+    );
+
+    if (estrategias.length === 0) return [];
+
+    let checadasSuplente = await Promise.all(
+        estrategias.map(async (estrategia: any) => {
+            let nombre: string = estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.segundo_apellido;
+
+            const data = await getAttendancesReport(
+                estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
+                estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
+                fechaIniCalendario,
+                fechaFinCalendario
+            );
+
+            const substituteAttendances = getUnrepeatedAttendances(data.attendances);
+            const strategyAttendances = getAttendancesPerPermissionDateRange(substituteAttendances, estrategia.fecha_inicio, estrategia.fecha_fin);
+
+            const strategyAttendancesWithLabel = strategyAttendances.map((attendance) => {
+                return {
+                    ...attendance,
+                    label: `TxT ${estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula} ${nombre}`,
+                    ini_horario_titular: estrategia.ini_horario_titular,
+                    fin_horario_titular: estrategia.fin_horario_titular
+                }
+            })
+
+            return {
+                data: strategyAttendancesWithLabel,
+            };
+        })
+    );
+
+    return checadasSuplente;
+}
+
+export const procesarEstrategiasSuplente = async (tipoEmpleado: string, matriculaEmpleado: number, permisos: any, fechaIniCalendario: string, fechaFinCalendario: string) => {
+    if (tipoEmpleado !== 'BASE IMSS BIENESTAR') return [];
+
+    const estrategias = permisos.filter((permiso: any) =>
+        permiso.cat_permisos.nombre === 'ESTRATEGIA' &&
+        permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula === matriculaEmpleado &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') >= fechaIniCalendario &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') <= fechaFinCalendario
+    );
+
+    if (estrategias.length === 0) return [];
+
+    const result: PropsEstrategiasSuplente[] = [];
+
+    for (let index = 0; index < estrategias.length; index++) {
+        let itemAux = { ...estrategias[index] }
+
+        const historialTitular: any = await getEmployeeShiftQuery(estrategias[index].rch_empleados.id);
+        const { horario_actual: actualTitular } = getEmployeeDataPerDateRange(historialTitular, fechaIniCalendario, fechaFinCalendario, estrategias[index].rch_empleados.hora_entrada, estrategias[index].rch_empleados.hora_salida, estrategias[index].rch_empleados);
+        const nombre = estrategias[index].rch_empleados.cmp_persona.nombres + ' ' + estrategias[index].rch_empleados.cmp_persona.primer_apellido + ' ' + estrategias[index].rch_empleados.cmp_persona.segundo_apellido;
+
+        if (estrategias[index].fecha_inicio === estrategias[index].fecha_fin) {
+            result.push({
+                matricula: estrategias[index].rch_empleados.matricula,
+                hora_entrada: actualTitular.hora_entrada,
+                hora_salida: actualTitular.hora_salida,
+                guardias: actualTitular.guardias,
+                fecha: estrategias[index].fecha_inicio,
+                label: `TxT ${estrategias[index].rch_empleados.matricula} ${nombre}`,
+            });
+        } else {
+            while (dayjs.utc(itemAux.fecha_inicio).format('YYYY-MM-DD') <= dayjs.utc(itemAux.fecha_fin).format('YYYY-MM-DD')) {
+                result.push({
+                    matricula: estrategias[index].rch_empleados.matricula,
+                    hora_entrada: actualTitular.hora_entrada,
+                    hora_salida: actualTitular.hora_salida,
+                    guardias: actualTitular.guardias,
+                    fecha: itemAux.fecha_inicio,
+                    label: `TxT ${estrategias[index].rch_empleados.matricula} ${nombre}`,
+                });
+
+                itemAux.fecha_inicio = dayjs(itemAux.fecha_inicio).add(1, 'day').toISOString();
+            }
+        }
+    }
+
+    return result;
 }

@@ -1,12 +1,12 @@
 import { Response } from "express";
 import tempfile from "tempfile";
-import { PropsAttendancesInterface, PropsChecadasEstrategias, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReqIMSS } from "../interfaces/reportsQueries";
+import { PropsAttendancesInterface, PropsChecadasEstrategias, PropsEstrategiasSuplente, PropsFormatoEstrategia, PropsPersonSign, PropsReporteChecadas, PropsReqIMSS } from "../interfaces/reportsQueries";
 import { calculateQuint, formatAttendancesReport, getAttendancesReport, getEmployeeTypeQuery, getIMSSN420Employees, getVacationIMSSReport, headerListaChecadasExcel } from "../helpers/reportsQueries";
 import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import _, { parseInt } from 'lodash';
-import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange, calcIncidencias } from '../helpers/ImssReport';
+import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange, calcIncidencias, procesarEstrategiasSuplente, procesarEstrategiasTitular } from '../helpers/ImssReport';
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
@@ -239,70 +239,12 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
-                let checadasSuplente: PropsChecadasEstrategias[] = [];
-                let estrategiasHorariosTitular: any[] = [];
 
                 //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
-                //PENDIENTE: verificar falla en el reporte cuando le cambian el horario al suplente
-                if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
-                    const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula !== employee.matricula);
+                let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin);
 
-
-                    if (estrategias.length > 0) {
-                        checadasSuplente = await Promise.all(
-                            estrategias.map(async (estrategia: any) => {
-                                let nombre: string = estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.cmp_persona.segundo_apellido;
-
-                                const data = await getAttendancesReport(
-                                    estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
-                                    estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula,
-                                    fecha_ini,
-                                    fecha_fin
-                                );
-
-                                const substituteAttendances = getUnrepeatedAttendances(data.attendances);
-                                const strategyAttendances = getAttendancesPerPermissionDateRange(substituteAttendances, estrategia.fecha_inicio, estrategia.fecha_fin);
-
-                                const strategyAttendancesWithLabel = strategyAttendances.map((attendance) => {
-                                    return {
-                                        ...attendance,
-                                        label: `TxT ${estrategia.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula} ${nombre}`,
-                                        ini_horario_titular: estrategia.ini_horario_titular,
-                                        fin_horario_titular: estrategia.fin_horario_titular
-                                    }
-                                })
-
-                                return {
-                                    data: strategyAttendancesWithLabel,
-                                };
-                            })
-                        );
-                    }
-                }
-
-                //obtener checadas del tiular con horario del suplente para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
-                if (employee.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
-                    const estrategias = permisos.filter((permiso: any) => permiso.cat_permisos.nombre === 'ESTRATEGIA' && permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula === employee.matricula && dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') >= fecha_ini && dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') <= fecha_fin);
-
-                    if (estrategias.length > 0) {
-                        estrategiasHorariosTitular = await Promise.all(
-                            estrategias.map(async (estrategia: any) => {
-                                const historialTitular: any = await getEmployeeShiftQuery(estrategia.rch_empleados.id);
-                                const { historial: histTitular, horario_actual: actualTitular } = getEmployeeDataPerDateRange(historialTitular, fecha_ini, fecha_fin, estrategia.rch_empleados.hora_entrada, estrategia.rch_empleados.hora_salida, estrategia.rch_empleados);
-                                const nombre = estrategia.rch_empleados.cmp_persona.nombres + ' ' + estrategia.rch_empleados.cmp_persona.primer_apellido + ' ' + estrategia.rch_empleados.cmp_persona.segundo_apellido;
-
-                                return {
-                                    maticula: estrategia.rch_empleados.matricula,
-                                    hora_entrada: actualTitular.hora_entrada,
-                                    hora_salida: actualTitular.hora_salida,
-                                    guardias: actualTitular.guardias,
-                                    fecha: estrategia.fecha_inicio,
-                                    label: `TxT ${estrategia.rch_empleados.matricula} ${nombre}`,
-                                };
-                            })
-                        );
-                    }
-                }
+                //obtener checadas del suplente para reflejar en reporte del suplente en estrategias para empleados IMSS BIENESTAR
+                let estrategiasHorariosTitular: PropsEstrategiasSuplente[] = await procesarEstrategiasSuplente(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin);
 
                 //procesar el historial de los horarios de cada empleado
                 const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
