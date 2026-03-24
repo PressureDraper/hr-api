@@ -208,10 +208,19 @@ export interface PropsHorarioPerChecada {
 
 export interface PropsChecadasCentralizadas extends PropsAttendances {
     label?: string;
-    ini_horario_titular?: string;
-    fin_horario_titular?: string;
+    ini_horario_titular?: string | null;
+    fin_horario_titular?: string | null;
 }
 
 export interface PropsChecadasEstrategias {
     data: PropsChecadasCentralizadas[];
+}
+
+export interface PropsEstrategiasSuplente {
+    matricula: number;
+    hora_entrada: string;
+    hora_salida: string;
+    guardias: string[];
+    fecha: string;
+    label: string;
 }
