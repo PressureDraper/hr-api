@@ -344,6 +344,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 curp: item1.cmp_persona.curp,
                 mat: `${item1.matricula}`,
                 turno: item1.cat_turnos.nombre,
+                guardias: JSON.parse(employees[0].guardias).join(', '),
                 code: item1.cat_categorias.codigo,
                 catFederal: item1.cat_categorias.nombre,
                 hour: headerHorario,

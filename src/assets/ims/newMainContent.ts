@@ -62,6 +62,10 @@ export const newImssReportMainContent = `
                         <span class="description">HOSPITAL:</span>
                         <span class="paramsBox description">CAE</span>
                     </div>
+                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                        <span class="description">GUARDIAS:</span>
+                        <span class="paramsBox description">{guardias}</span>
+                    </div>
                 </div>
             </div>
             <div class="row d-flex justify-content-center mx-auto" style="width: 95vw;">
