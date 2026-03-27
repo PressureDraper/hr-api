@@ -1,13 +1,23 @@
 import request from 'supertest';
-import app from '../../../app';
 import { ShiftsHistoryQueries } from '../../../interfaces/employeesQueries';
 import { db } from '../../../utils/db';
+import TestAgent from 'supertest/lib/agent';
+
+let app: any;
+let api: TestAgent;
+
+beforeAll(async () => {
+    if (!app) {
+        app = (await import('../../../app')).default;
+        api = request(app);
+    }
+});
 
 describe('GET /api/rh/employee', () => {
     let response: any;
 
     beforeAll(async () => {
-        response = await request(app).get('/api/rh/employee/').query({ data: '[6634, 6635, 6636, 6637]' });
+        response = await api.get('/api/rh/employee/').query({ data: '[6634, 6635, 6636, 6637]' });
     });
 
     test('Debe retornar un código de respuesta éxitoso (200)', () => {
@@ -33,9 +43,13 @@ describe('GET /api/rh/employee', () => {
 
 describe('GET /api/rh/employee/filter', () => {
     let response: any;
+    let emptyResponse: any;
+    let badRequestResponse: any;
 
     beforeAll(async () => {
-        response = await request(app).get('/api/rh/employee/filter').query({ enrollmentFilter: '7004' });
+        response = await api.get('/api/rh/employee/filter').query({ enrollmentFilter: '7004' });
+        emptyResponse = await api.get('/api/rh/employee/filter').query({ enrollmentFilter: '090909' });
+        badRequestResponse = await api.get('/api/rh/employee/filter');
     });
 
     test('Debe retornar un código de respuesta éxitoso (200)', () => {
@@ -55,21 +69,23 @@ describe('GET /api/rh/employee/filter', () => {
     });
 
     test('Debe retornar array vacío si la matrícula no existe', async () => {
-        const res = await request(app).get('/api/rh/employee/filter').query({ enrollmentFilter: '090909' });
-        expect(res.body.data.length).toBe(0);
+        expect(emptyResponse.body.data.length).toBe(0);
     });
 
     test('Debe retornar 400 si no se envía enrollmentFilter', async () => {
-        const res = await request(app).get('/api/rh/employee/filter');
-        expect(res.status).toBe(400);
+        expect(badRequestResponse.status).toBe(400);
     });
 });
 
 describe('GET /api/rh/employee/kardex', () => {
     let response: any;
+    let serverErrorResponse: any;
+    let badRequestResponse: any;
 
     beforeAll(async () => {
-        response = await request(app).get('/api/rh/employee/kardex').query({ id: 5772 });
+        response = await api.get('/api/rh/employee/kardex').query({ id: 5772 });
+        serverErrorResponse = await api.get('/api/rh/employee/kardex').query({ id: '07070707' });
+        badRequestResponse = await api.get('/api/rh/employee/kardex');
     });
 
     test('Debe retornar un código de respuesta éxitoso (200)', () => {
@@ -91,13 +107,11 @@ describe('GET /api/rh/employee/kardex', () => {
     });
 
     test('Debe retornar 500 si el id no existe', async () => {
-        const res = await request(app).get('/api/rh/employee/kardex').query({ id: '07070707' });
-        expect(res.status).toBe(500);
+        expect(serverErrorResponse.status).toBe(500);
     });
 
     test('Debe retornar 400 si no se manda el parámetro id', async () => {
-        const res = await request(app).get('/api/rh/employee/kardex');
-        expect(res.status).toBe(400);
+        expect(badRequestResponse.status).toBe(400);
     });
 });
 
@@ -105,7 +119,7 @@ describe('GET /api/rh/employee/types', () => {
     let response: any;
 
     beforeAll(async () => {
-        response = await request(app).get('/api/rh/employee/types');
+        response = await api.get('/api/rh/employee/types');
     });
 
     test('Debe retornar un código de respuesta éxitoso (200)', () => {
@@ -134,17 +148,17 @@ const mockData: ShiftsHistoryQueries = {
     observaciones: 'sfsdfs'
 }
 
-describe.skip('POST /api/rh/employee/shiftHistory', () => {
+describe('POST /api/rh/employee/shiftHistory', () => {
     let response: any;
     let ephemeralId: number;
 
     beforeAll(async () => {
-        response = await request(app).post('/api/rh/employee/shiftHistory').send(mockData);
+        response = await api.post('/api/rh/employee/shiftHistory').send(mockData);
         ephemeralId = response.body.data.id;
     });
 
     afterAll(async () => {
-        await db.rch_empleados_historial_horarios.deleteMany({
+        await db.rch_empleados_historial_horarios.delete({
             where: { id: ephemeralId }
         });
     });

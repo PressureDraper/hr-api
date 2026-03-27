@@ -1,2 +1,12 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.test' });
+import { db } from '../../utils/db';
+
+const globalSetup = async () => {
+    console.log('\n🚀  [integration] Inicializando configuraciones globales...');
+
+    dotenv.config({ path: '.env.test' });
+    
+    await db.$connect();
+}
+
+export default globalSetup;
