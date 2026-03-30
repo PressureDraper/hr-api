@@ -68,11 +68,11 @@ describe('GET /api/rh/employee/filter', () => {
         expect(response.body.data[0].matricula).toBe(7004);
     });
 
-    test('Debe retornar array vacío si la matrícula no existe', async () => {
+    test('Debe retornar array vacío si la matrícula no existe', () => {
         expect(emptyResponse.body.data.length).toBe(0);
     });
 
-    test('Debe retornar 400 si no se envía enrollmentFilter', async () => {
+    test('Debe retornar 400 si no se envía enrollmentFilter', () => {
         expect(badRequestResponse.status).toBe(400);
     });
 });
@@ -106,11 +106,11 @@ describe('GET /api/rh/employee/kardex', () => {
         expect(Object.keys(response.body.data)).toContain('historial');
     });
 
-    test('Debe retornar 500 si el id no existe', async () => {
+    test('Debe retornar 500 si el id no existe', () => {
         expect(serverErrorResponse.status).toBe(500);
     });
 
-    test('Debe retornar 400 si no se manda el parámetro id', async () => {
+    test('Debe retornar 400 si no se manda el parámetro id', () => {
         expect(badRequestResponse.status).toBe(400);
     });
 });

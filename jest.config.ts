@@ -19,8 +19,7 @@ const config: Config = {
             displayName: "integration",
             testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
             testEnvironment: 'node',
-            globalSetup: '<rootDir>/src/__tests__/integration/setup.ts',
-            globalTeardown: '<rootDir>/src/__tests__/integration/teardown.ts',
+            setupFiles: ['<rootDir>/src/__tests__/loadEnv.ts'],
             transform: {
                 '^.+\\.ts$': ['@swc/jest'],
             },
@@ -29,6 +28,7 @@ const config: Config = {
             displayName: "e2e",
             testMatch: ['<rootDir>/src/__tests__/e2e/**/*.test.ts'],
             testEnvironment: 'node',
+            setupFiles: ['<rootDir>/src/__tests__/loadEnv.ts'],
             transform: {
                 '^.+\\.ts$': ['@swc/jest'],
             },

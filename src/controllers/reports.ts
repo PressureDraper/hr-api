@@ -51,9 +51,7 @@ export const getExcelChecadas = async (req: any, res: Response) => {
 
         await workBook.xlsx.writeFile(tempFileXlsPath);
         res.sendFile(tempFileXlsPath);
-    }
-
-    catch (err) {
+    } catch (err) {
         console.log(err);
         res.status(500).json({
             ok: false,
