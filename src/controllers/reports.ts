@@ -314,7 +314,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         let mainContent = '';
 
-        employees.forEach((item1: any) => {
+        employees.forEach((item1: any) => {            
             let body = '<tbody style="font-size: 12px;">';
             let headerHorario = '';
             let horarioActual = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`;
@@ -344,7 +344,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 curp: item1.cmp_persona.curp,
                 mat: `${item1.matricula}`,
                 turno: item1.cat_turnos.nombre,
-                guardias: JSON.parse(employees[0].guardias).join(', '),
+                guardias: JSON.parse(item1.guardias).join(', '),
                 code: item1.cat_categorias.codigo,
                 catFederal: item1.cat_categorias.nombre,
                 hour: headerHorario,
