@@ -4,8 +4,8 @@ include:
     file: '/docker-build.yaml'
 
 variables:
-    DEPLOY_USER_PRE: sica16
-    DEPLOY_HOST_PRE: 10.30.0.16
+    DEPLOY_USER_PRE: sica118
+    DEPLOY_HOST_PRE: 10.30.0.118
 
 build-app:
     extends: .build-common
