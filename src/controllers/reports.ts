@@ -115,13 +115,14 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         const permissionYear = moment.utc(params.dateInit.split('-')[0]).toISOString();
         const permissionNextYear = (parseInt(permissionYear) + 1).toString();
         let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' }, params.titular.cat_tipos_empleado.nombre);
+        
         params.folium = (foliumList[0].folio).toString(); //update folium
 
         let templateParams: any = {};
         let template: string = '';
 
         //get params to substitute inside html template
-        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR' || params.titular.cat_tipos_empleado.nombre === 'CONTRATO EVENTUAL IMSS BIENESTAR') {
             templateParams = await htmlParamsIMSS(params);
             template = format(templateEstrategiaIMSS, templateParams);
         } else {
@@ -172,7 +173,7 @@ export const printPdfEstrategia = async (req: any, res: Response) => { //func pa
         let template: string = '';
 
         //get params to substitute inside html template
-        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR') {
+        if (params.titular.cat_tipos_empleado.nombre === 'BASE IMSS BIENESTAR' || params.titular.cat_tipos_empleado.nombre === 'CONTRATO EVENTUAL IMSS BIENESTAR') {
             templateParams = await htmlParamsIMSS(params);
             template = format(templateEstrategiaIMSS, templateParams);
         } else {
