@@ -367,7 +367,7 @@ export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear
         try {
             let foliumList = [];
 
-            if (tipo_empleado === 'BASE IMSS BIENESTAR') {
+            if (tipo_empleado === 'BASE IMSS BIENESTAR' || tipo_empleado === 'CONTRATO EVENTUAL IMSS BIENESTAR') {
                 foliumList = await db.rch_permisos.findMany({
                     where: {
                         cat_permisos: { nombre: 'ESTRATEGIA' },
@@ -378,7 +378,12 @@ export const getLastFoliumFromYear = (permissionYear: string, permissionNextYear
                         deleted_at: null,
                         rch_empleados: {
                             cat_tipos_empleado: {
-                                nombre: 'BASE IMSS BIENESTAR'
+                                nombre: {
+                                    in: [
+                                        'BASE IMSS BIENESTAR',
+                                        'CONTRATO EVENTUAL IMSS BIENESTAR'
+                                    ]
+                                }
                             }
                         }
                     },
@@ -541,7 +546,7 @@ export const getStrategyFoliumQuery = (fecha_ini: string, tipo_empleado: string)
             let nextFolium: number = 1;
             let record = [];
 
-            if (tipo_empleado === 'BASE IMSS BIENESTAR') {
+            if (tipo_empleado === 'BASE IMSS BIENESTAR' || tipo_empleado === 'CONTRATO EVENTUAL IMSS BIENESTAR') {
                 record = await db.rch_permisos.findMany({
                     where: {
                         cat_permisos: {
@@ -553,7 +558,12 @@ export const getStrategyFoliumQuery = (fecha_ini: string, tipo_empleado: string)
                         },
                         rch_empleados: {
                             cat_tipos_empleado: {
-                                nombre: 'BASE IMSS BIENESTAR'
+                                nombre: {
+                                    in: [
+                                        'BASE IMSS BIENESTAR',
+                                        'CONTRATO EVENTUAL IMSS BIENESTAR'
+                                    ]
+                                }
                             }
                         },
                         deleted_at: null
