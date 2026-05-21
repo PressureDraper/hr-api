@@ -115,7 +115,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         const permissionYear = moment.utc(params.dateInit.split('-')[0]).toISOString();
         const permissionNextYear = (parseInt(permissionYear) + 1).toString();
         let foliumList: any = await getLastFoliumFromYear(permissionYear, permissionNextYear, { id: 'desc' }, params.titular.cat_tipos_empleado.nombre);
-        
+
         params.folium = (foliumList[0].folio).toString(); //update folium
 
         let templateParams: any = {};
@@ -239,13 +239,13 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const attendances = grouped_attendeances[employee.matricula] || [];
                 const vacaciones: any = await getVacationIMSSReport(employee.id, fecha_ini, fecha_fin);
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
-                const historial_horario: any = await getEmployeeShiftQuery(employee.id);
 
+                const historial_horario: any = await getEmployeeShiftQuery(employee.id);
                 //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
                 let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin);
 
                 //obtener checadas del suplente para reflejar en reporte del suplente en estrategias para empleados IMSS BIENESTAR
-                let estrategiasHorariosTitular: PropsEstrategiasSuplente[] = await procesarEstrategiasSuplente(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin);
+                /* let estrategiasHorariosTitular: PropsEstrategiasSuplente[] = await procesarEstrategiasSuplente(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin); */
 
                 //procesar el historial de los horarios de cada empleado
                 const { historial, horario_actual } = getEmployeeDataPerDateRange(historial_horario, fecha_ini, fecha_fin, hora_entrada, hora_salida, employee);
@@ -256,7 +256,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const result = getUnrepeatedAttendances(attendances);
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
-                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente, estrategiasHorariosTitular);
+                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente); /* estrategiasHorariosTitular */
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
@@ -278,7 +278,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                         finalData.push(item);
                     }
 
-                    if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') > fec_final && item.event.includes('OMISIÓN DE ENTRADA')) {
+                    if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') > fec_final && item.event.includes('OMISIÓN DE ENTRADA') && JSON.parse(decodeURIComponent(employee.guardias)).length <= 3) {
                         finalData.push(item);
                     }
                 });
