@@ -6,7 +6,7 @@ import exceljs from 'exceljs';
 import puppeteer from "puppeteer";
 import format from 'string-template';
 import _, { parseInt } from 'lodash';
-import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, getAttendancesPerPermissionDateRange, calcIncidencias, procesarEstrategiasSuplente, procesarEstrategiasTitular } from '../helpers/ImssReport';
+import { debugWorkingDays, parseWorkingDays, isComingOrOut, classifyEventType, generateRow, getEmployeeDataPerDateRange, getUnrepeatedAttendances, calcIncidencias, procesarEstrategiasTitular, cambiarHorarioSuplentePorEstrategia } from '../helpers/ImssReport';
 import moment from "moment";
 import { imsWrapperReportContent } from "../assets/ims/wrapperContentIms";
 import { getRangeHolidaysQuery } from "../helpers/holidaysQueries";
@@ -242,7 +242,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
                 //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
-                let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin);
+                let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, employee.cat_turnos.nombre, permisos, fecha_ini, fecha_fin);
 
                 //obtener checadas del suplente para reflejar en reporte del suplente en estrategias para empleados IMSS BIENESTAR
                 /* let estrategiasHorariosTitular: PropsEstrategiasSuplente[] = await procesarEstrategiasSuplente(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin); */
@@ -253,10 +253,13 @@ export const generareReportIms = async (req: any, res: Response) => {
                 hora_salida = horario_actual.hora_salida;
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
-                const result = getUnrepeatedAttendances(attendances);
+                const result = getUnrepeatedAttendances(attendances);    
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
-                const endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente); /* estrategiasHorariosTitular */
+                let endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente); /* estrategiasHorariosTitular */
+                
+                //cambiar horario y tipo de checada del suplente en las checadas por el establecido en la estrategia si aplica
+                cambiarHorarioSuplentePorEstrategia(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin, endOutAttendances);
 
                 //Proceso para añadir dias laborales que no tienen checadas dependiendo del turno del empleado
                 //3. Obtener los dias laborales del empleado y parsearlos al rango seleccionado de los dias del mes
