@@ -2,6 +2,10 @@ import { IOPermisosInterface, PropsAttendances, PropsChecadasCentralizadas, Prop
 import _, { uniq } from "lodash";
 import dayjs from "dayjs";
 import { parse } from "path";
+import utc from 'dayjs/plugin/utc';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(utc);
+dayjs.extend(isSameOrBefore);
 import { getEmployeeShiftQuery } from "./employeesQueries";
 import { getAttendancesReport } from "./reportsQueries";
 
@@ -33,7 +37,7 @@ export const getUnrepeatedAttendances = (attendances: any[]) => {
     return result
 }
 
-export const getAttendancesPerPermissionDateRange = (attendances: any[], fec_ini: string, fec_fin: string, ini_horario_suplente: string, fin_horario_suplente: string, guardias_titular: string) => {
+export const getAttendancesPerPermissionDateRange = (attendances: any[], fec_ini: string, fec_fin: string, ini_horario_suplente: string, fin_horario_suplente: string, guardias_titular: string, turnoEmpleado: string) => {
     // Filtrar checadas para quedarnos con las que se encuentren capturadas en el rango de la estrategia
     const entradaMinimaPermitida = dayjs.utc(ini_horario_suplente).subtract(1, 'hour').format('HH:mm:ss');
     const entradaMaximaPermitida = dayjs.utc(ini_horario_suplente).add(40, 'minutes').format('HH:mm:ss');
@@ -44,7 +48,7 @@ export const getAttendancesPerPermissionDateRange = (attendances: any[], fec_ini
     let strategyAttendances: any[] = [];
 
     //Proceso para empleados que checan entrada en un dia y salida al siguiente
-    if (guardias.length <= 3) {
+    if (guardias.length <= 3 && turnoEmpleado !== 'JORNADA ACUMULADA') {
         strategyAttendances = attendances.filter((item) => {
             const horaChecada = dayjs.utc(item.horaReg, 'HH:mm:ss').format('HH:mm:ss');
             const fechaChecada = dayjs.utc(item.dateReg).toISOString();
@@ -256,7 +260,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
 
             debuggedWorkingDays.push(attendances);
         }
-    });
+    });    
 
     //combinar los array respecto a los cambios de horario y depurar por dateReg para quedarnos con registros únicos
     const combined = debuggedWorkingDays.flat();
@@ -903,7 +907,7 @@ export const calcIncidencias = (empleado: any) => {
     }
 }
 
-export const procesarEstrategiasTitular = async (tipoEmpleado: string, matriculaEmpleado: number, permisos: any, fechaIniCalendario: string, fechaFinCalendario: string) => {
+export const procesarEstrategiasTitular = async (tipoEmpleado: string, matriculaEmpleado: number, turnoEmpleado: string, permisos: any, fechaIniCalendario: string, fechaFinCalendario: string) => {
     if (tipoEmpleado !== 'BASE IMSS BIENESTAR') return [];
 
     const estrategias = permisos.filter((permiso: any) =>
@@ -927,7 +931,7 @@ export const procesarEstrategiasTitular = async (tipoEmpleado: string, matricula
             );
 
             const substituteAttendances = getUnrepeatedAttendances(data.attendances);
-            const strategyAttendances = getAttendancesPerPermissionDateRange(substituteAttendances, estrategia.fecha_inicio, estrategia.fecha_fin, estrategia.ini_horario_suplente, estrategia.fin_horario_suplente, estrategia.rch_empleados.guardias);
+            const strategyAttendances = getAttendancesPerPermissionDateRange(substituteAttendances, estrategia.fecha_inicio, estrategia.fecha_fin, estrategia.ini_horario_suplente, estrategia.fin_horario_suplente, estrategia.rch_empleados.guardias, turnoEmpleado);
 
             const strategyAttendancesWithLabel = strategyAttendances.map((attendance) => {
                 return {
@@ -994,4 +998,45 @@ export const procesarEstrategiasSuplente = async (tipoEmpleado: string, matricul
     }
 
     return result;
+}
+
+export const cambiarHorarioSuplentePorEstrategia = (tipo_empleado: string, matricula: number, permisos: any, fechaIniCalendario: string, fechaFinCalendario: string, checadas: any[]): void => {
+    if (tipo_empleado !== 'BASE IMSS BIENESTAR') return;
+
+    const estrategias = permisos.filter((permiso: any) =>
+        permiso.cat_permisos.nombre === 'ESTRATEGIA' &&
+        permiso.rch_empleados_rch_permisos_id_suplenteTorch_empleados.matricula === matricula &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') >= fechaIniCalendario &&
+        dayjs.utc(permiso.fecha_inicio).format('YYYY-MM-DD') <= fechaFinCalendario
+    );
+
+    if (!estrategias.length) return;
+
+    checadas.forEach((checada, index) => {
+        const fechaChecada = dayjs.utc(checada.dateReg).format('YYYY-MM-DD');
+        const horaChecada = dayjs.utc(checada.horaReg, 'HH:mm:ss').format('HH:mm:ss');
+
+        estrategias.forEach((estrategia: any) => {
+            const entradaMinimaPermitida = dayjs.utc(estrategia.ini_horario_suplente).subtract(30, 'minutes').format('HH:mm:ss');
+            const entradaMaximaPermitida = dayjs.utc(estrategia.ini_horario_suplente).add(2, 'hours').format('HH:mm:ss');
+            const salidaMaximaPermitida = dayjs.utc(estrategia.fin_horario_suplente).add(1, 'hour').format('HH:mm:ss');
+            let fechaInicioEstrategia = dayjs.utc(estrategia.fecha_inicio);
+            const fechaFinEstrategia = dayjs.utc(estrategia.fecha_fin);
+
+            while (fechaInicioEstrategia.isSameOrBefore(fechaFinEstrategia, 'day')) {
+                if (fechaChecada === fechaInicioEstrategia.format('YYYY-MM-DD') && horaChecada >= entradaMinimaPermitida && horaChecada <= salidaMaximaPermitida) {
+                    if (horaChecada >= entradaMinimaPermitida && horaChecada <= entradaMaximaPermitida) {
+                        checadas[index].type = 'ENTRADA';
+                    } else {
+                        checadas[index].type = 'SALIDA';
+                    }
+                    
+                    checadas[index].schedule = `${dayjs.utc(estrategia.ini_horario_suplente).format('HH:mm:ss')} - ${dayjs.utc(estrategia.fin_horario_suplente).format('HH:mm:ss')}`;
+                }
+                 
+                fechaInicioEstrategia = fechaInicioEstrategia.add(1, 'day');
+            }
+
+        });
+    });
 }
