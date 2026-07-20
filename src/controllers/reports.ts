@@ -66,7 +66,7 @@ export const testPDF = async (req: any, res: Response) => {
     try {
         //get params to substitute inside html template
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
+            executablePath: puppeteer.executablePath(),
         });
 
         const page = await browser.newPage();
@@ -134,7 +134,7 @@ export const getPdfEstrategia = async (req: any, res: Response) => { //func para
         /* const template = format(fs.readFileSync(dir, 'utf8'), templateParams); */ //(just for editing template with formatting helpers)
 
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
+            executablePath: puppeteer.executablePath(),
         });
 
         const page = await browser.newPage();
@@ -182,7 +182,7 @@ export const printPdfEstrategia = async (req: any, res: Response) => { //func pa
         }
 
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
+            executablePath: puppeteer.executablePath(),
         });
 
         const page = await browser.newPage();
@@ -373,7 +373,7 @@ export const generareReportIms = async (req: any, res: Response) => {
         });
 
         const browser = await puppeteer.launch({
-            executablePath: "/usr/bin/google-chrome",
+            executablePath: puppeteer.executablePath(),
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
 
