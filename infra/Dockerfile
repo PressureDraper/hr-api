@@ -9,9 +9,9 @@ RUN npx prisma generate --schema prisma/schema.prisma
 
 FROM node:18.17.1-alpine3.18 AS builder
 WORKDIR /app
+COPY --chown=node --from=deps /app/node_modules/ ./node_modules/
 COPY . .
-RUN npm install -g typescript
-RUN tsc || true
+RUN npm run build
 
 FROM node:18.17.1-bullseye AS prod
 WORKDIR /app
