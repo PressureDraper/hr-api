@@ -1,4 +1,4 @@
-FROM node:18.17.1-alpine3.18 AS deps
+FROM node:24.11-alpine3.23 AS deps
 
 WORKDIR /app
 COPY package.json .
@@ -13,7 +13,7 @@ COPY --chown=node --from=deps /app/node_modules/ ./node_modules/
 COPY . .
 RUN npm run build
 
-FROM node:18.17.1-bullseye AS prod
+FROM node:24.11.1-bullseye AS prod
 WORKDIR /app
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
