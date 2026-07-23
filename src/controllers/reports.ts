@@ -15,11 +15,13 @@ import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoP
 import { htmlParams, htmlParamsIMSS, templateEstrategia, templateEstrategiaIMSS } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
+import "dayjs/locale/es";
 import { footerDownLine, logo_imss, logo_mujer_2025, logo_sheinbaum, sello_cae } from "../helpers/images";
 import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
 import fs from 'fs';
 import path from "path";
 import { newImssReportMainContent } from "../assets/ims/newMainContent";
+dayjs.locale("es");
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -253,11 +255,11 @@ export const generareReportIms = async (req: any, res: Response) => {
                 hora_salida = horario_actual.hora_salida;
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
-                const result = getUnrepeatedAttendances(attendances);    
+                const result = getUnrepeatedAttendances(attendances);
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
                 let endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente); /* estrategiasHorariosTitular */
-                
+
                 //cambiar horario y tipo de checada del suplente en las checadas por el establecido en la estrategia si aplica
                 cambiarHorarioSuplentePorEstrategia(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin, endOutAttendances);
 
@@ -318,7 +320,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         let mainContent = '';
 
-        employees.forEach((item1: any) => {            
+        employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
             let headerHorario = '';
             let horarioActual = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`;
@@ -450,9 +452,26 @@ export const generareReportIms = async (req: any, res: Response) => {
             `
         });
 
+        let filename: string = "reporte";
+
+        if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
+            filename = `${employeesType[0].cmp_persona.rfc}_${quin}`
+        } else if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
+            filename = `${employeesType[0].cmp_persona.rfc}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+        } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
+            filename = `${mat_inicio}_${mat_final}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+        } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
+            filename = `${mat_inicio}_${mat_final}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+        }
+
         await browser.close();
 
-        res.contentType("application/pdf");
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${filename}.pdf"`,
+            'Access-Control-Expose-Headers': 'Content-Disposition'
+        });
+
         res.send(pdfBuffer);
     }
     catch (err) {
