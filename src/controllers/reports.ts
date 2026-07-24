@@ -21,7 +21,6 @@ import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
 import fs from 'fs';
 import path from "path";
 import { newImssReportMainContent } from "../assets/ims/newMainContent";
-dayjs.locale("es");
 
 export const getExcelChecadas = async (req: any, res: Response) => {
     try {
@@ -243,6 +242,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
 
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
+
                 //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
                 let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, employee.cat_turnos.nombre, permisos, fecha_ini, fecha_fin);
 
@@ -397,7 +397,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 right: 20,
                 bottom: '202px'
             },
-            scale: 0.95,
+            scale: 0.96,
             displayHeaderFooter: true,
             footerTemplate: `
             <footer style="width: 95vw; height: 50px;">
@@ -454,21 +454,26 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         let filename: string = "reporte";
 
+        const mes = dayjs(fec_inicio)
+            .locale("es")
+            .format("MMMM")
+            .toUpperCase();
+
         if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
             filename = `${employeesType[0].cmp_persona.rfc}_${quin}`
         } else if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
-            filename = `${employeesType[0].cmp_persona.rfc}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+            filename = `${employeesType[0].cmp_persona.rfc}_${mes}_${new Date().getFullYear()}`
         } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
-            filename = `${mat_inicio}_${mat_final}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+            filename = `${mat_inicio}_${mat_final}_${quin}`
         } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
-            filename = `${mat_inicio}_${mat_final}_${dayjs(fec_inicio).format("MMMM").toUpperCase()}_${new Date().getFullYear()}`
+            filename = `${mat_inicio}_${mat_final}_${mes}_${new Date().getFullYear()}`
         }
 
         await browser.close();
 
         res.set({
             'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${filename}.pdf"`,
+            'Content-Disposition': `inline; filename="${filename}.pdf"`,
             'Access-Control-Expose-Headers': 'Content-Disposition'
         });
 
