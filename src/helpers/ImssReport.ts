@@ -273,7 +273,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
     return uniqueWorkingDays;
 }
 
-export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[]) => {
+export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[], matricula: number) => {
     if (parsedWorkingDays === null || parsedWorkingDays === undefined) {
         return [];
     }
@@ -293,7 +293,22 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
 
     let debuggedDays = parsedWorkingDays.filter((item: any) => !purgeDays.includes(item.dateReg));
 
-    return attendances.concat(debuggedDays);
+    debuggedDays = attendances.concat(debuggedDays)
+
+    let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+    let data = [];
+
+    //Eliminar los eventos de FALTA para empleados irregulares donde se haya capturado una LICENCIA MEDICA un dia anterior para turnos de 24 hrs
+    if (empleadosIrregulares.includes(matricula)) {
+        for (let index = 1; index < sortedData.length; index++) {
+            if (!(sortedData[index - 1].event === 'LICENCIA MEDICA' && sortedData[index].day === 'Monday')) {
+                data.push(sortedData[index]);
+            }
+        }
+    }
+
+    return data.length != 0 ? data : sortedData;
 }
 
 export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: string) => {
@@ -456,7 +471,7 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
         }
     });
 
-    //Marcar como salida las checadas que cumplan con los requerimientos
+    //Marcar como salida las checadas que cumplan con los requerimientos para empleados irregulares
     if (empleadosIrregulares.includes(employee.matricula)) {
         let guards = translateDays(checadasClasificadas[0].guardias);
         for (let index = 1; index < checadasClasificadas.length; index++) {
@@ -466,7 +481,6 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
             }
         }
     }
-    
 
     return checadasClasificadas;
 };

@@ -271,14 +271,11 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fecha_ini, fecha_fin, historial);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
-                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, horario_actual.guardias);
+                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, horario_actual.guardias, employee.matricula);
 
-                //6. Ordenar el array ascendentemente por dateReg
-                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
-
-                //7. Eliminar primer dia por el rango de fechas -1 y +1 para la evaluación de las checadas y dejar los dias +1 para aquellos donde hay eventos de OMISION DE ENTRADA PARA JORNADA ACUMULADA
+                //6. Eliminar primer dia por el rango de fechas -1 y +1 para la evaluación de las checadas y dejar los dias +1 para aquellos donde hay eventos de OMISION DE ENTRADA PARA JORNADA ACUMULADA
                 let finalData: any[] = [];
-                sortedData.forEach((item: any) => {
+                debuggedDays.forEach((item: any) => {
                     if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(item.dateReg).format('YYYY-MM-DD') <= fec_final) {
                         finalData.push(item);
                     }
@@ -288,7 +285,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     }
                 });
 
-                //8. Eliminar eventos de FALTA donde el siguiente día tenga como evento OMISION DE ENTRADA para JORNADA ACUMULADA
+                //7. Eliminar eventos de FALTA donde el siguiente día tenga como evento OMISION DE ENTRADA para JORNADA ACUMULADA
                 finalData.forEach((item: any, index: number) => {
                     if (index === finalData.length - 1) {
                         return;
@@ -299,7 +296,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     }
                 });
 
-                //9. Para permiso de lactancia, agregar falta a aquellos registros donde no hay hora de checada
+                //8. Para permiso de lactancia, agregar falta a aquellos registros donde no hay hora de checada
                 finalData = finalData.map((item: any) => {
                     if (item.event === 'LACTANCIA' && item.horaReg === '') {
                         return { ...item, event: item.event + ', FALTA' }
