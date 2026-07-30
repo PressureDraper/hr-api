@@ -260,7 +260,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
 
             debuggedWorkingDays.push(attendances);
         }
-    });    
+    });
 
     //combinar los array respecto a los cambios de horario y depurar por dateReg para quedarnos con registros únicos
     const combined = debuggedWorkingDays.flat();
@@ -273,7 +273,7 @@ export const parseWorkingDays = (fec_inicio: string, fec_final: string, festivos
     return uniqueWorkingDays;
 }
 
-export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[]) => {
+export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendances: any, notParsedWorkingDays: string[], matricula: number) => {
     if (parsedWorkingDays === null || parsedWorkingDays === undefined) {
         return [];
     }
@@ -293,7 +293,22 @@ export const debugWorkingDays = (parsedWorkingDays: any, festivos: any, attendan
 
     let debuggedDays = parsedWorkingDays.filter((item: any) => !purgeDays.includes(item.dateReg));
 
-    return attendances.concat(debuggedDays);
+    debuggedDays = attendances.concat(debuggedDays)
+
+    let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+    let data = [];
+
+    //Eliminar los eventos de FALTA para empleados irregulares donde se haya capturado una LICENCIA MEDICA un dia anterior para turnos de 24 hrs
+    if (empleadosIrregulares.includes(matricula)) {
+        for (let index = 1; index < sortedData.length; index++) {
+            if (!(sortedData[index - 1].event === 'LICENCIA MEDICA' && sortedData[index].day === 'Monday')) {
+                data.push(sortedData[index]);
+            }
+        }
+    }
+
+    return data.length != 0 ? data : sortedData;
 }
 
 export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: string) => {
@@ -303,6 +318,8 @@ export const horaEntradaPerTipoEmpleado = (tipo_empleado: number, hora_entrada: 
         return dayjs.utc(hora_entrada).subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
     }
 }
+
+const empleadosIrregulares = [6035, 6091, 6611, 7312, 7461, 7858, 7902, 9338];
 
 export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentralizadas[], employee: any, historial: PropsHistorialHorario[], checadasSuplente: PropsChecadasEstrategias[]) => { /* estrategiasHorariosTitular: any[] */
     let horaEntradaLimite: string = '';
@@ -454,6 +471,17 @@ export const isComingOrOut = (hora_entrada: string, checadas: PropsChecadasCentr
         }
     });
 
+    //Marcar como salida las checadas que cumplan con los requerimientos para empleados irregulares
+    if (empleadosIrregulares.includes(employee.matricula)) {
+        let guards = translateDays(checadasClasificadas[0].guardias);
+        for (let index = 1; index < checadasClasificadas.length; index++) {
+            //si el tipo de la checada actual es igual al tipo de la checada anterior solo en los dias donde la diferencia de dias sea 1 (turnos de 24 hrs) y se encuentren en las guardias del empleado
+            if (checadasClasificadas[index].type === checadasClasificadas[index - 1].type && dayjs(checadasClasificadas[index].dateReg).diff(dayjs(checadasClasificadas[index - 1].dateReg), "day") === 1 && guards.includes(dayjs(checadasClasificadas[index - 1].dateReg).format('dddd'))) {
+                checadasClasificadas[index].type = 'SALIDA'
+            }
+        }
+    }
+
     return checadasClasificadas;
 };
 
@@ -589,6 +617,7 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
         if (id_tipo_empleado === 17 || id_tipo_empleado === 19) { //Base IMSS Bienestar
             horaEntradaLimite = dayjs(horaEntrada, "HH:mm:ss").add(6, 'minutes').format('HH:mm:ss');
             horaEntradaPermitida = dayjs(horaEntrada, "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss"); //1 hora antes de hora de entrada
+            horaEntradaMaxima = dayjs(horaEntrada, "HH:mm:ss").add(31, 'minutes').format('HH:mm:ss');
         } else { //cualquier otro empleado que no sea base imss bienestar
             horaEntradaLimite = dayjs(horaEntrada, "HH:mm:ss").add(16, 'minutes').format("HH:mm:ss"); //entrada sin retardo 16 minutos despues
             horaEntradaPermitida = dayjs(horaEntrada, "HH:mm:ss").subtract(30, 'minutes').format("HH:mm:ss"); //30 minutos antes de hora de entrada
@@ -609,6 +638,29 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
             } */
         }
     });
+
+    //Evaluar los segundos horarios de los empleados irregulares
+    if (empleadosIrregulares.includes(employee.matricula)) {
+        horaEntradaPermitida = dayjs('08:06:00', "HH:mm:ss").subtract(1, 'hour').format("HH:mm:ss");
+        horaEntradaLimite = dayjs('08:06:00', "HH:mm:ss").format('HH:mm:ss');
+        let horaEntradaMaxima = dayjs('08:00:00', "HH:mm:ss").add(31, 'minutes').format('HH:mm:ss');
+        let horaOmision = dayjs('08:00:00', "HH:mm:ss").add(4, 'hours').format('HH:mm:ss');
+
+        classifiedAttendances.map((item: any) => {
+            if (item.type === "ENTRADA") {
+                if (item.horaReg >= horaEntradaPermitida && item.horaReg < horaEntradaLimite) {
+
+                    item.event = '';
+                } else if (item.horaReg >= horaEntradaLimite && item.horaReg < horaEntradaMaxima) {
+                    item.event = item.label ? 'RETARDO MENOR, '.concat(item.label) : 'RETARDO MENOR';
+                } else if (item.horaReg > horaEntradaMaxima && item.horaReg < horaOmision) {
+                    item.event = item.label ? 'OMISIÓN DE ENTRADA, '.concat(item.label) : 'OMISIÓN DE ENTRADA';
+                }
+            }
+
+            return item;
+        });
+    }
 
     //PERMISOS
     let sharedDays: any[] = [];
@@ -695,6 +747,16 @@ export const classifyEventType = (attendances: any, vacaciones: any, permisos: a
     }
 
     let sortedData = classifiedAttendances.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
+
+    //Cambiar tipo de checada a salida si es un empleado irregular y se capturo una AE el dia inmediato anterior
+    if (empleadosIrregulares.includes(employee.matricula)) {
+        for (let index = 1; index < sortedData.length; index++) {
+            if (sortedData[index].type === 'ENTRADA' && sortedData[index - 1].event === 'AUTORIZACIÓN DE ENTRADA' && dayjs(sortedData[index].dateReg).format('dddd') === 'Sunday') {
+                sortedData[index] = { ...sortedData[index], type: 'SALIDA', event: '' };
+            }
+        }
+    }
+
     //Agregar OMISIONES DE ENTRADA Y SALIDA
     const omisionesSalida: any[] = [];
     const omisionesEntrada: any[] = [];
@@ -1030,10 +1092,10 @@ export const cambiarHorarioSuplentePorEstrategia = (tipo_empleado: string, matri
                     } else {
                         checadas[index].type = 'SALIDA';
                     }
-                    
+
                     checadas[index].schedule = `${dayjs.utc(estrategia.ini_horario_suplente).format('HH:mm:ss')} - ${dayjs.utc(estrategia.fin_horario_suplente).format('HH:mm:ss')}`;
                 }
-                 
+
                 fechaInicioEstrategia = fechaInicioEstrategia.add(1, 'day');
             }
 

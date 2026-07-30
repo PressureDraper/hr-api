@@ -15,6 +15,7 @@ import { getEmployeesPermissionsQuery, getLastFoliumFromYear, getStrategiesInfoP
 import { htmlParams, htmlParamsIMSS, templateEstrategia, templateEstrategiaIMSS } from "../helpers/strategyReport";
 import dayjs from "dayjs";
 import utc from 'dayjs/plugin/utc'
+import "dayjs/locale/es";
 import { footerDownLine, logo_imss, logo_mujer_2025, logo_sheinbaum, sello_cae } from "../helpers/images";
 import { getEmployeeShiftQuery } from "../helpers/employeesQueries";
 import fs from 'fs';
@@ -241,6 +242,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const permisos: any = await getEmployeesPermissionsQuery({ employee_id: employee.id, fecha_ini: fecha_ini, fecha_fin: fecha_fin });
 
                 const historial_horario: any = await getEmployeeShiftQuery(employee.id);
+
                 //obtener checadas de suplentes para reflejar en reporte del titular en estrategias para empleados IMSS BIENESTAR
                 let checadasSuplente: PropsChecadasEstrategias[] = await procesarEstrategiasTitular(employee.cat_tipos_empleado.nombre, employee.matricula, employee.cat_turnos.nombre, permisos, fecha_ini, fecha_fin);
 
@@ -253,11 +255,11 @@ export const generareReportIms = async (req: any, res: Response) => {
                 hora_salida = horario_actual.hora_salida;
 
                 //1. OBTENER DE LAS CHECADAS LA PRIMERA DE CADA HORA EN CADA DIA
-                const result = getUnrepeatedAttendances(attendances);    
+                const result = getUnrepeatedAttendances(attendances);
 
                 //2. CLASIFICAR CADA CHECADA COMO ENTRADA O SALIDA AGREGANDO LA PROPIEDAD 'TYPE', 'SCHEDULE' AL OBJETO Y 'LABEL' PARA IDENTIFICAR LAS ESTRATEGIAS
                 let endOutAttendances = isComingOrOut(hora_entrada, result, employee, historial, checadasSuplente); /* estrategiasHorariosTitular */
-                
+
                 //cambiar horario y tipo de checada del suplente en las checadas por el establecido en la estrategia si aplica
                 cambiarHorarioSuplentePorEstrategia(employee.cat_tipos_empleado.nombre, employee.matricula, permisos, fecha_ini, fecha_fin, endOutAttendances);
 
@@ -269,14 +271,11 @@ export const generareReportIms = async (req: any, res: Response) => {
                 const classifiedAttendances = classifyEventType(endOutAttendances, vacaciones, permisos, employee, fecha_ini, fecha_fin, historial);
 
                 //5. Eliminar festivos (aquellos que no laboran festivos), dias donde ya haya checadas y permisos asignados
-                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, horario_actual.guardias);
+                const debuggedDays = debugWorkingDays(parsedWorkingDays, festivos, classifiedAttendances, horario_actual.guardias, employee.matricula);
 
-                //6. Ordenar el array ascendentemente por dateReg
-                let sortedData = debuggedDays.sort((a: any, b: any) => new Date(a.dateReg).getTime() - new Date(b.dateReg).getTime());
-
-                //7. Eliminar primer dia por el rango de fechas -1 y +1 para la evaluación de las checadas y dejar los dias +1 para aquellos donde hay eventos de OMISION DE ENTRADA PARA JORNADA ACUMULADA
+                //6. Eliminar primer dia por el rango de fechas -1 y +1 para la evaluación de las checadas y dejar los dias +1 para aquellos donde hay eventos de OMISION DE ENTRADA PARA JORNADA ACUMULADA
                 let finalData: any[] = [];
-                sortedData.forEach((item: any) => {
+                debuggedDays.forEach((item: any) => {
                     if (dayjs.utc(item.dateReg).format('YYYY-MM-DD') >= fec_inicio && dayjs.utc(item.dateReg).format('YYYY-MM-DD') <= fec_final) {
                         finalData.push(item);
                     }
@@ -286,7 +285,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     }
                 });
 
-                //8. Eliminar eventos de FALTA donde el siguiente día tenga como evento OMISION DE ENTRADA para JORNADA ACUMULADA
+                //7. Eliminar eventos de FALTA donde el siguiente día tenga como evento OMISION DE ENTRADA para JORNADA ACUMULADA
                 finalData.forEach((item: any, index: number) => {
                     if (index === finalData.length - 1) {
                         return;
@@ -297,7 +296,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                     }
                 });
 
-                //9. Para permiso de lactancia, agregar falta a aquellos registros donde no hay hora de checada
+                //8. Para permiso de lactancia, agregar falta a aquellos registros donde no hay hora de checada
                 finalData = finalData.map((item: any) => {
                     if (item.event === 'LACTANCIA' && item.horaReg === '') {
                         return { ...item, event: item.event + ', FALTA' }
@@ -318,7 +317,7 @@ export const generareReportIms = async (req: any, res: Response) => {
 
         let mainContent = '';
 
-        employees.forEach((item1: any) => {            
+        employees.forEach((item1: any) => {
             let body = '<tbody style="font-size: 12px;">';
             let headerHorario = '';
             let horarioActual = `${item1.parseHora_entrada} - ${item1.parseHora_salida}`;
@@ -395,7 +394,7 @@ export const generareReportIms = async (req: any, res: Response) => {
                 right: 20,
                 bottom: '202px'
             },
-            scale: 0.95,
+            scale: 0.96,
             displayHeaderFooter: true,
             footerTemplate: `
             <footer style="width: 95vw; height: 50px;">
@@ -450,9 +449,31 @@ export const generareReportIms = async (req: any, res: Response) => {
             `
         });
 
+        let filename: string = "reporte";
+
+        const mes = dayjs(fec_inicio)
+            .locale("es")
+            .format("MMMM")
+            .toUpperCase();
+
+        if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
+            filename = `${employeesType[0].cmp_persona.rfc}_${quin}`
+        } else if (employeesType.length === 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
+            filename = `${employeesType[0].cmp_persona.rfc}_${mes}_${new Date().getFullYear()}`
+        } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") <= 16) {
+            filename = `${mat_inicio}_${mat_final}_${quin}`
+        } else if (employeesType.length > 1 && dayjs(fec_final).diff(dayjs(fec_inicio), "day") >= 16) {
+            filename = `${mat_inicio}_${mat_final}_${mes}_${new Date().getFullYear()}`
+        }
+
         await browser.close();
 
-        res.contentType("application/pdf");
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `inline; filename="${filename}.pdf"`,
+            'Access-Control-Expose-Headers': 'Content-Disposition'
+        });
+
         res.send(pdfBuffer);
     }
     catch (err) {

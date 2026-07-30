@@ -86,8 +86,6 @@ export const getEmployeeTypeQuery = ({ ...params }: PropsReporteChecadas) => {
 export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const employeesInExcel = [7461, 7312, 1798]; //EMPLEADOS CON MUCHAS IRREGULARIDADES QUE MANEJERAN APARTE
-
             const infoEmployeeType = await db.rch_empleados.findMany({
                 where: {
                     OR: [
@@ -160,9 +158,7 @@ export const getIMSSN420Employees = ({ ...params }: PropsReporteIMSS) => {
                 orderBy: { matricula: 'asc' }
             });
 
-            const filteredEmployees = infoEmployeeType.filter((item: any) => !employeesInExcel.includes(item.matricula));
-
-            resolve(filteredEmployees);
+            resolve(infoEmployeeType);
         } catch (error) {
             reject(error);
         }
